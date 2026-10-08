@@ -8,12 +8,9 @@ import { raids, upcomingRaids, getRaidNewLabel } from '@/data/raids';
 import { raidRewards, type MaterialReward } from '@/data/raidRewards';
 import { raidClearRewards } from '@/data/raidClearRewards';
 import { PriceProvider, usePriceData } from '@/contexts/PriceContext';
-import GuideFaq from '@/components/common/GuideFaq';
-import MoreRewardGuideBody from '@/components/guide/MoreRewardGuideBody';
 import AdBanner from '@/components/ads/AdBanner';
 import DesktopBannerAd from '@/components/ads/DesktopBannerAd';
 import { ADFIT_UNITS } from '@/components/ads/adConfig';
-import { faqData } from './faq-data';
 import styles from './more-reward.module.css';
 
 // 재료 아이콘 (패키지 효율과 동일한 최신 아이콘 사용)
@@ -427,7 +424,7 @@ function MoreRewardInner() {
         {/* 모바일 띠배너 — 두 섹션 카드 사이. 아래 기존 광고(320×100)와 단위가 겹치면
             애드핏이 첫 자리만 채우므로 인-콘텐츠 단위 순번을 따로 쓴다. */}
         <div className="d-block d-lg-none my-2">
-          <AdBanner slot="8616653628" index={0} />
+          <AdBanner index={0} />
         </div>
 
         {/* 데스크톱 728×90 — 두 섹션 카드 사이. 이 페이지의 유일한 데스크톱 애드핏 자리라
@@ -485,7 +482,7 @@ function MoreRewardInner() {
 
         {/* 레이드 클리어 보상 섹션 아래 — 위 경계 자리(index 0)와 다른 단위(단일 단위) */}
         <div className="d-block d-lg-none my-3">
-          <AdBanner slot="8616653628" />
+          <AdBanner />
         </div>
 
         {/* 관련 도구 */}
@@ -497,39 +494,10 @@ function MoreRewardInner() {
           <Link href="/package" className={styles.relatedLink}>패키지 효율</Link>
         </div>
 
-        <GuideFaq
-          relatedGuides={['/guide/raid-rewards', '/weekly-gold']}
-          article={<MoreRewardGuideBody />}
-          guideTitle="더보기 효율 이용 가이드"
-          sections={[
-            {
-              heading: '더보기 손익은 이렇게 계산됩니다',
-              paragraphs: [
-                '레이드 관문을 클리어하면 골드를 추가로 지불하고 재련 재료를 더 받는 더보기 선택지가 열립니다. 이 페이지는 관문별 더보기로 받는 파괴석·수호석, 돌파석, 운명의 파편 같은 재료 전체를 현재 거래소 평균 시세로 환산한 총 가치에서 더보기 비용을 뺀 손익을 보여줍니다. 카드의 숫자가 양수(초록)면 더보기를 사는 것이 재료를 거래소에서 직접 사는 것보다 이득이고, 음수(빨강)면 골드를 아끼고 필요한 재료만 따로 사는 편이 낫다는 뜻입니다.',
-                '시세는 매시간 자동으로 갱신되므로 레이드를 돌기 전에 확인하면 그 시점 기준으로 가장 정확한 판단을 할 수 있습니다. 은총의 파편, 코어, 고통의 가시처럼 거래소에서 거래할 수 없는 재료는 시세가 없어 손익 계산에서 제외되며, 반투명하게 표시됩니다. 이런 귀속 재료가 필요한 캐릭터라면 표시된 손익보다 실질 가치는 더 높게 봐야 합니다.',
-              ],
-            },
-            {
-              heading: '더보기 손익 계산과 레이드 클리어 보상, 두 섹션으로 나눈 이유',
-              paragraphs: [
-                '위쪽 더보기 손익 계산 섹션은 관문별 더보기 비용과 재료 가치만 비교해 지금 더보기를 사는 게 이득인지 퍼센트로 보여주고, 아래쪽 레이드 클리어 보상 섹션은 관문을 깨면 무조건 받는 클리어 골드·재료에 더보기 재료까지 모두 더한 레이드 한 번의 전체 가치를 보여줍니다. 카드를 누르면 해당 섹션 바로 아래에 기본 클리어 보상, 더보기 보상, 더보기 포함 총 가치를 관문별로 정리한 표가 펼쳐지고, 재료별 체크박스로 필요 없는 재료를 빼고 다시 계산할 수도 있습니다.',
-              ],
-            },
-            {
-              heading: '지원 레이드',
-              paragraphs: [
-                '벨가르딘(노말 1750 · 하드 1770 · 나메 1780), 지평의 성당 1~3단계, 세르카(노말·하드·나메), 카제로스 레이드 종막·4막·3막·2막·1막·서막, 베히모스까지 현재 서비스 중인 레이드 전체를 지원합니다. 벨가르딘은 2026년 8월 5일 출시 당일 확인한 더보기 보상 재료 확정치가 반영되어 있어 관문별 손익을 바로 비교할 수 있습니다.',
-                '내 원정대 기준으로 캐릭터별 레이드 조합과 주간 수익을 계산하고 싶다면 주간 골드 계산기를, 은총의 파편 교환 효율은 지평의 성당 페이지를 함께 이용해보세요.',
-              ],
-            },
-          ]}
-          faqs={faqData}
-        />
-
         {/* 페이지 최하단 — 가이드·FAQ 를 다 읽고 내려온 자리(세 번째 모바일 단위) +
             이 페이지의 두 번째 데스크톱 자리. 둘 다 위 자리들과 다른 단위여야 한다 */}
         <div className="d-block d-lg-none mt-3">
-          <AdBanner slot="8616653628" index={1} />
+          <AdBanner index={1} />
         </div>
         <DesktopBannerAd adfit={ADFIT_UNITS.refiningResultDesktop} />
       </div>

@@ -709,7 +709,7 @@ export default function WangapAverageCalculator({ adsActive = true }: { adsActiv
             단위가 겹치면 애드핏이 첫 자리만 채우므로 인-콘텐츠 단위 순번을 따로 쓴다. */}
         {adsActive && (
           <div className="d-block d-lg-none my-2">
-            <AdBanner slot="8616653628" index={0} />
+            <AdBanner index={0} />
           </div>
         )}
 
@@ -1016,7 +1016,7 @@ export default function WangapAverageCalculator({ adsActive = true }: { adsActiv
             이미 쓴다 — 같은 단위가 한 페이지에 겹치면 애드핏이 첫 자리만 채운다 */}
         {adsActive && (
           <div className="d-block d-lg-none my-2">
-            <AdBanner slot="8616653628" index={2} />
+            <AdBanner index={2} />
           </div>
         )}
 

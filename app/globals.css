@@ -291,11 +291,6 @@ input, select, textarea,
   filter: invert(1) brightness(1.6);
 }
 
-/* CLS Prevention - 이미지 컨테이너 */
-.img-container {
-  contain: layout style;
-}
-
 /* Global Card Styles + CLS Prevention */
 .card {
   contain: layout style;
@@ -387,7 +382,6 @@ input, select, textarea,
     4px 4px 0 0 rgba(59, 80, 181, 0.2),
     6px 6px 0 0 rgba(59, 80, 181, 0.12) !important;
 }
-
 
 [data-theme="dark"] .price-chart-card {
   border: 2px solid rgba(107, 126, 214, 0.4) !important;
@@ -496,12 +490,6 @@ textarea:-ms-input-placeholder {
   box-shadow: 0 0 0 3px rgba(59, 80, 181, 0.25);
 }
 
-/* 레이드 계산기(주간 골드) 전용 스타일(.raid-table / .theme-accordion / .raid-group-accordion
-   / .raid-difficulty-accordion / .character-raid-*)은 app/weekly-gold/weekly-gold.module.css 로 이전됨.
-   RaidCalculator 가 weekly-gold 페이지에서만 렌더되므로 그 모듈에서 관리한다. */
-
-/* Badge Styles */
-.badge.bg-success,
 .badge.bg-success * {
   --bs-badge-color: #ffffff !important;
   color: #ffffff !important;
@@ -571,8 +559,7 @@ textarea:-ms-input-placeholder {
   flex-wrap: wrap;
 }
 
-.footer-links a,
-.footer-links button.footer-inquiry-link {
+.footer-links a {
   color: var(--text-muted);
   text-decoration: none;
   font-size: 0.8rem;
@@ -582,8 +569,7 @@ textarea:-ms-input-placeholder {
   cursor: pointer;
 }
 
-.footer-links a:hover,
-.footer-links button.footer-inquiry-link:hover {
+.footer-links a:hover {
   color: var(--brand-primary);
 }
 
@@ -660,49 +646,6 @@ textarea:-ms-input-placeholder {
   }
 }
 
-/* Legacy footer-fixed class for backward compatibility */
-.footer-fixed {
-  margin-top: 60px;
-  padding: 20px 0;
-  border-top: 1px solid var(--border-color);
-  background-color: #f8f9fb;
-}
-
-[data-theme="dark"] .footer-fixed {
-  background-color: #141820;
-}
-
-@media (max-width: 768px) {
-  .footer-fixed {
-    margin-top: 40px;
-    padding: 15px 0;
-  }
-}
-
-/* 주간 골드 페이지 스타일은 weekly-gold.module.css로 이동됨 */
-
-/* ========================================
-   CLS 방지용 스타일
-   ======================================== */
-
-/* 광고 영역 크기 고정 - CLS 방지 */
-ins.adsbygoogle {
-    display: block;
-    min-height: 100px;
-    width: 100%;
-}
-
-/* 광고 컨테이너 래퍼 */
-.ad-container {
-    min-height: 100px;
-    width: 100%;
-    contain: layout style;
-}
-
-.ad-banner-container {
-    text-align: center;
-}
-
 /* 이미지 aspect-ratio 기본 설정 */
 img {
     height: auto;
@@ -715,9 +658,7 @@ html {
 }
 
 /* contain 속성으로 레이아웃 격리 */
-.price-chart-container,
-.raid-calculator-container,
-.see-more-calculator-container {
+.price-chart-container {
     contain: layout style;
 }
 
@@ -836,30 +777,11 @@ html, body {
   box-shadow: var(--shadow-sm);
 }
 
-/* 앱 다운로드 오프캔버스 링크 — 사이트 대표색 단색 배경 + 흰 글씨로 다른 메뉴와 구분 */
-.navbar-offcanvas-link-badge {
-  color: #fff !important;
-  background-color: var(--color-primary) !important;
-  font-weight: 700 !important;
-}
-
-.navbar-offcanvas-link-badge:hover {
-  color: #fff !important;
-  background-color: var(--color-primary) !important;
-  opacity: 0.88;
-}
-
-[data-theme="dark"] .navbar-offcanvas-link-badge {
-  color: #fff !important;
-  background-color: var(--color-primary) !important;
-}
-
 /* ── Nav 배지 공통 ──
    매트 단색 + 입체감만. 그라데이션·글로우·광택 애니메이션 없음.
    입체는 위쪽 미세 하이라이트 / 아래쪽 안쪽 그림자 / 1px 밑동 / 옅은 드롭섀도 네 겹으로만 낸다.
    색은 --badge-bg / --badge-edge 두 변수로 갈린다. */
 .nav-badge-new,
-.nav-badge-wangap,
 .nav-badge-beta {
   --badge-bg: #f59e0b;
   --badge-edge: rgba(0, 0, 0, 0.2);
@@ -889,20 +811,6 @@ html, body {
     0 1px 2px rgba(0, 0, 0, 0.12);
 }
 
-/* 완갑 시뮬 전용 — 완갑 등급 보라 단색 */
-.nav-badge-wangap {
-  --badge-bg: #7c3aed;
-  --badge-edge: rgba(76, 29, 149, 0.55);
-  --badge-ink: #6d28d9;
-  --badge-bg-strong: #6d28d9;
-}
-
-[data-theme="dark"] .nav-badge-wangap {
-  --badge-bg: #8b5cf6;
-  --badge-edge: rgba(59, 20, 120, 0.6);
-  --badge-bg-strong: #7c3aed;
-}
-
 /* BETA 배지 — 앱 다운로드와 동일한 대표색 */
 .nav-badge-beta {
   --badge-bg: var(--color-primary);
@@ -915,10 +823,8 @@ html, body {
    1) 대표색 단색 배경(데스크톱 상단 링크·모바일 링크 active): 배지를 흰 칩으로 반전.
       파랑 배경 위 보라/주황은 서로 뭉개져서 안 읽힌다. */
 .navbar-nav-link.active .nav-badge-new,
-.navbar-nav-link.active .nav-badge-wangap,
 .navbar-nav-link.active .nav-badge-beta,
 .navbar-offcanvas-link.active .nav-badge-new,
-.navbar-offcanvas-link.active .nav-badge-wangap,
 .navbar-offcanvas-link.active .nav-badge-beta {
   --badge-bg: #fff;
   --badge-edge: rgba(0, 0, 0, 0.24);
@@ -933,10 +839,8 @@ html, body {
 
 /* 2) 옅은 틴트 배경(드롭다운 active 항목·모바일 그룹 트리거 active): 한 톤 진하게만 */
 .nav-dropdown-item.active .nav-badge-new,
-.nav-dropdown-item.active .nav-badge-wangap,
 .nav-dropdown-item.active .nav-badge-beta,
 .navbar-offcanvas-trigger.active .nav-badge-new,
-.navbar-offcanvas-trigger.active .nav-badge-wangap,
 .navbar-offcanvas-trigger.active .nav-badge-beta {
   --badge-bg: var(--badge-bg-strong);
 }
@@ -1225,13 +1129,6 @@ html, body {
   opacity: 0.88;
 }
 
-/* 숙제 체크 버튼 위 불꽃 — 글로우는 애니메이션과 겹쳐 정신없어서 뺐다.
-   대신 색을 주황→골드 쪽으로 틀어 파란 버튼(--color-primary) 위에서
-   보색 대비로 또렷하게 보이게 한다 (불꽃 내부의 명암 그라데이션은 유지). */
-.navbar-fire-bright {
-  filter: hue-rotate(18deg) saturate(1.25) brightness(1.2);
-}
-
 [data-theme="dark"] .navbar-app-btn {
   color: #fff;
   background: var(--color-primary);
@@ -1286,10 +1183,6 @@ html, body {
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid var(--border-color);
-}
-
-.navbar-offcanvas-section-ad {
-  margin-top: auto; /* 콘텐츠가 짧으면 광고를 드로어 맨 하단에 붙임 (앱 드로어와 동일) */
 }
 
 .navbar-offcanvas-link {
@@ -1426,7 +1319,6 @@ html, body {
   display: none;
 }
 
-
 /* ==========================================================================
    좌우 대칭 사이드바 광고 레이아웃
    ========================================================================== */
@@ -1489,419 +1381,6 @@ html, body {
     zoom: 0.85;
   }
 }
-
-/* ---- 사이드바 업데이트 카드 (팝업 동일 디자인) ---- */
-.sidebar-update-card {
-  border-radius: 12px;
-  overflow: hidden;
-  background: var(--card-bg, #1a1a2e);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
-}
-
-.sidebar-update-image {
-  position: relative;
-  width: 100%;
-  height: 160px;
-  overflow: hidden;
-}
-
-.sidebar-update-overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to bottom,
-    rgba(0, 0, 0, 0.2) 0%,
-    rgba(0, 0, 0, 0.4) 50%,
-    rgba(0, 0, 0, 0.8) 100%
-  );
-}
-
-.sidebar-update-content {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 0.75rem;
-  text-align: center;
-}
-
-.sidebar-update-badge {
-  display: inline-block;
-  padding: 0.15rem 0.5rem;
-  font-size: 0.55rem;
-  font-weight: 800;
-  letter-spacing: 1.5px;
-  color: #fff;
-  background: linear-gradient(135deg, #ef4444, #f97316);
-  border-radius: 12px;
-  margin-bottom: 0.3rem;
-  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
-}
-
-.sidebar-update-title {
-  font-size: 0.9rem;
-  font-weight: 800;
-  color: #fff;
-  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
-  margin-bottom: 0.15rem;
-}
-
-.sidebar-update-subtitle {
-  font-size: 0.65rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.85);
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
-  line-height: 1.4;
-}
-
-.sidebar-update-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  padding: 0.6rem;
-}
-
-.sidebar-update-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.45rem 0.5rem;
-  border-radius: 8px;
-  background: var(--card-header-bg, rgba(255, 255, 255, 0.08));
-  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
-  color: var(--text-primary, #e0e0e0);
-  font-size: 0.72rem;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.sidebar-update-btn:hover {
-  background: rgba(201, 168, 76, 0.15);
-  border-color: rgba(201, 168, 76, 0.4);
-  color: #c9a84c;
-}
-
-.sidebar-btn-text {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 0;
-}
-
-.sidebar-btn-title {
-  font-size: 0.72rem;
-  font-weight: 600;
-  line-height: 1.3;
-}
-
-.sidebar-btn-desc {
-  font-size: 0.58rem;
-  font-weight: 400;
-  color: var(--text-muted, #999);
-  line-height: 1.3;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.sidebar-beta-badge {
-  display: inline-block;
-  margin-left: 3px;
-  padding: 0px 4px;
-  font-size: 7px;
-  font-weight: 800;
-  color: #fff;
-  background: linear-gradient(135deg, #ef4444, #f97316);
-  border-radius: 6px;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  vertical-align: middle;
-}
-
-/* ---- 인라인 업데이트 카드 (AdBanner - 이미지 위 오버레이) ---- */
-.inline-update-card {
-  position: relative;
-  border-radius: 14px;
-  overflow: hidden;
-  min-height: 280px;
-}
-
-.inline-update-overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to bottom,
-    rgba(0, 0, 0, 0.05) 0%,
-    rgba(0, 0, 0, 0.3) 50%,
-    rgba(0, 0, 0, 0.8) 100%
-  );
-  z-index: 1;
-}
-
-.inline-update-inner {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  min-height: 280px;
-  padding: 1rem;
-}
-
-.inline-update-header {
-  text-align: center;
-  margin-bottom: 0.6rem;
-}
-
-.inline-update-title {
-  font-size: 1.3rem;
-  font-weight: 800;
-  color: #fff;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
-  margin-bottom: 0.15rem;
-}
-
-.inline-update-subtitle {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
-}
-
-.inline-update-buttons {
-  display: flex;
-  flex-direction: row;
-  gap: 0.4rem;
-}
-
-.inline-update-btn {
-  display: flex;
-  flex: 1;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  padding: 0.55rem 0.4rem;
-  border-radius: 9px;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: #e0e0e0;
-  font-size: 0.72rem;
-  font-weight: 600;
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.inline-update-btn:hover {
-  background: rgba(201, 168, 76, 0.25);
-  border-color: rgba(201, 168, 76, 0.5);
-  color: #c9a84c;
-}
-
-@media (max-width: 576px) {
-  .inline-update-card {
-    min-height: 220px;
-  }
-  .inline-update-inner {
-    min-height: 220px;
-    padding: 0.75rem;
-  }
-  .inline-update-title {
-    font-size: 1.1rem;
-  }
-  .inline-update-btn {
-    font-size: 0.65rem;
-    padding: 0.45rem 0.3rem;
-    gap: 0.3rem;
-  }
-}
-
-/* ---- 자체 홍보 배너 (애드센스 비활성 시) ---- */
-
-/* 수평 배너 (모바일/인컨텐츠) */
-.promo-banner-horizontal {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  padding: 0.6rem 1rem;
-  border-radius: 10px;
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.06) 0%, rgba(99, 102, 241, 0.12) 100%);
-  border: 1px solid rgba(99, 102, 241, 0.15);
-  text-decoration: none;
-}
-
-.promo-banner-horizontal:hover {
-  border-color: rgba(99, 102, 241, 0.3);
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(99, 102, 241, 0.16) 100%);
-}
-
-.promo-banner-text {
-  font-size: 0.82rem;
-  color: var(--text-secondary);
-}
-
-.promo-banner-text strong {
-  color: var(--color-primary);
-}
-
-.promo-banner-cta {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #fff;
-  background: var(--color-primary);
-  padding: 0.3rem 0.75rem;
-  border-radius: 6px;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-/* 수직 배너 (데스크톱 사이드바) */
-.promo-banner-vertical {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 1.5rem 0.75rem;
-  border-radius: 12px;
-  background: linear-gradient(180deg, rgba(99, 102, 241, 0.08) 0%, rgba(99, 102, 241, 0.18) 100%);
-  border: 1.5px solid rgba(99, 102, 241, 0.3);
-  text-decoration: none;
-  text-align: center;
-  backdrop-filter: blur(8px);
-}
-
-.promo-banner-vertical:hover {
-  border-color: rgba(99, 102, 241, 0.5);
-  background: linear-gradient(180deg, rgba(99, 102, 241, 0.12) 0%, rgba(99, 102, 241, 0.24) 100%);
-}
-
-.promo-v-icon {
-  font-size: 1.8rem;
-  line-height: 1;
-}
-
-.promo-v-icon-img {
-  width: 32px;
-  height: 32px;
-}
-
-.promo-banner-icon {
-  width: 18px;
-  height: 18px;
-  vertical-align: middle;
-}
-
-.promo-v-title {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--color-primary);
-}
-
-.promo-v-desc {
-  font-size: 0.72rem;
-  color: var(--text-muted);
-  line-height: 1.5;
-}
-
-.promo-v-cta {
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: #fff;
-  background: var(--color-primary);
-  padding: 0.35rem 0.85rem;
-  border-radius: 6px;
-  margin-top: 0.25rem;
-}
-
-/* 설문조사 배너 (사이드바 수직) */
-.promo-banner-survey {
-  background: linear-gradient(180deg, rgba(16, 185, 129, 0.08) 0%, rgba(16, 185, 129, 0.18) 100%);
-  border-color: rgba(16, 185, 129, 0.3);
-  margin-top: 0.75rem;
-}
-
-.promo-banner-survey:hover {
-  border-color: rgba(16, 185, 129, 0.5);
-  background: linear-gradient(180deg, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0.24) 100%);
-}
-
-.promo-banner-survey .promo-v-title {
-  color: #10b981;
-}
-
-.promo-v-cta-survey {
-  background: #10b981 !important;
-}
-
-/* 모바일 배너 반반 레이아웃 */
-.promo-banner-row {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.promo-banner-row .promo-banner-horizontal {
-  flex: 1;
-  flex-direction: column;
-  gap: 0.4rem;
-  padding: 0.5rem 0.6rem;
-  text-align: center;
-}
-
-.promo-banner-row .promo-banner-text {
-  font-size: 0.78rem;
-}
-
-.promo-banner-horizontal-survey {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(16, 185, 129, 0.18) 100%);
-  border-color: rgba(16, 185, 129, 0.3);
-}
-
-.promo-banner-horizontal-survey:hover {
-  border-color: rgba(16, 185, 129, 0.5);
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0.24) 100%);
-}
-
-.promo-banner-horizontal-survey strong {
-  color: #10b981;
-}
-
-.promo-cta-survey {
-  background: #10b981 !important;
-}
-
-@media (max-width: 768px) {
-  .promo-banner-horizontal {
-    gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
-  }
-
-  .promo-banner-text {
-    font-size: 0.75rem;
-  }
-
-  .promo-banner-cta {
-    font-size: 0.7rem;
-    padding: 0.25rem 0.6rem;
-  }
-
-  .promo-banner-row {
-    gap: 0.4rem;
-  }
-
-  .promo-banner-row .promo-banner-text {
-    font-size: 0.68rem;
-  }
-
-  .promo-banner-row .promo-banner-cta {
-    font-size: 0.65rem;
-    padding: 0.2rem 0.5rem;
-  }
-}
-
-
-
 
 /* ─── 요소 안 스크롤바 전부 숨김 (모바일·데스크톱) ───
    가로 카테고리 스트립·드롭다운·표·목록 등 overflow 가 있는 모든 요소에서 스크롤 기능은 그대로 두고

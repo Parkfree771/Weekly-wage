@@ -4,13 +4,14 @@
 // 재요청 주기만 결정한다(= 같은 슬롯이면 메모리 캐시 사용, 바뀌면 CDN에 재요청).
 // 아카이브(정적) + 최근(API) 병합 구조
 
+import { decodeArchive, type HistoryData } from './price-archive-format';
+
 type PriceEntry = {
   price: number;
   timestamp: string;
   date: string;
 };
 
-type HistoryData = Record<string, Array<{ date: string; price: number }>>;
 type LatestPrices = Record<string, number>;
 
 // 아카이브 캐시 (정적 파일, 한 번 로드하면 영구 유지)
@@ -108,7 +109,9 @@ async function loadArchive(): Promise<HistoryData> {
       if (!res.ok) throw new Error('Failed to fetch archive');
       return res.json();
     })
-    .then((data: HistoryData) => {
+    // 압축형(v2)을 화면이 쓰는 { date, price } 배열로 푼다 (옛 형식이면 그대로)
+    .then((raw: unknown) => {
+      const data = decodeArchive(raw);
       cachedArchive = data;
       return data;
     })

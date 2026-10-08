@@ -1,18 +1,17 @@
 import { Metadata } from 'next'
 import { SITE_URL } from '@/lib/site-config'
-import { faqData } from './faq-data'
 
 export const metadata: Metadata = {
-  title: '세르카 보상',
+  title: '로아 세르카 보상 · 교환 효율',
 
-  description: '세르카 레이드의 노말·하드·나메 클리어 보상과 더보기 손익, 고통의 가시 교환 상점의 품목별 교환 효율을 실시간 거래소 시세로 계산합니다. 야금술·재봉술 업화, 재련 재료 상자, 젬 랜덤 상자의 골드 가치를 비교할 수 있습니다.',
+  description: '세르카 노말·하드·나메 클리어 보상과 더보기 손익, 고통의 가시 교환 상점의 품목별 효율을 실시간 거래소 시세로 계산합니다.',
 
-  keywords: '로아로골, 로아 세르카, 세르카 보상, 세르카 클리어 보상, 세르카 더보기, 세르카 노말, 세르카 하드, 세르카 나메, 고통의 가시, 고통의 가시 상점, 고통의 가시 교환, 고통의 가시 효율, 고통의 재련 재료 상자, 고통의 재련 보조 재료 주머니, 야금술 업화, 재봉술 업화, 영웅 젬 랜덤 상자, 로아 세르카 군단장, 로아 세르카 레이드, 로아 1740, 로아 1730, 로아 1710, 로아 카제로스 군단장',
+  keywords: '로아 세르카 보상, 로아 세르카 더보기, 로아 고통의 가시 교환, 로아로골',
 
   openGraph: {
     images: ['/og-image.png'],
-    title: '로아로골 | 세르카 - 클리어 보상 & 고통의 가시 교환 상점',
-    description: '로아 세르카 노말/하드/나메 클리어 보상, 더보기 손익, 고통의 가시 교환 상점 효율을 실시간 시세로 확인하세요.',
+    title: '로아로골 | 로아 세르카 보상 · 교환 효율',
+    description: '세르카 노말·하드·나메 클리어 보상과 더보기 손익, 고통의 가시 교환 상점의 품목별 효율을 실시간 거래소 시세로 계산합니다.',
     url: '/cerka',
     siteName: '로아로골',
     locale: 'ko_KR',
@@ -56,24 +55,6 @@ export default function CerkaLayout({
               "로아 야금술/재봉술 업화 교환 효율 분석",
               "로아 고통의 재련 재료 상자 기댓값 계산"
             ]
-          })
-        }}
-      />
-      {/* SEO를 위한 JSON-LD 구조화된 데이터 - FAQPage (화면에 렌더링되는 faq-data.ts와 동일한 소스 사용) */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "FAQPage",
-            "mainEntity": faqData.map((item) => ({
-              "@type": "Question",
-              "name": item.q,
-              "acceptedAnswer": {
-                "@type": "Answer",
-                "text": item.a,
-              },
-            })),
           })
         }}
       />

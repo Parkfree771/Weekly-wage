@@ -1,12 +1,12 @@
 import HomeClient from './HomeClient';
-import PriceHistoryAnalysis from '@/components/home/PriceHistoryAnalysis';
+import { loadHomePriceSnapshot } from '@/lib/home-price-snapshot';
+import { DASHBOARD_DEFAULT_ITEM_IDS } from '@/data/priceItems';
 
-/**
- * 홈 — 서버 컴포넌트 껍데기.
- * 화면 전체는 HomeClient 가 그리고, 맨 아래 과거 시세 분석만 서버에서 계산해 끼워 넣는다.
- * 위쪽 시세 카드·차트는 ssr:false 라 JS 를 실행하지 않는 크롤러에는 비어 보이므로,
- * 이 섹션이 홈의 시세 정보를 HTML 에 직접 담는 역할을 한다.
- */
-export default function Home() {
-  return <HomeClient historySection={<PriceHistoryAnalysis />} />;
+// ISR: "오늘의 시세" 기본 목록을 서버에서 계산해 HTML 에 싣는다 (사이트 표준 300초).
+// 시세 파일 읽기는 방문자당이 아니라 재생성 때만 돈다.
+export const revalidate = 300;
+
+export default async function Home() {
+  const snapshot = await loadHomePriceSnapshot(DASHBOARD_DEFAULT_ITEM_IDS);
+  return <HomeClient initialPrices={snapshot?.prices} initialDate={snapshot?.dateLabel} />;
 }

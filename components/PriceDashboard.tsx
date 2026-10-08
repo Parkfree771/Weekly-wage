@@ -5,12 +5,16 @@ import Image from 'next/image';
 import { Spinner } from 'react-bootstrap';
 import { PriceContext } from './PriceComparisonStats';
 
-import { PRICE_ITEMS as DASHBOARD_ITEMS } from '@/data/priceItems';
+import { PRICE_ITEMS as DASHBOARD_ITEMS, DASHBOARD_DEFAULT_ITEM_IDS } from '@/data/priceItems';
 // 악세 등급 글자 색은 매수가 보드와 같은 컴포넌트를 쓴다 (팔레트가 갈라지면 같은 종목이 화면마다 다른 색이 된다)
 import PriceItemName from './PriceItemName';
 import TrendArrow from './TrendArrow';
 
 const STORAGE_KEY = 'priceDashboardConfig';
+
+// 카드 아이콘은 44px 로 그리는데 원본은 256px(10~27KB)이라, 같은 폴더의 88px(2배) 사본을 쓴다.
+// 사본은 원본 옆에 `이름-88.webp` 로 둔다 — 새 종목을 추가하면서 사본을 안 만들면 onError 가 원본으로 되돌린다.
+const smallIcon = (icon: string) => icon.replace(/\.webp(\?|$)/, '-88.webp$1');
 
 
 // 선택된 아이템 ID 목록 (순서대로)
@@ -18,30 +22,15 @@ type DashboardConfig = {
   selectedItems: string[];
 };
 
-type PriceData = {
+export type DashboardPrice = {
   current: number;
   previous: number;
   change: number;
 };
-
-// 기본 설정 (사용자 지정)
-const DEFAULT_SELECTED_ITEMS = [
-  '66102007',  // 파괴석 결정
-  '66102107',  // 수호석 결정
-  '6861013',   // 상비도스
-  'auction_gem_fear_10', // 10겁화
-  'auction_gem_fear_9',  // 9겁화
-  'auction_gem_fear_8',  // 8겁화
-  '65203905',  // 아드레날린
-  '65203305',  // 돌격대장
-  '65200505',  // 원한
-  '65201005',  // 예리한 둔기
-  'auction_necklace_ancient_refine3_high', // 목걸이 상상
-  'auction_ring_ancient_refine3_high',     // 반지 상상
-];
+type PriceData = DashboardPrice;
 
 const getDefaultConfig = (): DashboardConfig => ({
-  selectedItems: [...DEFAULT_SELECTED_ITEMS]
+  selectedItems: [...DASHBOARD_DEFAULT_ITEM_IDS]
 });
 
 // localStorage에서 설정 불러오기
@@ -76,11 +65,19 @@ const saveConfig = (config: DashboardConfig) => {
   }
 };
 
-export default function PriceDashboard() {
+/**
+ * initialPrices·initialDate: 홈 서버(app/page.tsx)가 기본 목록 시세를 미리 계산해 넘긴 값.
+ * 있으면 첫 화면(서버 HTML)부터 시세가 찍혀 나간다 — 스피너 없이 바로 보이고 검색엔진도 읽는다.
+ * 마운트 뒤에는 지금까지처럼 브라우저가 다시 받아 최신 값으로 덮는다.
+ */
+export default function PriceDashboard({ initialPrices, initialDate }: {
+  initialPrices?: Record<string, DashboardPrice>;
+  initialDate?: string;
+}) {
   const { selectItemById } = useContext(PriceContext);
-  const [prices, setPrices] = useState<Record<string, PriceData>>({});
-  const [loading, setLoading] = useState(true);
-  const [lastUpdate, setLastUpdate] = useState<string>('');
+  const [prices, setPrices] = useState<Record<string, PriceData>>(initialPrices ?? {});
+  const [loading, setLoading] = useState(!initialPrices);
+  const [lastUpdate, setLastUpdate] = useState<string>(initialDate ?? '');
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
@@ -123,8 +120,9 @@ export default function PriceDashboard() {
         }
 
         setPrices(priceMap);
-        const now = new Date();
-        setLastUpdate(`${now.getMonth() + 1}월 ${now.getDate()}일`);
+        // 로아 날짜(KST) 기준 — 서버 스냅샷 표기와 같은 기준이어야 해외·시차 환경에서 날짜가 안 어긋난다
+        const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
+        setLastUpdate(`${kst.getUTCMonth() + 1}월 ${kst.getUTCDate()}일`);
       } catch (error) {
         console.error('Failed to fetch prices:', error);
       } finally {
@@ -134,7 +132,7 @@ export default function PriceDashboard() {
 
     fetchPrices();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [config.selectedItems.length]);
+  }, [config.selectedItems.join(',')]);
 
   const checkScroll = () => {
     if (scrollRef.current) {
@@ -370,7 +368,7 @@ export default function PriceDashboard() {
                 }}
               >
                 <Image
-                  src={item.icon}
+                  src={smallIcon(item.icon)}
                   alt={item.name}
                   width={44}
                   height={44}
@@ -378,7 +376,8 @@ export default function PriceDashboard() {
                   loading="lazy"
                   unoptimized
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/icon.png';
+                    const img = e.target as HTMLImageElement;
+                    img.src = img.src.includes('-88.webp') ? item.icon : '/icon.png';
                   }}
                 />
                 <span style={{
@@ -544,7 +543,7 @@ export default function PriceDashboard() {
 
                       {/* 아이콘 */}
                       <Image
-                        src={item.icon}
+                        src={smallIcon(item.icon)}
                         alt={item.name}
                         width={32}
                         height={32}
@@ -552,7 +551,8 @@ export default function PriceDashboard() {
                         loading="lazy"
                         unoptimized
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src = '/icon.png';
+                          const img = e.target as HTMLImageElement;
+                          img.src = img.src.includes('-88.webp') ? item.icon : '/icon.png';
                         }}
                       />
 
@@ -630,12 +630,6 @@ export default function PriceDashboard() {
           </div>
         </div>
       )}
-
-      <style jsx>{`
-        div::-webkit-scrollbar {
-          display: none;
-        }
-      `}</style>
     </div>
   );
 }

@@ -1,14 +1,12 @@
 import { MetadataRoute } from 'next'
 import { SITE_URL, isNoindexed } from '@/lib/site-config'
-import { guides } from '@/data/guides'
 
-// lastModified: 실제 수정일을 아는 라우트(가이드 글)만 넣고, 나머지는 생략한다.
-// 가이드 글은 실제 수정일(data/guides.ts)을 넣는다 — 전 URL에 매 빌드 시각을 박으면
+// lastModified 는 넣지 않는다 — 전 URL에 매 빌드 시각을 박으면
 // "매번 전부 바뀌었다"는 신호가 되어 구글이 lastmod 자체를 신뢰하지 않는다.
 // priority 순서는 실제 트래픽 순이다 (패키지 효율 > 재련 시뮬 > 완갑 > 메인 > 숙제 체크).
 // 참고: 구글은 priority·changefreq 를 무시한다고 공식적으로 밝혔다. 실제로 의미 있는 건
 // lastmod 와 "URL 이 사이트맵에 들어 있다는 사실" 뿐이라, 이 값은 다른 크롤러용 힌트에 가깝다.
-const ROUTES: Array<{ path: string; changeFrequency: 'daily' | 'weekly' | 'monthly'; priority: number; lastModified?: string }> = [
+const ROUTES: Array<{ path: string; changeFrequency: 'daily' | 'weekly' | 'monthly'; priority: number }> = [
   { path: '/package',            changeFrequency: 'daily',   priority: 1.0 },
   { path: '/refining',           changeFrequency: 'weekly',  priority: 0.9 },
   { path: '/wangap',             changeFrequency: 'weekly',  priority: 0.9 },
@@ -28,14 +26,6 @@ const ROUTES: Array<{ path: string; changeFrequency: 'daily' | 'weekly' | 'month
   { path: '/engraving',          changeFrequency: 'weekly',  priority: 0.7 },
   { path: '/app',                changeFrequency: 'monthly', priority: 0.6 },
   { path: '/hell-reward',        changeFrequency: 'weekly',  priority: 0.6 },
-  { path: '/guide',              changeFrequency: 'weekly',  priority: 0.7 },
-  // 개별 가이드 글은 data/guides.ts 에서 자동 등록
-  ...guides.map((g) => ({
-    path: g.href,
-    changeFrequency: 'monthly' as const,
-    priority: 0.6,
-    lastModified: g.updated ?? g.date,
-  })),
   { path: '/about',              changeFrequency: 'monthly', priority: 0.6 },
   { path: '/contact',            changeFrequency: 'monthly', priority: 0.5 },
   { path: '/privacy',            changeFrequency: 'monthly', priority: 0.5 },
@@ -43,16 +33,12 @@ const ROUTES: Array<{ path: string; changeFrequency: 'daily' | 'weekly' | 'month
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  // lastModified 는 실제 수정일을 아는 라우트(가이드 글)에만 넣는다.
-  // 나머지에 빌드 시각을 박으면 배포마다 20개 URL 이 "전부 바뀜"으로 찍혀 구글이 lastmod 를 무시한다.
-
   // 색인에서 뺀 경로(NOINDEX_PATHS)는 사이트맵에서도 뺀다.
   // "사이트맵으로 색인을 요청하면서 페이지에는 noindex" 는 서로 어긋나는 신호다.
   const staticRoutes = ROUTES
     .filter(({ path }) => !isNoindexed(path || '/'))
-    .map(({ path, changeFrequency, priority, lastModified }) => ({
+    .map(({ path, changeFrequency, priority }) => ({
       url: `${SITE_URL}${path}`,
-      ...(lastModified ? { lastModified: new Date(lastModified) } : {}),
       changeFrequency,
       priority,
     }));

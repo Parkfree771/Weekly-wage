@@ -5,8 +5,7 @@
 //
 // 계속 반복 재생하되, 화면에 실제로 보일 때만 돈다.
 // 네비 드롭다운은 열려 있지 않아도 DOM 에 남아 있고(display:none) 전 페이지에 렌더되므로,
-// 그냥 loop 를 켜면 안 보이는 아이콘이 모든 페이지에서 rAF 를 계속 태운다.
-// IntersectionObserver 로 보일 때 play, 벗어나면 pause 한다 (display:none 은 교차 0 으로 잡힌다).
+// IntersectionObserver 로 처음 보일 때 엔진·JSON 을 받고, 이후 보일 때 play·벗어나면 pause 한다.
 //
 // JSON(/lottie/new-flame.json)은 loadLottieData 가 경로당 한 번만 받는다 — 여러 곳에 띄워도 요청은 한 번.
 
@@ -35,46 +34,57 @@ export default function NewLottie({ size = 26, title = '새로 등장', classNam
   useEffect(() => {
     let cancelled = false;
     let anim: AnimationItem | undefined;
-    let io: IntersectionObserver | undefined;
+    let visible = false;
+    let started = false;
     const host = ref.current;
+    if (!host) return;
 
-    Promise.all([import('lottie-web/build/player/lottie_light'), loadLottieData('/lottie/new-flame.json')]).then(([mod, animationData]) => {
-      if (cancelled || !ref.current) return;
-      const a = mod.default.loadAnimation({
-        container: ref.current,
-        renderer: 'svg',
-        loop: true,
-        // 보일 때만 돈다 — 아래 IntersectionObserver 가 play 를 걸어 준다
-        autoplay: false,
-        animationData,
-      });
-      anim = a;
-      a.addEventListener('DOMLoaded', () => {
-        const root = ref.current;
-        if (!root) return;
-        root.querySelectorAll<SVGElement>('[stroke], [fill]').forEach((el) => {
-          const st = el.getAttribute('stroke');
-          if (st && RECOLOR[st]) el.style.stroke = RECOLOR[st];
-          const fl = el.getAttribute('fill');
-          if (fl && RECOLOR[fl]) el.style.fill = RECOLOR[fl];
-          const w = parseFloat(el.getAttribute('stroke-width') || '');
-          if (w > 0) el.style.strokeWidth = String(w * STROKE_SCALE);
+    // 처음 화면에 보일 때에야 로티 엔진·JSON 을 받는다. 예전엔 마운트 즉시 받아서,
+    // 모바일처럼 데스크톱 메뉴가 숨은 화면이나 닫힌 드롭다운 안의 아이콘까지 전 페이지에서
+    // 엔진(약 170KB)·JSON(172KB)을 받고 파싱했다.
+    const start = () => {
+      started = true;
+      Promise.all([import('lottie-web/build/player/lottie_light'), loadLottieData('/lottie/new-flame.json')]).then(([mod, animationData]) => {
+        if (cancelled || !ref.current) return;
+        const a = mod.default.loadAnimation({
+          container: ref.current,
+          renderer: 'svg',
+          loop: true,
+          autoplay: false,
+          animationData,
         });
-      });
-      if (!host) return;
-      io = new IntersectionObserver((entries) => {
-        for (const e of entries) {
-          if (e.isIntersecting) a.play();
-          else a.pause();
-        }
-      });
-      io.observe(host);
-    // 받기 실패는 조용히 넘긴다 — 아이콘 자리만 비고 링크는 그대로 동작한다
-    }).catch(() => {});
+        anim = a;
+        a.addEventListener('DOMLoaded', () => {
+          const root = ref.current;
+          if (!root) return;
+          root.querySelectorAll<SVGElement>('[stroke], [fill]').forEach((el) => {
+            const st = el.getAttribute('stroke');
+            if (st && RECOLOR[st]) el.style.stroke = RECOLOR[st];
+            const fl = el.getAttribute('fill');
+            if (fl && RECOLOR[fl]) el.style.fill = RECOLOR[fl];
+            const w = parseFloat(el.getAttribute('stroke-width') || '');
+            if (w > 0) el.style.strokeWidth = String(w * STROKE_SCALE);
+          });
+        });
+        if (visible) a.play();
+      // 받기 실패는 조용히 넘긴다 — 아이콘 자리만 비고 링크는 그대로 동작한다
+      }).catch(() => { started = false; });
+    };
+
+    // 보일 때 play, 벗어나면 pause (display:none 은 교차 0 으로 잡힌다)
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        visible = e.isIntersecting;
+        if (visible && !started) start();
+        if (visible) anim?.play();
+        else anim?.pause();
+      }
+    });
+    io.observe(host);
 
     return () => {
       cancelled = true;
-      io?.disconnect();
+      io.disconnect();
       anim?.destroy();
     };
   }, []);

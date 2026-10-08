@@ -35,7 +35,7 @@ export const isNoindexed = (path: string): boolean => NOINDEX_PATHS.includes(pat
 
 /**
  * 네비게이션에서 감출 경로. 색인 제외와는 별개다 —
- * noindex 는 크롤러만 막고, 이건 사람(애드센스 심사자)의 동선까지 끊는다.
+ * noindex 는 크롤러만 막고, 이건 사람의 동선까지 끊는다.
  * `/mypage` 는 실제로 쓰는 기능이라 감추지 않는다 (noindex 로 충분).
  * `/extreme` 은 코밍순 기간(2026-07-09 ~ 09-18)에만 감췄다가 보상 공개와 함께 되돌렸다.
  */

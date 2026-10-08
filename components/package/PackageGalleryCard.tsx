@@ -47,12 +47,15 @@ type Props = {
   basePrices?: Record<string, number>;
 };
 
+// 한국 시간 기준으로 고정한다 — 서버(ISR, UTC)와 브라우저(KST)가 같은 글을 다른 날짜로 그리면
+// 00~09시에 올라온 글에서 하이드레이션이 어긋나 화면 전체를 클라이언트가 다시 그렸다.
 function formatShortDate(timestamp: any): string {
   if (!timestamp) return '';
   const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-  const y = String(date.getFullYear()).slice(2);
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
+  const kst = new Date(date.getTime() + 9 * 60 * 60 * 1000);
+  const y = String(kst.getUTCFullYear()).slice(2);
+  const m = String(kst.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(kst.getUTCDate()).padStart(2, '0');
   return `${y}.${m}.${d}`;
 }
 
@@ -265,6 +268,11 @@ export function BenefitPct({ v, stale = false }: { v: number; stale?: boolean })
  * 셋을 한 줄에 두면 모바일 오른쪽 칸(154px)에 안 들어가 글자가 잘렸다 —
  * 옛 값은 작아서 라벨과 같은 줄에 서고, 큰 최종 값만 아래 줄을 통째로 쓴다.
  */
+/** 시세 도착 전 자리 — 빈 시세로 계산한 0G·-100% 를 잠깐 보여주지 않게 한다 */
+function PendingPct() {
+  return <span className={styles.benefitBadge} style={{ opacity: 0.45 }}>…</span>;
+}
+
 function BenefitCell({ v, base, delta }: { v: number; base: number | null; delta: number | null }) {
   if (delta === null || base === null) return <BenefitPct v={v} />;
   return (
@@ -296,6 +304,8 @@ function BenefitDelta({ d }: { d: number }) {
 // 전부 리렌더되는 것을 막는다 — post/latestPrices 는 참조가 안정적이라 memo 가 실제로 먹힌다
 function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, basePrices }: Props) {
   const router = useRouter();
+  // 시세가 오기 전(서버 HTML·첫 렌더)엔 골드·이득률 자리를 비워 둔다
+  const pricesReady = Object.keys(latestPrices).length > 0;
 
   const defaultWon = post.goldPerWon && post.goldPerWon > 0
     ? Math.round(1000 / post.goldPerWon) / 10
@@ -548,13 +558,6 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
   // 가챠: 기대값 계산 (체크 해제 아이템은 골드 0으로 계산, 확률은 유지)
   const isGacha = post.packageType === '가챠';
   const gachaBcRate = goldPerWon > 0 ? goldPerWon * 2750 : 0;
-  const gachaExpectedGold = isGacha
-    ? post.items.reduce((s, item, idx) => {
-        if (checkedItems[idx] === false) return s + 0 * ((item.probability || 0) / 100);
-        const gold = calculateGachaItemGold(item, latestPrices, goldPerWon, gachaBcRate, undefined, noPeon);
-        return s + gold * ((item.probability || 0) / 100);
-      }, 0)
-    : 0;
 
   // 가챠: 확률 높은 순 표시 순서 (원본 인덱스 → 정렬된 순서)
   const gachaDisplayOrder = useMemo(() => {
@@ -581,6 +584,14 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
       calculateGachaItemGold(item, latestPrices, goldPerWon, gachaBcRate, undefined, noPeon),
     );
   }, [isGacha, post.items, latestPrices, goldPerWon, gachaBcRate, noPeon]);
+  // 기대값 — 아이템별 골드(gachaItemGolds)에 확률을 곱해 더한다. 체크 해제 아이템은 0골드(확률은 유지).
+  // 예전엔 렌더마다(뽑기 연출 35ms 틱마다) 전 아이템을 다시 계산했다.
+  const gachaExpectedGold = useMemo(() => {
+    if (!isGacha) return 0;
+    return post.items.reduce((sum, item, idx) => (
+      checkedItems[idx] === false ? sum : sum + (gachaItemGolds[idx] || 0) * ((item.probability || 0) / 100)
+    ), 0);
+  }, [isGacha, post.items, checkedItems, gachaItemGolds]);
   // 뽑기 결과용 골드 — 체크 해제한 아이템이 걸리면 0골드 (기대값과 같은 기준)
   const gachaWonGold = (idx: number) => (checkedItems[idx] === false ? 0 : gachaItemGolds[idx]);
 
@@ -923,6 +934,12 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
     if (prefetchTimerRef.current) { clearTimeout(prefetchTimerRef.current); prefetchTimerRef.current = null; }
   };
 
+  // 페이지를 넘기거나 떠나 카드가 사라질 때 뽑기 연출·미리받기 타이머를 멈춘다
+  useEffect(() => () => {
+    if (gachaTimerRef.current) clearTimeout(gachaTimerRef.current);
+    if (prefetchTimerRef.current) clearTimeout(prefetchTimerRef.current);
+  }, []);
+
   // 이벤트 테마 — 등록·수정 폼에서 체크한 글만 색동 띠를 두른다 (기간이 지나도 남는다)
   const chuseok = post.eventTheme === 'chuseok';
 
@@ -1195,7 +1212,7 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
               ={' '}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img loading="lazy" decoding="async" src="/gold.webp" alt="골드" className={styles.goldIconInline} />
-              {formatNumber(effectiveGold)}
+              {pricesReady ? formatNumber(effectiveGold) : '…'}
             </span>
           </div>
 
@@ -1203,7 +1220,7 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
           {goldPerWon > 0 && !isGacha && (
             <div className={`${styles.resultRow} ${styles.resultRowKey} ${benefitDelta !== null ? styles.resultRowBenefitSplit : ''}`}>
               <span className={styles.resultLabel}>이득률</span>
-              <BenefitCell v={singleBenefit} base={baseBenefit} delta={benefitDelta} />
+              {pricesReady ? <BenefitCell v={singleBenefit} base={baseBenefit} delta={benefitDelta} /> : <PendingPct />}
             </div>
           )}
 
@@ -1214,7 +1231,7 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
           {goldPerWon > 0 && isGacha && (
             <div className={`${styles.resultRow} ${styles.resultRowKey} ${benefitDelta !== null ? styles.resultRowBenefitSplit : ''}`}>
               <span className={styles.resultLabel}>기대 효율</span>
-              <BenefitCell v={singleBenefit} base={baseBenefit} delta={benefitDelta} />
+              {pricesReady ? <BenefitCell v={singleBenefit} base={baseBenefit} delta={benefitDelta} /> : <PendingPct />}
             </div>
           )}
 
@@ -1228,13 +1245,13 @@ function PackageGalleryCard({ post, latestPrices, commonWonPer100Gold = 0, baseP
                   ={' '}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img loading="lazy" decoding="async" src="/gold.webp" alt="골드" className={styles.goldIconInline} />
-                  {formatNumber(bundleGold)}
+                  {pricesReady ? formatNumber(bundleGold) : '…'}
                 </span>
               </div>
               {goldPerWon > 0 && (
                 <div className={`${styles.resultRow} ${styles.resultRowKey}`}>
                   <span className={styles.resultLabel}>{post.packageType} 이득률</span>
-                  <BenefitPct v={bundleBenefit} />
+                  {pricesReady ? <BenefitPct v={bundleBenefit} /> : <PendingPct />}
                 </div>
               )}
               {shareRowNode}

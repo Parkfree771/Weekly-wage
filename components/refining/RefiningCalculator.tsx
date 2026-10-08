@@ -4072,7 +4072,7 @@ export default function RefiningCalculator({
           {/* 모바일 띠배너 — 목표 설정 바로 아래. 같은 페이지의 다른 자리와 단위가 겹치면
               애드핏이 첫 자리만 채우므로 인-콘텐츠 단위 순번을 따로 쓴다. */}
           <div className="d-block d-lg-none my-2">
-            <AdBanner slot="8616653628" index={0} />
+            <AdBanner index={0} />
           </div>
 
           {/* 데스크톱 728×90 — 목표 카드 아래 (갤러리 하단과 공용 단위, 페이지가 달라 중복 아님) */}

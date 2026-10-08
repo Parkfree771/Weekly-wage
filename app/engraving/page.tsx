@@ -7,12 +7,9 @@ import { ENGRAVING_OVERRIDES, type EngSlot } from '@/lib/engraving-overrides';
 import { ENGRAVING_ICONS } from '@/lib/engraving-icons.generated';
 import ClassIcon from '@/components/tier/ClassIcon';
 import EngravingCorrectionBox from '@/components/engraving/EngravingCorrectionBox';
-import GuideFaq from '@/components/common/GuideFaq';
-import EngravingGuideBody from '@/components/guide/EngravingGuideBody';
 import AdBanner from '@/components/ads/AdBanner';
 import DesktopBannerAd from '@/components/ads/DesktopBannerAd';
 import { ADFIT_UNITS } from '@/components/ads/adConfig';
-import { faqData } from './faq-data';
 import styles from './page.module.css';
 
 // 표본 부족 등으로 페이지에서 숨길 스펙 (현재 없음 — 보정 빌드로 노출)
@@ -567,61 +564,11 @@ export default function EngravingPage() {
 
       {/* 모바일 인-콘텐츠 광고 — 본문 아래·가이드 위 (앱 배치와 유사) */}
       <div className="d-block d-lg-none my-3">
-        <AdBanner slot="8616653628" />
+        <AdBanner />
       </div>
 
       {/* 데스크톱 728×90 — 직업 카드 목록 아래·가이드 위. 이 페이지의 첫 데스크톱 자리 */}
       <DesktopBannerAd adfit={ADFIT_UNITS.galleryBottomDesktop} />
-
-      <GuideFaq
-        intro={[
-          '실제 유저 캐릭터가 장착한 각인을 집계해 직업·세팅별 대표 각인 5종과 조건부 서브 각인을 정리했습니다. 직업 검색, 역할·성별·플레이 스타일 필터, 각인 포함/제외 필터를 조합해 원하는 조건의 직업만 빠르게 추려볼 수 있습니다.',
-        ]}
-        sections={[
-          {
-            heading: '각인 데이터는 어떻게 만들어지나요',
-            paragraphs: [
-              '카드에 표시되는 각인 5칸은 개발자가 임의로 고른 것이 아니라, 실제 유저 캐릭터가 장착 중인 각인을 세팅(스펙)별로 집계한 빈도 데이터를 기반으로 자동 생성됩니다. 표본 수가 적어 자동 집계가 실제 메타와 어긋나는 일부 세팅만 예외적으로 수동 보정을 거칩니다.',
-              '실선 배지로 표시된 각인은 대부분의 유저가 고정으로 채용하는 각인이고, 점선 배지에 "or"로 묶인 각인은 유저마다 취향이나 아이템 상황에 따라 갈리는 슬롯입니다. 후자 중 "택N" 표시가 붙은 경우 여러 후보 중 N개를 골라 쓴다는 뜻입니다.',
-            ],
-            bullets: [
-              '실선 배지 = 사실상 고정으로 쓰는 각인',
-              '점선 배지 + or = 유저마다 갈리는 선택 슬롯',
-              '택N 표기 = 후보 중 N개를 함께 채용',
-            ],
-          },
-          {
-            heading: '검색과 필터를 함께 쓰는 법',
-            paragraphs: [
-              '검색창에는 축약된 직업명이나 세팅명을 입력해도 되고, "브레이커"·"핸드거너"처럼 정식 명칭으로 입력해도 관련된 축약 세팅이 함께 검색됩니다. 쉼표(,)로 여러 검색어를 구분하면 여러 직업의 각인 구성을 한 화면에 동시에 띄워 비교할 수 있습니다.',
-              '역할(딜러/서포터), 성별, 플레이 스타일, 직업군 필터는 서로 겹쳐서 적용되므로 "여캐 딜러 중 백사멸 세팅"처럼 조건을 좁혀 나갈 수 있습니다. 여기에 각인 칩을 클릭해 포함·제외 조건을 추가하면, 보유한 각인서 조합에 맞춰 어떤 직업이 그 조합을 쓰는지까지 찾아낼 수 있습니다.',
-            ],
-          },
-          {
-            heading: '백사멸·헤드사멸·타대는 어떤 기준으로 나뉘나요',
-            paragraphs: [
-              '플레이 스타일 배지는 세팅이 채용하는 각인으로 자동 분류됩니다. "기습의 대가"를 쓰는 세팅은 백사멸(등 뒤 공격 특화), "결투의 대가"를 쓰는 세팅은 헤드사멸(정면 얼굴 공격 특화)로 분류되고, 둘 다 쓰지 않으면 타대(정면 위주)로 분류됩니다.',
-              '서포터는 포지셔닝 개념이 딜러와 달라 이 분류 대상에서 제외됩니다. 또한 택1 각인 후보에 기습·결투가 포함되어 있어도 실제 플레이 방식이 다른 일부 세팅(예: 버서커 광기는 기습이 후보에 있어도 실제로는 타대)은 개별적으로 분류를 바로잡아 두었습니다.',
-            ],
-          },
-          {
-            heading: '유각 겹침 순위와 각인 정정 요청',
-            paragraphs: [
-              '오른쪽 칸의 "유각 겹침 순위"는 현재 필터로 걸러진 직업들만 놓고, 그 직업들이 가장 많이 공유하는 각인을 상위 10개까지 보여줍니다. 항목을 클릭하면 그 각인을 쓰는 카드 칸에 테두리가 표시되어, 어떤 직업들이 같은 각인서를 공유하는지 한눈에 파악할 수 있습니다.',
-              '순위 아래의 각인 정정 요청 창에서는 직업을 고르고 실제와 다른 부분을 적어 익명으로 보낼 수 있습니다. 표본이 적은 세팅은 한두 명의 선택으로 자동 집계가 흔들릴 수 있어서, 이렇게 들어온 정정 요청을 확인해 수동 보정에 반영합니다.',
-            ],
-          },
-        ]}
-        article={<EngravingGuideBody />}
-        faqs={faqData}
-      />
-
-      {/* 페이지 최하단 — 가이드·FAQ 를 다 읽고 내려온 자리.
-          위 자리와 반드시 다른 단위여야 한다 (같은 단위면 애드핏이 첫 자리만 채운다) */}
-      <div className="d-block d-lg-none mt-3">
-        <AdBanner slot="8616653628" index={1} />
-      </div>
-      <DesktopBannerAd adfit={ADFIT_UNITS.refiningResultDesktop} />
     </div>
   );
 }

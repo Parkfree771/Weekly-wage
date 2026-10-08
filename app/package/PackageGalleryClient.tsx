@@ -8,7 +8,6 @@ import { Container } from 'react-bootstrap';
 import PackageGalleryCard from '@/components/package/PackageGalleryCard';
 import { useNoPeon } from '@/components/package/useNoPeon';
 import PeonBasisButton from '@/components/package/PeonBasisButton';
-import AzenaBlessingGalleryCard from '@/components/package/AzenaBlessingGalleryCard';
 // package-service(→ Firestore SDK ~250KB)는 정적 import 하지 않는다 — 목록은 서버(ISR)가
 // 통째로 넘겨주므로, 그 서버 조회가 실패했을 때만 지연 로드한다.
 import { fetchLatestPrices } from '@/lib/price-history-client';
@@ -28,13 +27,14 @@ import { isSaleEnded } from '@/lib/package-sale';
 import type { PackagePost } from '@/types/package';
 import AdBanner from '@/components/ads/AdBanner';
 import AdFitUnit from '@/components/ads/AdFitUnit';
+import dynamic from 'next/dynamic';
+
+// 아제나의 축복 카드(418줄 + CSS)는 칩·타일을 눌러 팝업을 열 때만 쓴다 — 첫 로드 묶음에서 뺀다
+const AzenaBlessingGalleryCard = dynamic(() => import('@/components/package/AzenaBlessingGalleryCard'), { ssr: false });
 import NewLottie from '@/components/NewLottie';
 import useIsMobileViewport from '@/components/ads/useIsMobileViewport';
 import { LEFT_RAIL_SLOT_ID } from '@/components/ads/AdLayout';
 import { ADFIT_ENABLED, ADFIT_UNITS } from '@/components/ads/adConfig';
-import GuideFaq from '@/components/common/GuideFaq';
-import PackageEfficiencyGuideBody from '@/components/guide/PackageEfficiencyGuideBody';
-import { faqData } from './faq-data';
 import styles from './package.module.css';
 
 // 집계를 다시 받는 최소 간격 — /api/package/stats 의 CDN s-maxage(300초)와 같은 값.
@@ -94,11 +94,10 @@ const STATS_MAX_IDS = 60;
 // ─── 정렬·필터 ───
 // 전부 이미 불러온 posts 배열 위에서만 도는 화면 기준 기능이다.
 // Firestore 재조회를 절대 일으키지 않는다 — 예전에 정렬을 서버 쿼리로 돌리다
-// 드롭다운을 건드릴 때마다 읽기가 한 페이지씩 더 나가서 뺐던 기능이라, 같은 실수를 막으려고
-// 실시간 최저가(시세 갱신 버튼) — 캐시·쿨다운은 lib/live-prices-client 모듈에 있다.
+// 드롭다운을 건드릴 때마다 읽기가 한 페이지씩 더 나가서 뺐던 기능이다.
+//
+// 실시간 최저가(시세 갱신 버튼)의 캐시·쿨다운은 lib/live-prices-client 모듈에 있다.
 // 상세 페이지와 공유해, 여기서 켠 상태로 상세에 들어가면 그대로 켜져 보인다.
-
-// sortBy/typeFilter 는 goToPage 의 의존성에 넣지 않는다.
 type GallerySort = 'createdAt' | 'efficiency' | 'newRelease' | 'likeCount';
 type SaleFilter = 'all' | 'onSale' | 'ended';
 
@@ -317,11 +316,8 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
     // 효율순 — 시세가 도착하기 전엔 전부 0이 나와 순서가 무의미하므로 원래 순서를 유지한다
     if (Object.keys(effectivePrices).length === 0) return filtered;
     const rateOverride = deferredCommonRate > 0 ? 100 / deferredCommonRate : 0;
-    return [...filtered].sort(
-      (a, b) =>
-        calculatePostEfficiency(b, effectivePrices, rateOverride, noPeon) -
-        calculatePostEfficiency(a, effectivePrices, rateOverride, noPeon),
-    );
+    const eff = new Map(filtered.map((p) => [p.id, calculatePostEfficiency(p, effectivePrices, rateOverride, noPeon)]));
+    return [...filtered].sort((a, b) => eff.get(b.id)! - eff.get(a.id)!);
   }, [posts, saleFilter, sortBy, effectivePrices, deferredCommonRate, noPeon]);
 
   // 필터를 걸었을 때 "몇 개 중 몇 개" — 이제 목록 전체가 기준이다
@@ -361,9 +357,13 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
   useEffect(() => {
     const find = () => setRailSlot(document.getElementById(LEFT_RAIL_SLOT_ID));
     find();
-    const mo = new MutationObserver(find);
+    let raf = 0;
+    const mo = new MutationObserver(() => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => { raf = 0; find(); });
+    });
     mo.observe(document.body, { childList: true, subtree: true });
-    return () => mo.disconnect();
+    return () => { mo.disconnect(); if (raf) cancelAnimationFrame(raf); };
   }, []);
   const azenaBenefitText = `${azenaBenefit >= 0 ? '+' : ''}${azenaBenefit.toFixed(1)}%`;
   const azenaBenefitClass = azenaBenefit >= 0 ? styles.azenaChipUp : styles.azenaChipDown;
@@ -603,10 +603,11 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
                   // 마지막 카드 뒤에는 붙이지 않는다.
                   const adSlotIndex = AD_AFTER_CARD_INDEX.indexOf(index);
                   const showAd = adSlotIndex !== -1 && index < pagedPosts.length - 1;
+                  // 자리(빈 상자)는 서버 HTML 부터 잡아 둔다 — 마운트 뒤에 줄이 끼어들면 아래 카드가 통째로 밀렸다.
+                  // 광고 자체는 지금처럼 데스크톱 뷰포트가 확인된 뒤에만 넣는다(모바일 광고 요청 방지).
                   const showDesktopGridAd =
                     index === DESKTOP_AD_AFTER_CARD_INDEX &&
                     index < pagedPosts.length - 1 &&
-                    isMobileMd === false &&
                     ADFIT_ENABLED &&
                     !!ADFIT_UNITS.galleryBottomDesktop.unit;
                   return (
@@ -622,7 +623,7 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
                           같은 단위를 반복하면 애드핏이 첫 자리만 채우고 나머지는 안 나온다. */}
                       {showAd && (
                         <div className={`d-block d-md-none ${styles.mobileAdSlot} ${styles.betweenCardsAd}`}>
-                          <AdBanner slot="8616653628" index={adSlotIndex} />
+                          <AdBanner index={adSlotIndex} />
                         </div>
                       )}
                       {/* 데스크톱 전용(d-md-block) — 패키지 4개(2줄) 뒤 전체폭 가로 배너.
@@ -635,12 +636,14 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
                           className={`d-none d-md-block ${styles.inGridAdSlot}`}
                           style={{ minHeight: ADFIT_UNITS.galleryBottomDesktop.height }}
                         >
-                          <AdFitUnit
-                            key={`ad-ingrid-${curPage}`}
-                            unit={ADFIT_UNITS.galleryBottomDesktop.unit}
-                            width={ADFIT_UNITS.galleryBottomDesktop.width}
-                            height={ADFIT_UNITS.galleryBottomDesktop.height}
-                          />
+                          {isMobileMd === false && (
+                            <AdFitUnit
+                              key={`ad-ingrid-${curPage}`}
+                              unit={ADFIT_UNITS.galleryBottomDesktop.unit}
+                              width={ADFIT_UNITS.galleryBottomDesktop.width}
+                              height={ADFIT_UNITS.galleryBottomDesktop.height}
+                            />
+                          )}
                         </div>
                       )}
                     </React.Fragment>
@@ -724,7 +727,7 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
                 key={page}: 페이지를 넘길 때마다 새 광고를 받는다 (가운데 띠배너들은 글 목록이
                 갈리면서 저절로 리마운트되지만 이 자리는 페이지 버튼처럼 남는 요소라 직접 갈아줘야 한다) */}
             <div key={`ad-bottom-${curPage}`} className={`d-block d-md-none ${styles.mobileAdSlot} ${styles.belowPagerAd}`}>
-              <AdBanner slot="8616653628" />
+              <AdBanner />
             </div>
 
             {/* 데스크톱 — 페이지 버튼 아래 300×250 (모바일은 위 320×100 이 담당).
@@ -748,43 +751,6 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
           </>
         )}
 
-        <GuideFaq
-          relatedGuides={['/guide/market-price']}
-          article={<PackageEfficiencyGuideBody />}
-          guideTitle="패키지 효율 게시판 이용 가이드"
-          sections={[
-            {
-              heading: '효율은 무엇을, 어떻게 비교하는 건가요',
-              paragraphs: [
-                '이곳은 로스트아크 캐시샵에서 판매하는 유료 패키지의 구성품을 이용자가 직접 등록하고, 그 구성품을 거래소·경매장 실시간 시세로 환산해 "이 패키지를 사는 것이 실제로 이득인지"를 함께 비교하는 커뮤니티 게시판입니다. 패키지 안의 파괴석·수호석 결정, 숨결, 돌파석, 카드팩, 티켓류 같은 재료를 하나씩 현재 시세로 환산해 더한 값을 총 골드 가치로 계산하고, 이를 패키지의 실제 결제 금액(로열 크리스탈 또는 블루 크리스탈 환산가)과 비교해 이득률(%)로 보여줍니다.',
-                '카드 우측의 "이득률"은 해당 패키지를 정가로 한 번 결제했을 때 시세 기준으로 몇 퍼센트 이득 또는 손해인지를 뜻합니다. 시세는 계속 변동하므로 같은 패키지라도 등록 시점과 지금 보는 시점의 이득률이 달라질 수 있습니다.',
-              ],
-            },
-            {
-              heading: '3+1·2+1 묶음 패키지, 가챠 패키지는 별도로 계산됩니다',
-              paragraphs: [
-                '3+1, 2+1처럼 여러 개를 한 번에 결제해야 보너스 구성이 붙는 패키지는 실제 지불 개수와 수령 개수를 구분해서 계산합니다. 예를 들어 3+1은 3개 가격을 내고 4개를 받는 구조이므로, 카드에는 1개만 살 때의 이득률과 3+1로 묶어서 살 때의 이득률을 따로 표시합니다.',
-                '확률형(가챠) 패키지는 무엇이 나올지 결제 전에는 알 수 없기 때문에, 등록된 각 결과물의 확률과 골드 가치를 곱해서 모두 더한 기댓값을 기준으로 효율을 계산합니다. 카드에서 직접 1회·10회 뽑기를 눌러볼 수 있는 것은 확률을 체감해 보는 체험 기능이며, 실제 정렬·비교에 쓰이는 수치는 확률 기댓값입니다.',
-              ],
-            },
-            {
-              heading: '환율 입력과 N선택 패키지',
-              paragraphs: [
-                '카드 안의 환율 입력칸(골드 100 : 로열 크리스탈 N원)은 게시물 등록 시점의 환율을 기본값으로 보여주되, 직접 원하는 값으로 바꿀 수 있습니다. 환율을 바꾸면 크리스탈·페온 단위로 환산되는 재화들의 골드 가치와 이득률이 그 자리에서 다시 계산되어, 지금 본인이 실제로 이용하는 환율 기준으로 손익을 확인할 수 있습니다.',
-                '구성품 중 정해진 개수만 골라 받는 "N선택" 패키지는 기본적으로 골드 가치가 높은 순으로 자동 체크되어 총 골드 가치에 반영되며, 아이템을 직접 클릭해 체크 상태를 바꾸면 본인이 실제로 고를 조합 기준으로 다시 계산됩니다.',
-              ],
-            },
-            {
-              heading: '목록 정렬과 필터',
-              paragraphs: [
-                '게시물은 기본적으로 업로드순(최근에 등록된 순서)으로 표시되며, 상단 왼쪽 드롭다운 하나로 보기 방식을 바꿀 수 있습니다. "정렬" 항목에서 "효율순"은 방금 설명한 총 골드 가치 대비 결제 금액 기준으로 이득이 큰 패키지부터, "신작순"은 신규 출시로 등록된 지 30일이 지나지 않은 판매중 패키지(NEW 배지가 붙은 글)부터, "인기순"은 다른 이용자들의 좋아요가 많은 게시물부터 보여줍니다. "판매 상태" 항목에서 "판매중" 또는 "판매종료"를 고르면 해당 상태의 패키지만 골라서 볼 수 있습니다.',
-                '정렬과 필터는 지금 보고 있는 페이지의 게시물 안에서 즉시 다시 계산됩니다. 지난 게시물은 목록 아래 페이지 번호로 넘겨서 확인할 수 있습니다. 각 카드에 표시되는 이득률은 실시간 시세 기준으로 계산되므로, 같은 패키지라도 등록 시점과 지금 보는 시점의 값이 달라질 수 있습니다.',
-                '공통 환율을 입력해 둔 상태에서 "효율순"을 고르면 모든 게시물이 같은 환율로 환산되므로, 정렬 순서가 각 카드에 찍히는 이득률 순서와 정확히 일치합니다. 공통 환율 없이 정렬하면 게시물마다 등록 당시 환율이 달라 순서가 카드의 이득률과 어긋나 보일 수 있습니다.',
-              ],
-            },
-          ]}
-          faqs={faqData}
-        />
       </div>
     </Container>
   );

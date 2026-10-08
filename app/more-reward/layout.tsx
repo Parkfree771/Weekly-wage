@@ -1,18 +1,14 @@
 import { Metadata } from 'next';
 import { SITE_URL } from '@/lib/site-config';
-import { faqData } from './faq-data';
 
 export const metadata: Metadata = {
-  title: '더보기 효율 & 레이드 보상 - 벨가르딘 더보기 손익, 클골 계산기',
-  description:
-    '로아 더보기 효율 & 레이드 클리어 보상(클골) 실시간 정리! 벨가르딘 나메·하드·노말을 비롯해 세르카, 지평의 성당, 카제로스 종막~서막, 베히모스까지 레이드 관문별 더보기 비용과 보상 재료를 거래소 시세로 골드 환산해 더보기 손익을 계산합니다. 클리어 골드 계산기(클골 계산기)로 레이드 보상을 한 페이지에서 확인하세요.',
-  keywords:
-    '로아 더보기 효율, 더보기 효율, 더보기 계산기, 더보기 손익, 로아 더보기, 로아 클골 계산기, 클골 계산기, 로아 클골, 클리어 골드 계산기, 로아 골드 계산기, 레이드 클리어 보상, 로아 레이드 보상 정리, 에기르 보상, 1막 에기르 보상, 에기르 더보기, 벨가르딘 더보기, 벨가르딘 나메 더보기, 벨가르딘 하드 더보기, 벨가르딘 노말 더보기, 세르카 더보기, 세르카 나메 더보기, 세르카 하드 더보기, 지평의 성당 더보기, 성당 3단계 더보기, 성당 2단계 더보기, 카제로스 종막 더보기, 종막 더보기, 4막 더보기, 3막 더보기, 2막 더보기, 1막 더보기, 서막 더보기, 베히모스 더보기, 로아 레이드 보상, 로아 레이드 골드, 로스트아크 더보기 효율, 로스트아크 레이드 클리어 보상, 로아로골, 로골로골',
+  title: '로아 더보기 효율 · 클골 계산기',
+  description: '벨가르딘·세르카·지평의 성당·카제로스 등 레이드 관문별 더보기 비용과 보상을 실시간 시세로 환산해 더보기 손익과 클리어 골드를 계산합니다.',
+  keywords: '로아 더보기 효율, 로아 더보기 손익, 로아 클골 계산기, 로아 레이드 클리어 보상, 로아로골',
   openGraph: {
     images: ['/og-image.png'],
-    title: '로아로골 | 더보기 효율 - 벨가르딘 더보기 손익·클골 계산기',
-    description:
-      '벨가르딘부터 세르카, 지평의 성당, 카제로스 종막까지 레이드 관문별 더보기 손익과 클리어 골드(클골)를 실시간 시세로 계산하세요.',
+    title: '로아로골 | 로아 더보기 효율 · 클골 계산기',
+    description: '벨가르딘·세르카·지평의 성당·카제로스 등 레이드 관문별 더보기 비용과 보상을 실시간 시세로 환산해 더보기 손익과 클리어 골드를 계산합니다.',
     url: `${SITE_URL}/more-reward`,
     siteName: '로아로골',
     locale: 'ko_KR',
@@ -20,8 +16,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary',
-    title: '로아로골 | 더보기 효율 - 벨가르딘 더보기 손익·클골 계산기',
-    description: '벨가르딘 등 레이드별 더보기 손익과 클리어 골드(클골) 보상을 실시간 시세로 확인하세요.',
+    title: '로아로골 | 로아 더보기 효율 · 클골 계산기',
+    description: '벨가르딘·세르카·지평의 성당·카제로스 등 레이드 관문별 더보기 비용과 보상을 실시간 시세로 환산해 더보기 손익과 클리어 골드를 계산합니다.',
   },
   alternates: {
     canonical: '/more-reward',
@@ -54,21 +50,6 @@ export default function MoreRewardLayout({
               price: '0',
               priceCurrency: 'KRW',
             },
-          }),
-        }}
-      />
-      {/* SEO를 위한 JSON-LD 구조화된 데이터 - FAQPage (하단 FAQ와 동일 배열 공유) */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            '@context': 'https://schema.org',
-            '@type': 'FAQPage',
-            mainEntity: faqData.map((f) => ({
-              '@type': 'Question',
-              name: f.q,
-              acceptedAnswer: { '@type': 'Answer', text: f.a },
-            })),
           }),
         }}
       />

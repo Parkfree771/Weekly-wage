@@ -1,5 +1,5 @@
 import { getAdminFirestore } from '@/lib/firebase-admin';
-import { applyStatsToPosts } from '@/lib/package-stats';
+import { applyStatsToPosts, prefetchPackageStats } from '@/lib/package-stats';
 import { renewPostIcons } from '@/lib/package-shared';
 import type { PackagePost } from '@/types/package';
 import PackageGalleryClient from './PackageGalleryClient';
@@ -35,6 +35,10 @@ type GalleryData = {
 async function loadGallery(): Promise<GalleryData | null> {
   try {
     const db = getAdminFirestore();
+    // 집계 문서는 글과 무관하니 글 조회와 동시에 받는다 (실패는 applyStatsToPosts 가 삼키고 원본 유지).
+    // catch 를 미리 달아 두는 건 글 조회가 먼저 실패했을 때 처리 안 된 거부로 남지 않게 하려는 것.
+    const statsPromise = prefetchPackageStats();
+    statsPromise.catch(() => {});
     const snap = await db
       .collection('packagePosts')
       .orderBy('createdAt', 'desc')
@@ -54,8 +58,8 @@ async function loadGallery(): Promise<GalleryData | null> {
     }).map(renewPostIcons);
     // 조회·따봉·흠은 packageStats 문서가 진실이다. 글 문서의 카운터는 2026-08-26 에 멈춰 있어 여기서 갈아 끼운다
     // — 이러지 않으면 첫 화면이 옛날 숫자로 떴다가 클라이언트 조회가 오면 확 바뀐다.
-    // 글 전체를 IN 쿼리 1회로 덮으므로, 이제 목록의 모든 글이 처음부터 최신 숫자를 들고 나간다.
-    const posts = await applyStatsToPosts(rawPosts);
+    // 집계 문서 1회 읽기로 글 전체를 덮으므로, 목록의 모든 글이 처음부터 최신 숫자를 들고 나간다.
+    const posts = await applyStatsToPosts(rawPosts, statsPromise);
     return { posts, statsAt: Date.now() };
   } catch (err) {
     // 실패는 던진다 — null 로 넘기면 "글 없는 갤러리" 가 5분 ISR 에 실리고, 그동안 방문자마다

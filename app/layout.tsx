@@ -69,7 +69,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
     template: '로아로골 | %s',
-    default: "로아로골 | 로아 시세 차트",
+    default: '로아로골 | 로아 패키지 효율 · 시세 차트',
   },
   alternates: {
     canonical: '/',
@@ -79,17 +79,17 @@ export const metadata: Metadata = {
     shortcut: '/favicon.ico',
     apple: '/apple-icon.png',
   },
-  description: "로아로골 - 로아 패키지 효율 실시간 계산과 로아 시세 확인 사이트! 캐시샵 패키지의 골드 가치를 실시간 시세로 계산하고, 로아 거래소 가격·과거 시세 차트, 재련 재료·각인서·보석 시세를 한눈에 확인하세요.",
+  description: '로스트아크 캐시샵 패키지 효율과 거래소·경매장 시세를 실시간으로 확인하세요. 재련 재료·각인서·보석 시세 차트와 주간 골드·재련 계산기를 무료로 제공합니다.',
 
-  keywords: "로아로골, 로아 패키지 효율, 로스트아크 패키지, 로아 캐시샵 패키지, 로아 시세, 로아 거래소, 로아 가격, 로아 아이템 시세, 로아 경매장, 로아 과거 시세, 로아 시세 차트, 로아 재련 재료 시세, 로아 각인서 시세, 로아 보석 시세, 로스트아크 시세, 로스트아크 거래소, 로스트아크 가격, 로아 캐릭터 조회, 로아 전투정보실, 로아온, 로아온 썸머, 로아온 썸머 2026, 2026 로아온, 로아 신규 패치, 로아 여름 패치, 로아온 일정",
+  keywords: '로아로골, 로아 패키지 효율, 로아 시세, 로아 거래소 시세, 로아 시세 차트',
 
   authors: [{ name: "로아로골" }],
   creator: "로아로골",
   publisher: "로아로골",
 
   openGraph: {
-    title: "로아로골 - 로아 시세 거래소 가격 차트",
-    description: "로아로골 - 로아 패키지 효율 실시간 계산! 로아 거래소 시세, 과거 시세 차트, 재련 재료·각인서 시세까지 한눈에.",
+    title: '로아로골 | 로아 패키지 효율 · 시세 차트',
+    description: '로스트아크 캐시샵 패키지 효율과 거래소·경매장 시세를 실시간으로 확인하세요. 재련 재료·각인서·보석 시세 차트와 주간 골드·재련 계산기를 무료로 제공합니다.',
     url: SITE_URL,
     siteName: "로아로골",
     images: [
@@ -97,7 +97,7 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "로아로골 - 로아 시세 거래소 가격 차트"
+        alt: '로아로골 | 로아 패키지 효율 · 시세 차트'
       }
     ],
     locale: "ko_KR",
@@ -105,8 +105,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "로아로골 - 로아 시세 거래소 가격 차트",
-    description: "로아로골 - 로아 패키지 효율 계산, 로아 시세, 거래소 가격, 과거 시세 차트 확인",
+    title: '로아로골 | 로아 패키지 효율 · 시세 차트',
+    description: '로스트아크 캐시샵 패키지 효율과 거래소·경매장 시세를 실시간으로 확인하세요. 재련 재료·각인서·보석 시세 차트와 주간 골드·재련 계산기를 무료로 제공합니다.',
     images: ["/og-image.png"],
   },
   robots: {
@@ -142,13 +142,15 @@ export default function RootLayout({
     // data-scroll-behavior: globals 의 scroll-behavior:smooth 가 의도한 것임을 Next 에 알려 개발 경고를 없앰
     <html lang="ko" data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
-        {/* 사이트 보기 배율 — 저장된 배율을 첫 페인트 전에 적용해 번쩍임 방지 (컨트롤: components/ZoomControl.tsx)
-            suppressHydrationWarning: 아래 애드센스 로더가 head에 관리 스크립트를 동적 주입하면서
+        {/* 사이트 보기 배율·다크모드 — 저장된 값을 첫 페인트 전에 적용해 번쩍임 방지
+            (컨트롤: components/ZoomControl.tsx · components/ThemeProvider.tsx).
+            다크모드도 여기서 먼저 걸지 않으면 하이드레이션 뒤에야 바뀌어 매 페이지 흰 화면이 한 번 번쩍인다
+            suppressHydrationWarning: 아래 광고 로더가 head에 스크립트를 동적 주입하면서
             hydration 시 이 노드의 자리가 밀려 mismatch 경고가 뜸 — 기능엔 영향 없는 dev 전용 경고라 억제 */}
         <script
           suppressHydrationWarning
           dangerouslySetInnerHTML={{
-            __html: `try{var z=parseInt(localStorage.getItem('site-zoom')||'',10);if(z>=60&&z<=150&&z!==100)document.documentElement.style.zoom=z/100;}catch(e){}`,
+            __html: `try{var z=parseInt(localStorage.getItem('site-zoom')||'',10);if(z>=60&&z<=150&&z!==100)document.documentElement.style.zoom=z/100;var t=localStorage.getItem('theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}`,
           }}
         />
         {/* 가격 데이터 preload — URL이 안정적이라(캐시키 제거됨) 정적 preload 태그로 처리.
@@ -160,18 +162,8 @@ export default function RootLayout({
             DNS만 미리 풀어두면 그 시점의 조회 왕복이 사라진다.
             preconnect가 아닌 dns-prefetch인 이유: 연결까지 미리 맺으면 모바일에서
             본문 리소스와 대역폭을 다투게 되므로 DNS 단계까지만 앞당긴다. */}
-        <link rel="dns-prefetch" href="https://googleads.g.doubleclick.net" />
-        <link rel="dns-prefetch" href="https://tpc.googlesyndication.com" />
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
         <link rel="dns-prefetch" href="https://display.ad.daum.net" />
-        {/* Google AdSense — 서버 HTML(head)에 포함되어야 애드센스 크롤러가 사이트 확인 가능.
-            async라 렌더링 비차단. (lazyOnload는 HTML에 안 들어가 검증 실패) */}
-        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
-        <script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6944494802169618"
-          crossOrigin="anonymous"
-        />
         {/* 카카오 애드핏 로더 — 서버 HTML(head)에 있어야 심사자가 JS 실행 없이도 광고 설치를 확인한다.
             (AdFitUnit 이 마운트마다 스크립트를 다시 붙이는 건 클라이언트 라우팅으로 새로 생긴
              광고 자리를 채우기 위한 것이고, 첫 로드분은 여기서 처리한다) */}
@@ -179,7 +171,7 @@ export default function RootLayout({
         {/* 미러(프록시) 사이트 차단 가드 — 허용되지 않은 호스트에서 열리면 정식 도메인으로 강제 이동.
             미러가 HTML 내 도메인 문자열을 자기 것으로 치환하는 수법을 쓰므로 도메인은 base64로 숨김
             (bG9hbG9nb2wua3I= → loalogol.kr). head 최상단 동기 실행이라 미러에서 콘텐츠 노출 전에 이탈. */}
-        {/* suppressHydrationWarning: 위 배율 스크립트와 동일 사유 — 애드센스 async 로더가 head에
+        {/* suppressHydrationWarning: 위 배율 스크립트와 동일 사유 — 광고 async 로더가 head에
             노드를 동적 주입해 형제 위치가 밀리며 mismatch 경고가 뜸. 내용은 서버·클라 동일한 정적
             문자열이라 실제 불일치 아님(위치 밀림) → 억제가 올바른 처리 */}
         <script
@@ -201,8 +193,6 @@ export default function RootLayout({
             <ConsentModal />
           </AuthProvider>
         </ThemeProvider>
-
-        {/* Google AdSense 스크립트는 위 <head>로 이동 (애드센스 사이트 확인 위해 서버 HTML에 포함) */}
 
         {/* Google Analytics - lazyOnload로 메인 콘텐츠 우선 */}
         <Script

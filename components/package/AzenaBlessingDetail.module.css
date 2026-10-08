@@ -103,39 +103,6 @@
   white-space: nowrap;
 }
 
-/* ─── 자주 묻는 질문 ─── */
-.faqList {
-  display: flex;
-  flex-direction: column;
-  gap: 0.9rem;
-}
-
-.faqItem {
-  padding-bottom: 0.9rem;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.faqItem:last-child {
-  padding-bottom: 0;
-  border-bottom: none;
-}
-
-.faqQ {
-  margin: 0 0 0.35rem;
-  font-size: 0.92rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  word-break: keep-all;
-}
-
-.faqA {
-  margin: 0;
-  font-size: 0.84rem;
-  line-height: 1.75;
-  color: var(--text-secondary);
-  word-break: keep-all;
-}
-
 /* ─── 내 플레이 설정 ─── */
 /* 상자 안에 상자를 겹치지 않는다: 바깥 상자 하나 + 조작부(세그먼트·스테퍼)만 테두리를 갖고,
    각 항목은 라벨 + 조작부로만 둔다. 행은 얇은 구분선으로 나눈다. */
@@ -661,23 +628,6 @@
   .intro {
     font-size: 0.78rem;
     line-height: 1.65;
-  }
-
-  .faqList {
-    gap: 0.7rem;
-  }
-
-  .faqItem {
-    padding-bottom: 0.7rem;
-  }
-
-  .faqQ {
-    font-size: 0.85rem;
-  }
-
-  .faqA {
-    font-size: 0.78rem;
-    line-height: 1.7;
   }
 
   /* 아이템 목록 — 다른 상세는 [줄 사이 구분선] 리스트지만, 이 페이지는 항목마다 드롭다운 줄이

@@ -946,7 +946,7 @@ export default function LifeCraftCalculator() {
 
         {/* 모바일 중간 광고 */}
         <div className="d-block d-lg-none my-3">
-          <AdBanner slot="8616653628" />
+          <AdBanner />
         </div>
 
         {/* 사이드바 */}

@@ -11,6 +11,7 @@ const CompactPriceChart = dynamic(() => import('./CompactPriceChart'), { ssr: fa
 const MiniPriceChart = dynamic(() => import('./MiniPriceChart'), { ssr: false });
 import { PriceContext } from './PriceComparisonStats';
 import { useTheme } from './ThemeProvider';
+import useIsMobileViewport from './ads/useIsMobileViewport';
 
 // 카테고리 표시 순서
 const CATEGORY_ORDER: ItemCategory[] = ['refine', 'gem', 'refine_additional', 'engraving', 'accessory', 'bracelet', 'jewel'];
@@ -43,8 +44,6 @@ const renderAccessoryItemName = (name: string, category: ItemCategory) => {
     return part;
   });
 };
-
-// 가격 포맷팅 함수
 
 // 차트 설정 localStorage 키
 const CHART_CONFIG_KEY = 'chartConfig';
@@ -151,7 +150,6 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
   const [chartConfig, setChartConfig] = useState<ChartConfig>(getDefaultChartConfig());
   const [showChartSettings, setShowChartSettings] = useState(false);
   const [tempChartConfig, setTempChartConfig] = useState<ChartConfig>(getDefaultChartConfig());
-  const [, setIsConfigLoaded] = useState(false);
 
   // 차트 설정 불러오기 (초기 로드 - 한 번만 실행)
   useEffect(() => {
@@ -168,7 +166,6 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
           setSelectedSubCategory(result.subCategory);
         }
         setSelectedItem(result.item);
-        setIsConfigLoaded(true);
         return;
       }
     }
@@ -177,10 +174,9 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
     const defaultCategoryItems = getItemsByCategory('refine');
     const defaultItem = defaultCategoryItems.find(item => item.id === '66102007') || defaultCategoryItems[0];
     setSelectedItem(defaultItem);
-    setIsConfigLoaded(true);
   }, []);
 
-  const toggleReferenceLine = (type: ReferenceLineType) => {
+  const toggleReferenceLine = useCallback((type: ReferenceLineType) => {
     setActiveReferenceLines(prev => {
       const newSet = new Set(prev);
       if (newSet.has(type)) {
@@ -190,16 +186,14 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
       }
       return newSet;
     });
-  };
+  }, []);
 
   // 아이템 ID로 선택하기 (대시보드에서 클릭 시 사용)
-  const selectItemById = (itemId: string) => {
+  const selectItemById = useCallback((itemId: string) => {
     const result = findItemById(itemId);
     if (result) {
       // 그리드 뷰가 켜져 있으면 끄기
-      if (isGridView) {
-        setIsGridView(false);
-      }
+      setIsGridView(false);
       // 카테고리 변경
       setSelectedCategory(result.category);
       // 서브카테고리가 있으면 설정
@@ -211,7 +205,7 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
       // 아이템 선택
       setSelectedItem(result.item);
     }
-  };
+  }, []);
 
   // 아이템 스크롤 관련
   const itemScrollRef = useRef<HTMLDivElement>(null);
@@ -483,10 +477,10 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
   }, [isGridView, currentCategoryItems]);
 
   // 차트 설정 모달 열기
-  const openChartSettings = () => {
+  const openChartSettings = useCallback(() => {
     setTempChartConfig({ ...chartConfig });
     setShowChartSettings(true);
-  };
+  }, [chartConfig]);
 
   // 차트 설정 저장
   const saveChartSettings = () => {
@@ -554,8 +548,37 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
 
   const categoryStyle = CATEGORY_STYLES[selectedCategory];
 
+  // 데스크톱·태블릿·모바일 레이아웃은 CSS(d-lg-block 등)로 하나만 보이지만 셋 다 마운트돼 있어서,
+  // 차트(Recharts)가 숨은 것까지 3벌 그려지고 있었다. 지금 보이는 레이아웃에서만 차트를 그린다.
+  // 기준 폭은 위 클래스의 부트스트랩 브레이크포인트(md 768 · lg 992)와 같다.
+  // 마운트 전(null)엔 아무 데도 안 그린다 — 차트는 원래 클라이언트 전용이라 첫 HTML 은 그대로다.
+  const categoryColor = theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor;
+  // 값이 그대로면 같은 객체를 넘겨, 상관없는 상태(스크롤 화살표 등)가 바뀔 때
+  // 대시보드·통계·이벤트 카드·차트가 통째로 다시 그려지지 않게 한다.
+  const contextValue = useMemo(() => ({
+    history, selectedItem, categoryLabel: categoryStyle.label, eventSelection, toggleEventSelection,
+    eventRangeActive: eventSelection.length > 0, filteredHistory, selectedPeriod, setSelectedPeriod: handleSetPeriod,
+    comparisonData, isGridView, onToggleGridView: handleToggleGridView, activeReferenceLines, toggleReferenceLine,
+    selectItemById, categoryColor, openChartSettings,
+    showEventDots: chartConfig.showEventDots, toggleEventDots,
+    showWednesdayDots: chartConfig.showWednesdayDots, toggleWednesdayDots,
+    showRegularDots: chartConfig.showRegularDots, toggleRegularDots,
+    showComparisonLine: chartConfig.showComparisonLine, toggleComparisonLine,
+  }), [
+    history, selectedItem, categoryStyle.label, eventSelection, toggleEventSelection, filteredHistory, selectedPeriod,
+    handleSetPeriod, comparisonData, isGridView, handleToggleGridView, activeReferenceLines, toggleReferenceLine,
+    selectItemById, categoryColor, openChartSettings, chartConfig, toggleEventDots, toggleWednesdayDots,
+    toggleRegularDots, toggleComparisonLine,
+  ]);
+
+  const belowLg = useIsMobileViewport(991.98);
+  const belowMd = useIsMobileViewport(767.98);
+  const chartLayout = belowLg === null || belowMd === null
+    ? null
+    : !belowLg ? 'desktop' : belowMd ? 'mobile' : 'tablet';
+
   return (
-    <PriceContext.Provider value={{ history, selectedItem, categoryLabel: categoryStyle.label, eventSelection, toggleEventSelection, eventRangeActive: eventSelection.length > 0, filteredHistory, selectedPeriod, setSelectedPeriod: handleSetPeriod, comparisonData, isGridView, onToggleGridView: handleToggleGridView, activeReferenceLines, toggleReferenceLine, selectItemById, categoryColor: theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor, openChartSettings, showEventDots: chartConfig.showEventDots, toggleEventDots, showWednesdayDots: chartConfig.showWednesdayDots, toggleWednesdayDots, showRegularDots: chartConfig.showRegularDots, toggleRegularDots, showComparisonLine: chartConfig.showComparisonLine, toggleComparisonLine }}>
+    <PriceContext.Provider value={contextValue}>
       {dashboard}
       <div className="price-chart-container">
         {/* 데스크톱: 사이드바 레이아웃 */}
@@ -1023,7 +1046,7 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
               )}
 
               {/* 차트 영역 */}
-              {isGridView ? (
+              {chartLayout !== 'desktop' ? null : isGridView ? (
                 <Row className="g-2">
                   {gridItems.map((item, index) => (
                     <Col key={index} xs={6}>
@@ -1069,6 +1092,7 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
             onSelectItem={handleSelectItem}
             onToggleGridView={handleToggleGridView}
             onSlotClick={handleSlotClick}
+            showChart={chartLayout === 'tablet'}
           />
         </div>
 
@@ -1102,7 +1126,7 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
           )}
 
           {/* 모바일 차트 */}
-          {isGridView ? (
+          {chartLayout !== 'mobile' ? null : isGridView ? (
             <Row className="g-1" style={{ height: '350px' }}>
               {gridItems.map((item, index) => (
                 <Col key={index} xs={6} style={{ height: '50%' }}>
@@ -1391,7 +1415,7 @@ function SidebarMobileLayout({
   onSelectItem,
   onToggleGridView,
   onSlotClick,
-  isMobile = false,
+  showChart,
 }: {
   selectedCategory: ItemCategory;
   selectedSubCategory: RefineAdditionalSubCategory | null;
@@ -1409,7 +1433,7 @@ function SidebarMobileLayout({
   onSelectItem: (item: TrackedItem) => void;
   onToggleGridView: () => void;
   onSlotClick: (index: number) => void;
-  isMobile?: boolean;
+  showChart: boolean;
 }) {
   const [showItemSheet, setShowItemSheet] = useState(false);
 
@@ -1434,7 +1458,7 @@ function SidebarMobileLayout({
                 setShowItemSheet(true);
               }}
               style={{
-                padding: isMobile ? '6px 12px' : '8px 16px',
+                padding: '8px 16px',
                 borderRadius: '8px',
                 border: `1px solid ${isSelected ? (theme === 'dark' ? catStyle.darkThemeColor : catStyle.color) : 'var(--border-color)'}`,
                 backgroundColor: isSelected
@@ -1443,7 +1467,7 @@ function SidebarMobileLayout({
                 color: isSelected
                   ? (theme === 'dark' ? catStyle.darkThemeColor : catStyle.darkColor)
                   : 'var(--text-secondary)',
-                fontSize: isMobile ? '0.75rem' : '0.85rem',
+                fontSize: '0.85rem',
                 fontWeight: isSelected ? 600 : 500,
                 whiteSpace: 'nowrap',
                 flexShrink: 0,
@@ -1607,17 +1631,16 @@ function SidebarMobileLayout({
       )}
 
       {/* 차트 */}
-      {isGridView ? (
-        <Row className="g-1" style={{ height: isMobile ? '350px' : 'auto' }}>
+      {!showChart ? null : isGridView ? (
+        <Row className="g-1">
           {gridItems.map((item, index) => (
-            <Col key={index} xs={6} style={isMobile ? { height: '50%' } : {}}>
+            <Col key={index} xs={6}>
               <MiniPriceChart
                 item={item}
                 categoryStyle={categoryStyle}
                 isSelected={selectedSlot === index}
                 onClick={() => onSlotClick(index)}
                 slotIndex={index}
-                isMobile={isMobile}
               />
             </Col>
           ))}
@@ -1632,9 +1655,4 @@ function SidebarMobileLayout({
       )}
     </>
   );
-}
-
-// 하위 호환성을 위한 default export (이제는 사용하지 않음)
-export default function PriceChartContainer() {
-  return null;
 }

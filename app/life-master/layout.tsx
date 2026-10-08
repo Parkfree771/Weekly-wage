@@ -1,14 +1,13 @@
 import type { Metadata } from 'next';
 import { SITE_URL } from '@/lib/site-config';
-import { faqData } from './faq-data';
 
 export const metadata: Metadata = {
-  title: '벌목 계산기',
-  description: '벌목 등 생활 콘텐츠의 시간당 수익과 아비도스 융화재료 제작 손익, 생활의 가루 환산 가치를 실시간 거래소 시세로 계산합니다. 목재 시세 추이도 함께 확인할 수 있습니다.',
-  keywords: '로아로골, 로아 벌목, 로아 벌목 효율, 로아 벌목 계산기, 로아 생활, 로아 생활 효율, 로아 융화재료, 로아 융화재료 제작, 로아 생활의 가루, 로아 목재 시세, 로스트아크 벌목, 아비도스 융화재료',
+  title: '로아 벌목 계산기 · 생활 효율',
+  description: '벌목 등 생활 콘텐츠의 시간당 수익과 아비도스 융화재료 제작 손익을 실시간 거래소 시세로 계산합니다. 목재 시세 추이도 함께 확인하세요.',
+  keywords: '로아 벌목 효율, 로아 생활 효율, 로아 융화재료 제작, 로아로골',
   openGraph: {
-    title: '로아로골 | 벌목 계산기 - 생활 효율, 융화재료 제작',
-    description: '로아로골 벌목 효율, 로아 생활 효율, 로아 융화재료 제작 손익을 실시간 시세로 계산하세요.',
+    title: '로아로골 | 로아 벌목 계산기 · 생활 효율',
+    description: '벌목 등 생활 콘텐츠의 시간당 수익과 아비도스 융화재료 제작 손익을 실시간 거래소 시세로 계산합니다. 목재 시세 추이도 함께 확인하세요.',
     url: '/life-master',
     siteName: '로아로골',
     images: [
@@ -24,8 +23,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: '로아로골 | 벌목 계산기 - 생활 효율, 융화재료 제작',
-    description: '로아로골 벌목 효율, 로아 생활 효율, 로아 융화재료 제작 손익 계산',
+    title: '로아로골 | 로아 벌목 계산기 · 생활 효율',
+    description: '벌목 등 생활 콘텐츠의 시간당 수익과 아비도스 융화재료 제작 손익을 실시간 거래소 시세로 계산합니다. 목재 시세 추이도 함께 확인하세요.',
     images: ['/og-image.png'],
   },
   alternates: {
@@ -64,24 +63,6 @@ export default function LifeMasterLayout({
               "로아 거래소 실시간 가격 반영",
               "로아 생활 콘텐츠 효율 비교"
             ]
-          })
-        }}
-      />
-      {/* SEO를 위한 JSON-LD 구조화된 데이터 - FAQPage */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "FAQPage",
-            "mainEntity": faqData.map((item) => ({
-              "@type": "Question",
-              "name": item.q,
-              "acceptedAnswer": {
-                "@type": "Answer",
-                "text": item.a,
-              },
-            })),
           })
         }}
       />

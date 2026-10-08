@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import styles from '@/app/guide/guide.module.css';
+import styles from './contact.module.css';
 import ContactForm from './ContactForm';
 
 const TOPICS = [

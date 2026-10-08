@@ -1,13 +1,13 @@
 import { cache } from 'react';
 import { Metadata } from 'next';
 import { getAdminFirestore } from '@/lib/firebase-admin';
-import { applyStatsToPosts } from '@/lib/package-stats';
+import { applyStatsToPosts, prefetchPackageStats } from '@/lib/package-stats';
 import { renewPostIcons } from '@/lib/package-shared';
 import { SITE_URL, INDEX_USER_PACKAGE_POSTS } from '@/lib/site-config';
 import type { PackagePost, PackageComment } from '@/types/package';
 import PackageDetailPage from './PackageDetailClient';
 import AzenaBlessingDetail from '@/components/package/AzenaBlessingDetail';
-import { AZENA_POST_ID, AZENA_TITLE, AZENA_FAQ } from '@/lib/azena-blessing';
+import { AZENA_POST_ID, AZENA_TITLE } from '@/lib/azena-blessing';
 
 // ISR: 상세 페이지 렌더(+ Firestore 읽기)를 5분간 재사용해 조회 폭주를 CDN이 흡수.
 // 수정·삭제는 /api/package/revalidate 호출로 즉시 반영된다.
@@ -165,8 +165,7 @@ export default async function Page({ params }: Props) {
     return (
       <>
         <AzenaBlessingDetail />
-        {/* 구조화 데이터 — 사이트의 다른 계산기(WebApplication + FAQPage)와 같은 형식.
-            FAQ 답변은 화면에 그대로 보이는 글(AZENA_FAQ)과 동일해야 한다 */}
+        {/* 구조화 데이터 — 사이트의 다른 계산기(WebApplication)와 같은 형식 */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -197,20 +196,6 @@ export default async function Page({ params }: Props) {
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               '@context': 'https://schema.org',
-              '@type': 'FAQPage',
-              mainEntity: AZENA_FAQ.map((item) => ({
-                '@type': 'Question',
-                name: item.q,
-                acceptedAnswer: { '@type': 'Answer', text: item.a },
-              })),
-            }),
-          }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              '@context': 'https://schema.org',
               '@type': 'BreadcrumbList',
               itemListElement: [
                 { '@type': 'ListItem', position: 1, name: '로아로골', item: SITE_URL },
@@ -224,12 +209,17 @@ export default async function Page({ params }: Props) {
     );
   }
 
-  const post = await getPost(postId);
   // 조회·따봉·흠만 최신 집계로 갈아 끼운다(packageStats 문서 1회 읽기). getPost 캐시 밖에서 하므로
   // generateMetadata 쪽은 그대로다. 이게 없으면 재방문자는 이관 시점에 멈춘 숫자를 계속 본다.
-  // 댓글과 집계는 서로 독립 — 병렬로 돌려 캐시 미스 렌더에서 왕복 한 번을 줄인다.
+  // 글·댓글·집계는 서로 기다릴 필요가 없어 셋을 동시에 건다 — 캐시 미스 렌더의 왕복이 3번 → 1번.
+  // (없는 글이면 댓글 읽기 1회가 헛돌 뿐이다.) catch 는 글이 없거나 먼저 실패했을 때 처리 안 된 거부 방지용.
+  const commentsPromise = getComments(postId);
+  commentsPromise.catch(() => {});
+  const statsPromise = prefetchPackageStats();
+  statsPromise.catch(() => {});
+  const post = await getPost(postId);
   const [comments, statsApplied] = post
-    ? await Promise.all([getComments(postId), applyStatsToPosts([post])])
+    ? await Promise.all([commentsPromise, applyStatsToPosts([post], statsPromise)])
     : [null, null];
   // 글에 저장된 아이콘 경로 중 그림이 바뀐 것은 새 그림으로 (renewPostIcons 주석 참조)
   const postWithStats = statsApplied ? renewPostIcons(statsApplied[0]) : null;

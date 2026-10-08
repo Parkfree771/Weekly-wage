@@ -11,7 +11,7 @@ export const POST_ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
 const BOT_RE = new RegExp(
   [
     'bot', 'crawler', 'spider', 'slurp', // 일반
-    'mediapartners-google', 'googleother', // 애드센스/구글 크롤러
+    'mediapartners-google', 'googleother', // 구글 크롤러
     'yeti', 'daumoa', 'baiduspider', 'yandex', 'applebot', 'duckduckbot', // 검색엔진
     'facebookexternalhit', 'kakaotalk-scrap', 'skypeuripreview', 'embedly', 'whatsapp', // 링크 프리뷰
     'headless', 'curl', 'wget', 'python-requests', 'node-fetch', 'go-http-client', // 스크립트

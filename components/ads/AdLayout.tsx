@@ -3,9 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import AdPlaceholder from './AdPlaceholder';
-import AdUnit from './AdUnit';
 import AdFitUnit from './AdFitUnit';
-import { AD_PREVIEW, AD_SLOTS, ADFIT_ENABLED, ADFIT_UNITS } from './adConfig';
+import { AD_PREVIEW, ADFIT_ENABLED, ADFIT_UNITS } from './adConfig';
 import AppSidebarPromo from '../AppSidebarPromo';
 import { SITE_ZOOM_EVENT, getSiteZoom } from '../ZoomControl';
 
@@ -85,14 +84,14 @@ const AD_EXTRA = 456;
 // 2026-07-15: body zoom을 0.67→0.85로 고정하면서 이 값도 같이 갱신.
 const DESKTOP_ZOOM = 0.85;
 
-// 광고 슬롯 zoom 역보정 배율 — 애드센스는 광고 요소의 "실제 렌더링 픽셀 크기"로 규격(160×600)을
+// 광고 슬롯 zoom 역보정 배율 — 광고 네트워크는 광고 요소의 "실제 렌더링 픽셀 크기"로 규격(160×600)을
 // 인식하므로, body zoom(0.85)에 그대로 맡기면 136×510처럼 줄어든 채 렌더돼 표준 규격 미달로
 // 처리될 위험이 있음. 광고를 담는 컨테이너에 1/zoom을 곱해 실제 화면 px를 선언한 값 그대로 복원
-// — 페이지 다른 요소보다 조금 커 보이지만 애드센스 입장에선 정확한 규격.
+// — 페이지 다른 요소보다 조금 커 보이지만 광고 쪽에선 정확한 규격.
 const AD_ZOOM_COMPENSATE = 1 / DESKTOP_ZOOM;
 
 // 데스크톱 광고는 사이드 레일이 전부 — 상단 배너·모바일 하단 앵커는 제거됨.
-// 모바일은 앱(AdMob)과 동일한 본문 인-콘텐츠(AdBanner)만 사용, 애드센스 자동광고(앵커 포함) 금지.
+// 모바일은 앱(AdMob)과 동일한 본문 인-콘텐츠(AdBanner)만 사용, 앵커 광고 금지.
 // 사이드 광고를 붙일 페이지 — 캐릭터 조회(자체 사이드바), 패키지 등록·수정(폼 화면, railsDisabled에서
 // 별도 제외)만 빼고 대부분 페이지에 적용.
 // 이 목록에 없는 페이지는 데스크톱에서 광고가 아예 없다.
@@ -174,7 +173,7 @@ export default function AdLayout({ children }: { children: React.ReactNode }) {
   // 실제 모드에선 해당 슬롯 ID가 있어야 자리를 차지(빈 자리 방지).
   const railsVisible =
     isRailPage(pathname) &&
-    (AD_PREVIEW || !!AD_SLOTS.sidebar || (ADFIT_ENABLED && !!ADFIT_UNITS.sidebarLeft.unit)) &&
+    (AD_PREVIEW || (ADFIT_ENABLED && !!ADFIT_UNITS.sidebarLeft.unit)) &&
     !railsDisabled && railsWide && !isMobile;
   // 메인도 이제 양쪽 레일에 광고 — 오른쪽은 앱 프로모와 도킹(아래 dockedPromo)되어 나란히 공존
   const rightRailAdVisible = railsVisible;
@@ -202,7 +201,7 @@ export default function AdLayout({ children }: { children: React.ReactNode }) {
       if (!shell) return;
       const rail = shell.querySelector('.side-rail-right');
       if (rail) {
-        // 애드센스 광고(160px, zoom 역보정으로 실제 화면에서도 160px)가 레일 안에서 가운데 정렬되는
+        // 레일 광고(160px, zoom 역보정으로 실제 화면에서도 160px)가 레일 안에서 가운데 정렬되는
         // 것과 똑같이 맞춤. 레일 자체도 body zoom을 받으므로 선언폭(220) 대신 실측 폭을 사용.
         const railRect = rail.getBoundingClientRect();
         setPromoLeft(railRect.left + (railRect.width - 160) / 2);
@@ -229,7 +228,7 @@ export default function AdLayout({ children }: { children: React.ReactNode }) {
   const PROMO_AD_GAP = 24;
 
   // 사이드 레일 한 칸 내용 — 표준 세로 규격 160×600(와이드 스카이스크래퍼) 고정.
-  // (미리보기=placeholder, 실제=AdUnit 고정 사이즈, key로 라우트마다 갱신)
+  // (미리보기=placeholder, 실제=AdFitUnit 고정 사이즈, key로 라우트마다 갱신)
   // 실제 화면 px가 160×600 그대로 나오도록 zoom 역보정 래퍼로 감쌈(위 AD_ZOOM_COMPENSATE 참고).
   // side: 좌·우가 같은 페이지에 동시에 뜨므로 애드핏 단위를 반드시 따로 쓴다.
   const renderRail = (side: 'left' | 'right') => {
@@ -245,21 +244,12 @@ export default function AdLayout({ children }: { children: React.ReactNode }) {
         style={{ width: '160px', height: '600px', minHeight: '600px', margin: '0 auto', whiteSpace: 'pre-line' }}
       />
     ) : ADFIT_ENABLED && adfitUnit.unit ? (
-      // 애드핏 우선 — 애드센스 미승인 상태라 켜져 있어도 채워지지 않는다.
       // 애드핏 레일 단위도 160×600 이라 레일 폭을 그대로 쓴다.
       <AdFitUnit
         key={pathname}
         unit={adfitUnit.unit}
         width={adfitUnit.width}
         height={adfitUnit.height}
-        style={{ margin: '0 auto' }}
-      />
-    ) : AD_SLOTS.sidebar ? (
-      <AdUnit
-        key={pathname}
-        slot={AD_SLOTS.sidebar}
-        width={160}
-        height={600}
         style={{ margin: '0 auto' }}
       />
     ) : null;

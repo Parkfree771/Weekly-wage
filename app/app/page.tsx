@@ -5,8 +5,6 @@ import Image from 'next/image';
 import { APP_STORE_URL, PLAY_STORE_URL } from '@/lib/app-download-config';
 import { AppleStoreBadge, GooglePlayBadge } from '@/components/StoreBadges';
 import { SITE_URL } from '@/lib/site-config';
-import GuideFaq from '@/components/common/GuideFaq';
-import { faqData } from './faq-data';
 import styles from './app.module.css';
 
 // 스크린샷만 있는 페이지가 되지 않도록, 각 기능이 실제로 무엇을 해주는지 본문으로 설명한다.
@@ -162,15 +160,6 @@ export default function AppDownloadPage() {
           ))}
         </div>
 
-        <GuideFaq
-          guideTitle="앱 이용 가이드"
-          intro={[
-            'iOS는 App Store, 안드로이드는 Google Play에서 "로아로골"로 검색하거나 위 배지를 눌러 설치할 수 있습니다. 설치와 이용에 비용은 들지 않고, 로그인 없이도 계산기 기능은 그대로 쓸 수 있습니다.',
-            '다만 캐릭터 목록과 주간 숙제 체크 기록을 웹과 함께 쓰려면 같은 계정으로 로그인해야 합니다. 로그인하지 않으면 기록이 설치된 기기에만 남습니다. 패키지 등록·좋아요·댓글은 웹 전용 기능이라 앱에서는 조회만 가능합니다.',
-          ]}
-          faqs={faqData}
-          faqTitle="앱 관련 자주 묻는 질문"
-        />
       </section>
 
     </div>

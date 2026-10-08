@@ -10,6 +10,12 @@ import { ColoredItemName } from '@/lib/components/ColoredItemName';
 import TrendArrow from './TrendArrow';
 import type { TooltipProps, CustomDotProps } from '@/types/recharts';
 
+/** 차트 날짜 키(YYYY-MM-DD) → 축·툴팁 표시(M/D) */
+const toAxisLabel = (key: unknown): string => {
+  const [, m, d] = String(key).split('-');
+  return d ? `${Number(m)}/${Number(d)}` : String(key);
+};
+
 // 커스텀 가격선 localStorage 키
 const CUSTOM_PRICE_LINES_KEY = 'customPriceLines';
 
@@ -440,6 +446,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
   }, [comparisonData]);
 
   const chartData = useMemo(() => {
+    // 날짜 키는 YYYY-MM-DD, 화면 표시는 toAxisLabel 로 M/D
     const dateMap = new Map<string, any>();
     filteredHistory.forEach((entry) => {
       let month: number, day: number, year: number;
@@ -451,7 +458,6 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
         month = date.getUTCMonth() + 1;
         day = date.getUTCDate();
       }
-      const dateKey = `${month}/${day}`;
       const dateObj = new Date(Date.UTC(year, month - 1, day));
       const dayOfWeek = dateObj.getUTCDay();
       const dateString = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -472,8 +478,8 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
       // 비교 가격 가져오기 (날짜 매칭)
       const comparisonPrice = comparisonPriceMap.get(dateString);
 
-      dateMap.set(dateKey, {
-        날짜: dateKey,
+      dateMap.set(dateString, {
+        날짜: dateString,
         가격: entry.price,
         비교가격: comparisonPrice,
         rawTime: dateObj.getTime(),
@@ -743,7 +749,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
         }}
       >
         <div style={{ fontWeight: '700', color: chartColor, marginBottom: '10px', fontSize: '16px' }}>
-          {label} {eventLabel && <span style={{ color: eventColor }}>({eventLabel})</span>}
+          {toAxisLabel(label)} {eventLabel && <span style={{ color: eventColor }}>({eventLabel})</span>}
         </div>
         <div style={{ fontWeight: '700', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-mono), monospace', fontVariantNumeric: 'tabular-nums' }}>
           <Image src={selectedItem?.icon || ''} alt="" width={20} height={20} style={{ borderRadius: '4px' }} />
@@ -811,7 +817,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
         }}
       >
         <div style={{ fontWeight: '700', color: chartColor, marginBottom: '6px', fontSize: '12px' }}>
-          {label} {eventLabel && <span style={{ color: eventColor }}>({eventLabel})</span>}
+          {toAxisLabel(label)} {eventLabel && <span style={{ color: eventColor }}>({eventLabel})</span>}
         </div>
         <div style={{ fontWeight: '700', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '5px', fontFamily: 'var(--font-mono), monospace', fontVariantNumeric: 'tabular-nums' }}>
           <Image src={selectedItem?.icon || ''} alt="" width={16} height={16} style={{ borderRadius: '3px' }} />
@@ -1672,7 +1678,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                 <LineChart data={effectiveData} onMouseDown={handleZoomMouseDown} onMouseMove={handleZoomMouseMove} onMouseUp={handleZoomMouseUp} style={{ cursor: isSelecting ? 'crosshair' : 'default', userSelect: 'none' }} margin={{ top: 25, right: 10, left: 0, bottom: 0 }}>
                   <defs><linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={chartColor} stopOpacity={0.4}/><stop offset="95%" stopColor={chartColor} stopOpacity={0.05}/></linearGradient></defs>
                   <CartesianGrid strokeDasharray="5 5" stroke="var(--border-color)" strokeWidth={1} vertical={true} horizontal={true} />
-                  <XAxis dataKey="날짜" ticks={effectiveXTicks} tick={(props) => { const { x, y, payload } = props; const dataIndex = effectiveData.findIndex(d => d.날짜 === payload.value); if (dataIndex < 0) return null; const data = effectiveData[dataIndex]; const eventLabel = data.eventLabel || ''; const eventColor = data.eventColor || '#ef4444'; return (<g transform={`translate(${x},${y})`}><text x={0} y={0} dy={10} textAnchor="end" fill="var(--text-primary)" fontSize={16} fontWeight="700" fontFamily="var(--font-mono), monospace" transform="rotate(-35)">{payload.value}</text>{eventLabel && (<text x={0} y={12} dy={10} textAnchor="end" fill={eventColor} fontSize={12} fontWeight="700" transform="rotate(-35)">{eventLabel}</text>)}</g>); }} height={80} stroke="var(--text-secondary)" strokeWidth={2} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} />
+                  <XAxis dataKey="날짜" ticks={effectiveXTicks} tick={(props) => { const { x, y, payload } = props; const dataIndex = effectiveData.findIndex(d => d.날짜 === payload.value); if (dataIndex < 0) return null; const data = effectiveData[dataIndex]; const eventLabel = data.eventLabel || ''; const eventColor = data.eventColor || '#ef4444'; return (<g transform={`translate(${x},${y})`}><text x={0} y={0} dy={10} textAnchor="end" fill="var(--text-primary)" fontSize={16} fontWeight="700" fontFamily="var(--font-mono), monospace" transform="rotate(-35)">{toAxisLabel(payload.value)}</text>{eventLabel && (<text x={0} y={12} dy={10} textAnchor="end" fill={eventColor} fontSize={12} fontWeight="700" transform="rotate(-35)">{eventLabel}</text>)}</g>); }} height={80} stroke="var(--text-secondary)" strokeWidth={2} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} />
                   <YAxis tick={(props) => { const { x, y, payload } = props; const isAverage = effectiveYAxisConfig.avgValue && Math.abs(payload.value - effectiveYAxisConfig.avgValue) < 0.01; return (<text x={x} y={y} textAnchor="end" fill={isAverage ? chartColor : 'var(--text-primary)'} fontSize={stats && stats.max >= 1000000 ? 14 : 16} fontWeight={isAverage ? '900' : '700'} fontFamily="var(--font-mono), monospace" dx={-8}>{formatPrice(payload.value)}</text>); }} tickFormatter={formatPrice} width={stats && stats.max >= 1000000 ? 105 : stats && stats.max >= 100000 ? 90 : stats && stats.max >= 10000 ? 78 : stats && stats.max >= 1000 ? 70 : stats && stats.max >= 100 ? 58 : 54} domain={effectiveYAxisConfig.domain} ticks={effectiveYAxisConfig.ticks} interval={0} stroke="var(--text-secondary)" strokeWidth={2} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} />
                   <Tooltip content={<CustomTooltip />} cursor={{ stroke: chartColor, strokeWidth: 2, strokeDasharray: '5 5' }} />
                   <ReferenceLine y={effectiveAvg} stroke={chartColor} strokeDasharray="5 5" strokeWidth={2} />
@@ -1737,7 +1743,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                 <LineChart data={effectiveData} onMouseDown={handleZoomMouseDown} onMouseMove={handleZoomMouseMove} onMouseUp={handleZoomMouseUp} style={{ cursor: isSelecting ? 'crosshair' : 'default', userSelect: 'none' }} margin={{ top: 10, right: 5, left: 0, bottom: 0 }}>
                   <defs><linearGradient id="colorPriceMobile" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={chartColor} stopOpacity={0.3}/><stop offset="95%" stopColor={chartColor} stopOpacity={0.05}/></linearGradient></defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" strokeWidth={0.5} vertical={false} horizontal={true} />
-                  <XAxis dataKey="날짜" ticks={effectiveXTicks} tick={(props) => { const { x, y, payload } = props; const dataIndex = effectiveData.findIndex(d => d.날짜 === payload.value); if (dataIndex < 0) return null; const data = effectiveData[dataIndex]; const eventLabel = data.eventLabel || ''; const eventColor = data.eventColor || '#ef4444'; return (<g transform={`translate(${x},${y})`}><text x={0} y={0} dy={8} textAnchor="end" fill="var(--text-primary)" fontSize={9} fontWeight="700" fontFamily="var(--font-mono), monospace" transform="rotate(-45)">{payload.value}</text>{eventLabel && (<text x={0} y={8} dy={8} textAnchor="end" fill={eventColor} fontSize={7} fontWeight="700" transform="rotate(-45)">{eventLabel}</text>)}</g>); }} height={55} stroke="var(--text-secondary)" strokeWidth={1.5} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} />
+                  <XAxis dataKey="날짜" ticks={effectiveXTicks} tick={(props) => { const { x, y, payload } = props; const dataIndex = effectiveData.findIndex(d => d.날짜 === payload.value); if (dataIndex < 0) return null; const data = effectiveData[dataIndex]; const eventLabel = data.eventLabel || ''; const eventColor = data.eventColor || '#ef4444'; return (<g transform={`translate(${x},${y})`}><text x={0} y={0} dy={8} textAnchor="end" fill="var(--text-primary)" fontSize={9} fontWeight="700" fontFamily="var(--font-mono), monospace" transform="rotate(-45)">{toAxisLabel(payload.value)}</text>{eventLabel && (<text x={0} y={8} dy={8} textAnchor="end" fill={eventColor} fontSize={7} fontWeight="700" transform="rotate(-45)">{eventLabel}</text>)}</g>); }} height={55} stroke="var(--text-secondary)" strokeWidth={1.5} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} />
                   <YAxis tick={(props) => { const { x, y, payload } = props; const isAverage = effectiveYAxisConfig.avgValue && Math.abs(payload.value - effectiveYAxisConfig.avgValue) < 0.01; const fontSize = stats ? (stats.max >= 1000000 ? 6 : stats.max >= 100000 ? 7 : stats.max >= 10000 ? 8 : stats.max >= 1000 ? 9 : stats.max >= 100 ? 7.5 : 7) : 8; return (<text x={x} y={y} textAnchor="end" fill={isAverage ? chartColor : 'var(--text-primary)'} fontSize={fontSize} fontWeight={isAverage ? '900' : '700'} fontFamily="var(--font-mono), monospace" dx={-2}>{formatPrice(payload.value)}</text>); }} tickFormatter={formatPrice} width={stats && stats.max >= 1000000 ? 46 : stats && stats.max >= 100000 ? 42 : stats && stats.max >= 10000 ? 38 : stats && stats.max >= 1000 ? 38 : stats && stats.max >= 100 ? 32 : 30} domain={effectiveYAxisConfig.domain} ticks={effectiveYAxisConfig.ticks} stroke="var(--text-secondary)" strokeWidth={1.5} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} />
                   <Tooltip content={<CustomTooltipMobile />} cursor={{ stroke: chartColor, strokeWidth: 1, strokeDasharray: '3 3' }} />
                   <ReferenceLine y={effectiveAvg} stroke={chartColor} strokeDasharray="5 5" strokeWidth={1.5} />

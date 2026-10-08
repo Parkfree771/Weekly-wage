@@ -932,8 +932,6 @@
     gap: 0.3rem;
   }
 
-
-
   /* 등록하기는 폰에서 숨긴다 — 한 줄에 정렬·환율·기준 토글까지 넣을 폭이 없다.
      등록은 네비게이션으로도 갈 수 있고, 폰에서 새 패키지를 올리는 일 자체가 드물다. */
   .registerLink {
@@ -2387,9 +2385,7 @@
 .resultCashNum,
 .itemCardSubtotal,
 .itemCardPriceLine,
-.itemCardQtyBadge,
 .gemDetailLine,
-.detailRateInput,
 .resultRateNumber {
   font-family: var(--font-num), var(--font-mono), 'Noto Sans KR', system-ui, sans-serif;
   font-variant-numeric: tabular-nums;

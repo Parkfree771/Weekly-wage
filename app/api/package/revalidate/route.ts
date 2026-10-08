@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { verifyBearerUid } from '@/lib/firebase-admin';
 
-// 패키지 상세와 갤러리 1페이지는 ISR(5분)로 캐시된다. 등록·수정·삭제·판매종료·댓글 직후
+// 패키지 상세와 갤러리는 ISR(5분)로 캐시된다. 등록·수정·삭제·판매종료·댓글 직후
 // 이 라우트를 호출해 해당 글과 갤러리(/package)를 즉시 재생성시킨다.
 //
 // 로그인 토큰 필수. 호출 1건이 갤러리(최대 200건) + 상세(글 + 댓글 최대 200건) 재렌더라

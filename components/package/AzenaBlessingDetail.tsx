@@ -13,7 +13,6 @@ import {
   AZENA_DAYS,
   AZENA_WEEKS,
   AZENA_INTRO,
-  AZENA_FAQ,
   AZENA_MAX_WEEKLY_RAID_CLEARS,
   AZENA_DEFAULT_OPTIONS,
   AZENA_DEFAULT_WON_PER_100_GOLD,
@@ -437,7 +436,7 @@ export default function AzenaBlessingDetail() {
             {/* 모바일 띠배너 — 자리마다 다른 애드핏 단위를 받아야 한다.
                 같은 단위를 두 번 넣으면 애드핏이 첫 자리만 채운다 (index 0) */}
             <div className={`d-block d-md-none ${styles.mobileAdSlot}`}>
-              <AdBanner slot="8616653628" index={0} />
+              <AdBanner index={0} />
             </div>
 
             {/* PC 좌측 250×250 (모바일에서는 CSS 로 숨김) */}
@@ -784,24 +783,10 @@ export default function AzenaBlessingDetail() {
           </section>
         )}
 
-        {/* 모바일 띠배너 — FAQ 위 (index 1: 계산 결과 아래 자리와 다른 단위) */}
+        {/* 모바일 띠배너 — 페이지 하단 (index 1: 계산 결과 아래 자리와 다른 단위) */}
         <div className={`d-block d-md-none ${styles.mobileAdSlot}`}>
-          <AdBanner slot="8616653628" index={1} />
+          <AdBanner index={1} />
         </div>
-
-        {/* 자주 묻는 질문 — 검색으로 들어온 사람이 바로 답을 얻는 자리.
-            같은 글이 페이지의 FAQPage 구조화 데이터로도 나가므로 한쪽만 고치면 안 된다 */}
-        <section className={styles.detailCard}>
-          <h2 className={styles.detailCardHeader}>아제나의 축복 자주 묻는 질문</h2>
-          <div className={az.faqList}>
-            {AZENA_FAQ.map((item) => (
-              <div key={item.q} className={az.faqItem}>
-                <h3 className={az.faqQ}>{item.q}</h3>
-                <p className={az.faqA}>{item.a}</p>
-              </div>
-            ))}
-          </div>
-        </section>
       </div>
     </Container>
   );

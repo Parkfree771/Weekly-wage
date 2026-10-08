@@ -4,12 +4,9 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Container, Row, Col, Card, Form } from 'react-bootstrap';
 import styles from './belgardin.module.css';
-import GuideFaq from '@/components/common/GuideFaq';
-import BelgardinGuideBody from '@/components/guide/BelgardinGuideBody';
 import AdBanner from '@/components/ads/AdBanner';
 import DesktopBannerAd from '@/components/ads/DesktopBannerAd';
 import { ADFIT_UNITS } from '@/components/ads/adConfig';
-import { faqData } from './faq-data';
 import { RAID_TABLE } from '@/data/rewardTable';
 
 // 재료 이미지 매핑
@@ -855,57 +852,13 @@ export default function BelgardinPage() {
 
             {/* 모바일 인-콘텐츠 광고 — 본문 아래·가이드 위 (앱 배치와 유사) */}
             <div className="d-block d-lg-none my-3">
-              <AdBanner slot="8616653628" />
+              <AdBanner />
             </div>
 
             {/* 데스크톱 728×90 — 상점 아래·가이드 위. 이 페이지의 유일한 가로 배너 자리다.
                 보상 상세 ↔ 상점 경계에도 한 자리 뒀었는데, 본문 한가운데를 끊어서 보기 안 좋다는
                 이유로 2026-09-21 제거했다. 다시 넣지 말 것. */}
             <DesktopBannerAd adfit={ADFIT_UNITS.refiningResultDesktop} />
-
-            <GuideFaq
-              relatedGuides={['/guide/belgardin-rewards', '/guide/wangap-upgrade-schedule', '/guide/raid-rewards']}
-              guideTitle="벨가르딘 이용 가이드"
-              article={<BelgardinGuideBody />}
-              sections={[
-                {
-                  heading: '벨가르딘 보상 정보 — 출시 확정치 반영',
-                  paragraphs: [
-                    '벨가르딘은 2026년 8월 5일 출시된 그림자 레이드입니다. 이 페이지의 난이도별 관문 구조와 클리어 골드·더보기 비용·재료 수량은 출시 당일 인게임에서 확인한 확정치이며, 주간 골드 계산기와 마이페이지에서도 그대로 체크하고 합산할 수 있습니다.',
-                    '클리어 보상에는 운명의 파괴석 결정 · 운명의 수호석 결정 · 위대한 운명의 돌파석 · 운명의 파편과 아크그리드 코어, 완갑 승급 재료(사령의 잔영 · 죽음의 손)가 포함되며, 재료 수량에 실시간 거래소 시세를 곱한 총 가치를 관문별로 계산해 보여줍니다.',
-                  ],
-                },
-                {
-                  heading: '난이도별 관문 구조와 클리어 골드',
-                  paragraphs: [
-                    '다른 최신 레이드와 마찬가지로 노말(1750) · 하드(1770) · 나메(1780) 세 난이도 모두 1관문 · 2관문 2개 관문으로 구성됩니다. 클리어 골드는 노말 1관문 20,000골드 · 2관문 30,000골드, 하드 1관문 25,000골드 · 2관문 37,000골드, 나메 1관문 30,000골드 · 2관문 45,000골드입니다.',
-                    '더보기(모험의 서약) 비용은 난이도와 무관하게 해당 관문 클리어 골드의 32% 수준으로 책정되어 있습니다. 예를 들어 나메 1관문은 클리어 골드 30,000골드에 더보기 비용 9,600골드로 정확히 32%이고, 노말 · 하드의 각 관문 역시 동일한 비율입니다. 더보기 재료별 손익 비교는 더보기 효율 페이지에서 실시간 시세 기준으로 확인할 수 있습니다.',
-                  ],
-                },
-                {
-                  heading: '벨가르딘 상점 — 사령의 잔영·죽음의 손 교환',
-                  paragraphs: [
-                    '벨가르딘 상점은 노말 클리어로 얻는 사령의 잔영, 하드·나메 클리어로 얻는 죽음의 손으로 교환하는 두 상점으로 나뉩니다. 교환 항목은 사령의 재련 재료 상자, 사령의 보조 재료 주머니, 비상의 돌 각인 지정 키트 3종으로 양쪽이 동일하고, 노말은 잔영 20·20·10개, 하드·나메는 죽음의 손 10·10·5개를 소모합니다.',
-                    '사령의 재련 재료 상자는 운명의 파편 15,000 · 위대한 운명의 돌파석 9개 · 운명의 파괴석 결정 500개 · 운명의 수호석 결정 1,500개 중 1종이 25% 확률로 나오는 랜덤 상자이고, 사령의 보조 재료 주머니는 용암의 숨결 5개 또는 빙하의 숨결 15개가 50% 확률로 나옵니다. 비상의 돌 각인 지정 키트는 어빌리티스톤 키트 1개를 지급합니다.',
-                  ],
-                },
-                {
-                  heading: '사령의 잔영·죽음의 손 단가는 어떻게 산출되나요',
-                  paragraphs: [
-                    '두 재화 모두 거래소에서 직접 거래되지 않기 때문에, 세르카의 고통의 가시와 같은 방식으로 사령의 재련 재료 상자의 기댓값(각 재료 실시간 시세 × 수량 × 25%의 합)을 교환 비용으로 나누어 역산합니다. 사령의 잔영 1개는 상자 기댓값 ÷ 20, 죽음의 손 1개는 상자 기댓값 ÷ 10이 됩니다.',
-                    '이렇게 산출한 단가는 이 페이지의 클리어 보상 · 더보기 보상 총 가치에 반영되고, 더보기 효율 페이지와 주간 골드 계산기의 더보기 손익 계산에도 동일하게 적용됩니다.',
-                  ],
-                },
-              ]}
-              faqs={faqData}
-            />
-
-            {/* 페이지 최하단 — 가이드·FAQ 를 다 읽고 내려온 자리.
-                모바일은 이 페이지에 2개 = 가이드 위(단일 단위) · 최하단(index 1).
-                위 자리와 반드시 다른 단위여야 한다. */}
-            <div className="d-block d-lg-none mt-3">
-              <AdBanner slot="8616653628" index={1} />
-            </div>
 
           </Col>
         </Row>

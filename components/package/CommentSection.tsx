@@ -4,15 +4,14 @@ import { revalidatePackage } from '@/lib/revalidate-client';
 import { memo, useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { isAdmin } from '@/lib/admin';
-import {
-  createPackageComment,
-  getPackageComments,
-  updatePackageComment,
-  deletePackageComment,
-} from '@/lib/package-service';
 import type { PackageComment } from '@/types/package';
 import ReactionBar from '@/components/package/ReactionBar';
 import styles from './CommentSection.module.css';
+
+// 댓글 쓰기·수정·삭제에만 필요한 Firestore 클라이언트(약 250KB, IndexedDB 초기화 포함)는
+// 실제로 그 동작을 할 때 받는다. 댓글 목록은 서버(ISR)가 넘겨주므로, 읽기만 하는 방문자는
+// 이 묶음을 아예 받지 않는다.
+const commentService = () => import('@/lib/package-service');
 
 type Props = {
   postId: string;
@@ -125,7 +124,7 @@ function CommentSection({ postId, commentCount, onCommentCountChange, initialCom
     }
     (async () => {
       try {
-        const data = await getPackageComments(postId);
+        const data = await (await commentService()).getPackageComments(postId);
         setComments(data);
       } catch (err) {
         console.error('댓글 로딩 실패:', err);
@@ -174,7 +173,7 @@ function CommentSection({ postId, commentCount, onCommentCountChange, initialCom
     setSubmitting(true);
     try {
       const content = newComment.trim();
-      const id = await createPackageComment(postId, {
+      const id = await (await commentService()).createPackageComment(postId, {
         postId, authorUid: user!.uid, authorNickname: userProfile!.nickname!, authorPhotoURL: myPhoto, content, parentId: null,
       });
       setComments((prev) => [...prev, makeLocal(id, content, null)]);
@@ -194,7 +193,7 @@ function CommentSection({ postId, commentCount, onCommentCountChange, initialCom
     setReplySubmitting(true);
     try {
       const content = replyContent.trim();
-      const id = await createPackageComment(postId, {
+      const id = await (await commentService()).createPackageComment(postId, {
         postId, authorUid: user!.uid, authorNickname: userProfile!.nickname!, authorPhotoURL: myPhoto, content, parentId,
       });
       setComments((prev) => [...prev, makeLocal(id, content, parentId)]);
@@ -214,7 +213,7 @@ function CommentSection({ postId, commentCount, onCommentCountChange, initialCom
   const handleEditSave = async (commentId: string) => {
     if (!editContent.trim() || editContent.length > MAX_LEN) return;
     try {
-      await updatePackageComment(postId, commentId, editContent.trim());
+      await (await commentService()).updatePackageComment(postId, commentId, editContent.trim());
       setComments((prev) =>
         prev.map((c) => (c.id === commentId ? { ...c, content: editContent.trim(), updatedAt: new Date() } : c)),
       );
@@ -235,6 +234,7 @@ function CommentSection({ postId, commentCount, onCommentCountChange, initialCom
     if (!confirm(msg)) return;
     try {
       // 답글 먼저 삭제 후 부모 삭제
+      const { deletePackageComment } = await commentService();
       for (const r of replies) await deletePackageComment(postId, r.id);
       await deletePackageComment(postId, commentId);
       const idsToRemove = new Set([commentId, ...replies.map((r) => r.id)]);
@@ -250,7 +250,7 @@ function CommentSection({ postId, commentCount, onCommentCountChange, initialCom
   const handleDeleteReply = async (replyId: string) => {
     if (!confirm('답글을 삭제하시겠습니까?')) return;
     try {
-      await deletePackageComment(postId, replyId);
+      await (await commentService()).deletePackageComment(postId, replyId);
       setComments((prev) => prev.filter((c) => c.id !== replyId));
       onCommentCountChange(-1);
       revalidateDetail(postId);

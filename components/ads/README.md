@@ -1,9 +1,9 @@
-# 광고(AdSense) 구조
+# 광고(카카오 애드핏) 구조
 
 ## 파일
-- `adConfig.ts` — 토글(`AD_PREVIEW`)·게시자ID·슬롯ID 한 곳 모음.
+- `adConfig.ts` — 토글(`AD_PREVIEW`·`ADFIT_ENABLED`)·애드핏 단위 ID 한 곳 모음.
 - `AdPlaceholder.tsx` — "여기 광고 들어감" 미리보기 박스(자리/크기).
-- `AdUnit.tsx` — 실제 광고 단위(`<ins class="adsbygoogle">`). push 1회, 중복 방지.
+- `AdFitUnit.tsx` — 애드핏 광고 단위. 마운트마다 로더를 다시 붙여 새 자리를 채운다.
 - `AdBanner.tsx` — 모바일 인-콘텐츠. 페이지 안에 직접 배치.
 - `AdLayout.tsx` — 데스크톱 상단 배너·사이드 레일을 레이아웃 레벨에서 배치.
 
@@ -14,7 +14,7 @@
     aside는 폭만 지키는 스페이서, 광고는 fixed 오버레이(x=aside 실측, y=문서좌표+adTop×0.85, CSS zoom 1.1765 보정).
   - 노출 판정은 데스크톱 body zoom(0.85)을 반영해 실제 레이아웃 폭으로 계산(`innerWidth / 0.85`).
   - 앱 다운로드 프로모(`APP_PROMO_PAGES`)는 오른쪽 레일과 같은 칸에 어깨를 맞춰 공존 가능 — `getPageConfig`에 `appPromoTop`이 지정된 페이지(`/`, `/wangap`, `/package`)만 해당, 나머지는 겹침 방지를 위해 광고가 뜨면 프로모를 숨김.
-- 모바일: 하단 앵커 없음(제거됨 — 애드센스 자동광고 앵커도 켜지 말 것).
+- 모바일: 하단 앵커 없음(제거됨).
   본문 인-콘텐츠(AdBanner)만 사용, **앱(AdMob BannerAdBar/NativeAdCard) 배치를 그대로 미러링**:
   - `/`(메인): 시세 차트·통계 아래 (앱 홈: 통계 바 아래)
   - `/mypage`: 캐릭터 카드 2개마다 1개, 1개뿐이면 그 아래 (앱 주간숙제와 동일)
@@ -24,25 +24,16 @@
   - `/character` 랭킹: 7행마다 1개, 마지막 뒤 제외 (앱 랭킹과 동일)
   - `/package` 갤러리: 카드 2개마다 1개, 마지막 뒤 제외 (앱 패키지와 동일)
   - 모바일 메뉴(Offcanvas) 하단: 앱 메뉴 드로어(푸터 위 배너)와 동일
-  - 앱에 없는 페이지(`/weekly-gold`·`/life-master`·`/more-reward`·`/cathedral`·`/cerka`·`/extreme`·`/belgardin`·`/bracelet`·`/engraving`·패키지 상세): 본문 아래·가이드 위 등 비슷한 위치
+  - 앱에 없는 페이지(`/weekly-gold`·`/life-master`·`/more-reward`·`/cathedral`·`/cerka`·`/extreme`·`/belgardin`·`/bracelet`·`/engraving`·패키지 상세): 본문 아래
 
 ## 페이지 이동 시 새 광고 (SPA 대응)
 App Router라 레이아웃은 라우팅 시 안 죽음 → 레이아웃 광고(상단/사이드)는
-`<AdUnit key={pathname} />`로 마운트해 경로가 바뀔 때마다 새 광고를 받음.
+`<AdFitUnit key={pathname} />`로 마운트해 경로가 바뀔 때마다 새 광고를 받음.
 인-콘텐츠는 페이지 컴포넌트가 재마운트되며 자연 갱신(+ 안전하게 key도 부여).
 **경로(pathname)만 key로 사용** — 쿼리스트링/타이머 새로고침은 정책 위반이라 금지.
 
-## 실제 광고로 켜는 절차
-1. 애드센스 > 광고 > 광고 단위에서 발급:
-   - 상단 배너용 디스플레이(가로) 단위 → `AD_SLOTS.topBanner`
-   - 사이드용 디스플레이(세로) 단위 → `AD_SLOTS.sidebar`
-   - (모바일 인-콘텐츠는 기존 `8616653628` 사용 중)
-2. 자동 광고는 전부 OFF (앵커 포함 — 수동 배치만 사용).
-3. `adConfig.ts`에서 `AD_PREVIEW = false`로 변경.
-   - 슬롯 ID가 빈 자리는 실제 모드에서 렌더되지 않음(빈/깨진 광고 방지).
-
 ## 최적화/정책 체크
-- 스크립트는 `app/layout.tsx`에서 `lazyOnload`(본문 우선).
+- 애드핏 로더는 `app/layout.tsx` head 에 async 로 한 번, 이후 자리마다 `AdFitUnit` 이 다시 붙인다.
 - 광고 자리 높이를 미리 예약 → 화면 밀림(CLS) 방지.
 - 동시 노출 최소(데스크톱 배너1+레일, 모바일 인콘텐츠 — 목록형은 간격 규칙으로 밀도 제한).
 - 본인/지인 클릭, 클릭 유도 문구, 광고 자동 새로고침 금지.

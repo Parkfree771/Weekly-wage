@@ -72,6 +72,17 @@
   to = "/life-master"
   status = 301
 
+# /guide 전체 삭제(2026-10-08) — 위 6개 외 나머지 가이드 글 URL 은 홈으로 인계
+[[redirects]]
+  from = "/guide"
+  to = "/"
+  status = 301
+
+[[redirects]]
+  from = "/guide/*"
+  to = "/"
+  status = 301
+
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 

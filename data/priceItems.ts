@@ -82,6 +82,23 @@ export const PRICE_ITEMS: PriceItem[] = [
   { id: '66112712', name: '장인의 재봉술 : 1단계 (방어구)', shortName: '장재 1', icon: '/master-tailoring-1.webp' },
 ];
 
+// "오늘의 시세" 기본 표시 목록 (순서대로). 사용자가 톱니바퀴로 바꾸기 전 상태이고,
+// 홈 서버 렌더(app/page.tsx)도 이 목록의 시세를 미리 계산해 HTML 에 싣는다.
+export const DASHBOARD_DEFAULT_ITEM_IDS: string[] = [
+  '66102007',  // 파괴석 결정
+  '66102107',  // 수호석 결정
+  '6861013',   // 상비도스
+  'auction_gem_fear_10', // 10겁화
+  'auction_gem_fear_9',  // 9겁화
+  'auction_gem_fear_8',  // 8겁화
+  '65203905',  // 아드레날린
+  '65203305',  // 돌격대장
+  '65200505',  // 원한
+  '65201005',  // 예리한 둔기
+  'auction_necklace_ancient_refine3_high', // 목걸이 상상
+  'auction_ring_ancient_refine3_high',     // 반지 상상
+];
+
 // 묶음 단위 — latest_prices.json 의 가격이 "이 수량" 기준이다.
 // 예: 운명의 파괴석 결정 1,126.7G 는 100개 값이므로 개당은 11.267G.
 // 개당으로 환산하지 않으면 손익이 100배·3000배로 튄다.

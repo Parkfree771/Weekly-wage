@@ -1,15 +1,14 @@
 import { Metadata } from 'next'
 import { SITE_URL } from '@/lib/site-config'
-import { faqData } from './faq-data'
 
 export const metadata: Metadata = {
-  title: '재련 시뮬레이터 - 로아 강화 시뮬, 재련 비용 계산',
-  description: 'T4 재련 시뮬레이터로 실제 확률과 장인의 기운 누적 구조를 그대로 재현해 재련을 체험하고, 목표 레벨까지의 예상 비용과 재료 소모량을 실시간 거래소 시세로 계산합니다.',
-  keywords: '로아 강화 시뮬, 로아 강화 시뮬레이터, 로아 강화 확률, 로아로골, 로골로골, 로아 재련, 로아 재련 시뮬, 로아 재련 비용, 로아 재련 계산기, 로아 장기백, 로아 장인의 기운, 로아 상급재련, 로아 재련 확률, 로아 재련 재료, 로아 재련 통계, 로스트아크 재련, 로스트아크 강화 시뮬, 재련 시뮬레이터, 전율 장비, 세르카 계승 장비',
+  title: '로아 재련 시뮬레이터 · 재련 비용 계산',
+  description: 'T4 재련을 실제 확률과 장인의 기운 그대로 시뮬레이션하고, 목표 레벨까지의 예상 재료와 골드 비용을 실시간 거래소 시세로 계산합니다.',
+  keywords: '로아 재련 시뮬, 로아 강화 시뮬, 로아 재련 비용, 로아 장인의 기운, 로아로골',
   openGraph: {
     images: ['/og-image.png'],
-    title: '로아로골 | 재련 시뮬레이터 - 재련 비용 계산, 장기백 평균',
-    description: 'T4 재련을 실제 확률로 시뮬레이션하고 예상 비용과 장인의 기운 통계를 실시간 시세로 확인합니다.',
+    title: '로아로골 | 로아 재련 시뮬레이터 · 재련 비용 계산',
+    description: 'T4 재련을 실제 확률과 장인의 기운 그대로 시뮬레이션하고, 목표 레벨까지의 예상 재료와 골드 비용을 실시간 거래소 시세로 계산합니다.',
     url: '/refining',
     siteName: '로아로골',
     locale: 'ko_KR',
@@ -51,24 +50,6 @@ export default function RefiningLayout({
               "로아 상급재련/일반재련 비용 계산",
               "로아 재련 재료 실시간 시세 반영"
             ]
-          })
-        }}
-      />
-      {/* SEO를 위한 JSON-LD 구조화된 데이터 - FAQPage */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "FAQPage",
-            "mainEntity": faqData.map((item) => ({
-              "@type": "Question",
-              "name": item.q,
-              "acceptedAnswer": {
-                "@type": "Answer",
-                "text": item.a
-              }
-            }))
           })
         }}
       />

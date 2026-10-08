@@ -39,11 +39,21 @@ const toStats = (e: Entry): PackageStats => ({
 
 const isEntry = (v: unknown): v is Entry => !!v && typeof v === 'object';
 
+/**
+ * 집계 문서 원본을 미리 받기 시작한다 — ISR 페이지가 글 조회와 동시에 걸어 왕복 한 번을 줄인다.
+ * 결과는 applyStatsToPosts 의 두 번째 인자로 넘긴다. 읽기 횟수는 그대로 1회.
+ */
+export function prefetchPackageStats(): Promise<Record<string, unknown>> {
+  return statsDoc().get().then((snap) => snap.data() || {});
+}
+
 /** 여러 글의 집계를 한 번에(문서 읽기 1회). 기록이 없는 글은 결과에서 빠진다(= 0 취급) */
-export async function readPackageStats(ids: string[]): Promise<Record<string, PackageStats>> {
+export async function readPackageStats(
+  ids: string[],
+  prefetched?: Promise<Record<string, unknown>>,
+): Promise<Record<string, PackageStats>> {
   if (ids.length === 0) return {};
-  const snap = await statsDoc().get();
-  const data = snap.data() || {};
+  const data = await (prefetched ?? prefetchPackageStats());
   const out: Record<string, PackageStats> = {};
   for (const id of ids) {
     const e = data[id];
@@ -98,10 +108,10 @@ export async function bumpPackageStats(
  */
 export async function applyStatsToPosts<
   T extends { id: string; viewCount?: number; likeCount?: number; sosoCount?: number },
->(posts: T[]): Promise<T[]> {
+>(posts: T[], prefetched?: Promise<Record<string, unknown>>): Promise<T[]> {
   if (posts.length === 0) return posts;
   try {
-    const stats = await readPackageStats(posts.map((p) => p.id));
+    const stats = await readPackageStats(posts.map((p) => p.id), prefetched);
     return posts.map((p) => {
       const st = stats[p.id];
       // updatedAt 도 같이 보낸다 — 클라이언트가 이 값을 기준으로 낡은 CDN 응답을 걸러낸다

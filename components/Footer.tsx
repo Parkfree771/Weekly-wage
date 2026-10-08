@@ -38,8 +38,6 @@ export default function Footer() {
             <div className="footer-links">
               <Link href="/about" prefetch={false}>사이트 소개</Link>
               <span className="footer-divider">|</span>
-              <Link href="/guide" prefetch={false}>가이드</Link>
-              <span className="footer-divider">|</span>
               <Link href="/app" prefetch={false}>앱 다운로드</Link>
               <span className="footer-divider">|</span>
               <Link href="/privacy" prefetch={false}>개인정보처리방침</Link>

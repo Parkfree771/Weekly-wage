@@ -1,15 +1,14 @@
 import { Metadata } from 'next'
 import { SITE_URL } from '@/lib/site-config'
-import { faqData } from './faq-data'
 
 export const metadata: Metadata = {
-  title: '팔찌 시뮬레이터',
-  description: '로스트아크 팔찌 부여 효과 시뮬레이터입니다. 전투 특성을 고르고 잠금과 재변환을 반복하며 원하는 옵션이 나올 때까지 실제 확률로 팔찌를 굴려볼 수 있습니다.',
-  keywords: '로아로골, 로아 팔찌, 로아 팔찌 시뮬, 팔찌 부여효과, 팔찌 시뮬레이터, 로스트아크 팔찌, 팔찌 재변환',
+  title: '로아 팔찌 시뮬레이터',
+  description: '전투 특성을 고르고 잠금·재변환을 반복하며 원하는 부여 효과가 나올 때까지 실제 확률로 팔찌를 굴려 보는 로스트아크 팔찌 시뮬레이터입니다.',
+  keywords: '로아 팔찌 시뮬, 로아 팔찌 부여효과, 로아 팔찌 재변환, 로아로골',
   openGraph: {
     images: ['/og-image.png'],
-    title: '로아로골 | 팔찌 시뮬레이터 - 로아 팔찌 부여효과',
-    description: '로스트아크 팔찌 부여 효과를 실제 확률로 시뮬레이션하고 잠금·재변환 전략을 미리 시험해 봅니다.',
+    title: '로아로골 | 로아 팔찌 시뮬레이터',
+    description: '전투 특성을 고르고 잠금·재변환을 반복하며 원하는 부여 효과가 나올 때까지 실제 확률로 팔찌를 굴려 보는 로스트아크 팔찌 시뮬레이터입니다.',
     url: '/bracelet',
     siteName: '로아로골',
     locale: 'ko_KR',
@@ -50,24 +49,6 @@ export default function BraceletLayout({
               "재변환 비교 선택",
               "실제 확률 기반 시뮬레이션"
             ]
-          })
-        }}
-      />
-      {/* SEO를 위한 JSON-LD 구조화된 데이터 - FAQPage */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "FAQPage",
-            "mainEntity": faqData.map((item) => ({
-              "@type": "Question",
-              "name": item.q,
-              "acceptedAnswer": {
-                "@type": "Answer",
-                "text": item.a,
-              },
-            })),
           })
         }}
       />

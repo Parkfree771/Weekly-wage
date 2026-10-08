@@ -1,18 +1,14 @@
 import { Metadata } from 'next';
 import { SITE_URL } from '@/lib/site-config';
-import { faqData } from './faq-data';
 
 export const metadata: Metadata = {
-  title: '패키지 효율 계산기',
-  description:
-    '로스트아크 캐시샵 패키지 효율을 계산하고 비교하세요. PC방 패키지 효율, 로열 크리스탈 대비 골드 가치를 실시간 시세로 한눈에 확인할 수 있습니다.',
-  keywords:
-    '로아 패키지 효율, 로아 PC방 효율, 로스트아크 패키지, 로아 캐시샵 패키지, PC방 패키지, 로아 로열 크리스탈, 로스트아크 PC방, 로아로골',
+  title: '로아 패키지 효율 계산기 · PC방 효율',
+  description: '로스트아크 캐시샵·PC방 패키지 구성품을 거래소 실시간 시세로 골드 환산해 효율을 비교합니다. 새로 나온 패키지와 아제나의 축복 효율도 바로 확인하세요.',
+  keywords: '로아 패키지 효율, 로아 PC방 효율, 로아 캐시샵 패키지, 로아 아제나의 축복 효율, 로아로골',
   openGraph: {
     images: ['/og-image.png'],
-    title: '로아로골 | 로아 패키지 효율 · PC방 효율 계산기',
-    description:
-      '로스트아크 캐시샵 패키지와 PC방 패키지의 효율을 비교하세요. 실시간 시세 반영.',
+    title: '로아로골 | 로아 패키지 효율 계산기 · PC방 효율',
+    description: '로스트아크 캐시샵·PC방 패키지 구성품을 거래소 실시간 시세로 골드 환산해 효율을 비교합니다. 새로 나온 패키지와 아제나의 축복 효율도 바로 확인하세요.',
     url: '/package',
     siteName: '로아로골',
     locale: 'ko_KR',
@@ -46,24 +42,6 @@ export default function PackageLayout({
               name: '로아로골',
               url: SITE_URL,
             },
-          }),
-        }}
-      />
-      {/* SEO를 위한 JSON-LD 구조화된 데이터 - FAQPage */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            '@context': 'https://schema.org',
-            '@type': 'FAQPage',
-            mainEntity: faqData.map((item) => ({
-              '@type': 'Question',
-              name: item.q,
-              acceptedAnswer: {
-                '@type': 'Answer',
-                text: item.a,
-              },
-            })),
           }),
         }}
       />

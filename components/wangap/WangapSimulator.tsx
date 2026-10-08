@@ -575,7 +575,7 @@ export default function WangapSimulator({ adsActive = true }: { adsActive?: bool
           애드핏이 첫 자리만 채우므로 인-콘텐츠 단위 순번을 따로 쓴다. */}
       {adsActive && (
         <div className="d-block d-lg-none my-2">
-          <AdBanner slot="8616653628" index={1} />
+          <AdBanner index={1} />
         </div>
       )}
 

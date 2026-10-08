@@ -33,18 +33,16 @@ type MiniPriceChartProps = {
   onClick?: () => void;
   slotIndex: number;
   isMobile?: boolean;
-  period?: PeriodOption;
-  onRemove?: () => void;
 };
 
 type PeriodOption = '7d' | '1m' | '2m' | '3m' | '6m' | '1y' | 'all';
 
-function MiniPriceChartInner({ item, categoryStyle, isSelected, onClick, slotIndex, isMobile = false, period, onRemove }: MiniPriceChartProps) {
+function MiniPriceChartInner({ item, categoryStyle, isSelected, onClick, slotIndex, isMobile = false }: MiniPriceChartProps) {
   const { theme } = useTheme();
   const [history, setHistory] = useState<PriceEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
-  const selectedPeriod: PeriodOption = period || '1m';
+  const selectedPeriod = '1m' as PeriodOption; // 4분할 미니 차트는 항상 1개월
 
   useEffect(() => {
     setIsMounted(true);

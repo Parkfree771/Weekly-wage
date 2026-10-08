@@ -1,18 +1,17 @@
 import { Metadata } from 'next'
 import { SITE_URL } from '@/lib/site-config'
-import { faqData } from './faq-data'
 
 export const metadata: Metadata = {
-  title: '벨가르딘 보상',
+  title: '로아 벨가르딘 보상 정리',
 
-  description: '그림자 레이드 벨가르딘의 노말·하드·나메 난이도별 관문 클리어 골드, 코어와 재련 재료 보상, 벨가르딘 상점 교환 목록을 실시간 거래소 시세 기준으로 정리한 페이지입니다.',
+  description: '그림자 레이드 벨가르딘의 노말·하드·나메 관문별 클리어 골드와 코어·재련 재료 보상, 상점 교환 목록을 실시간 시세로 정리했습니다.',
 
-  keywords: '로아로골, 로아 벨가르딘, 벨가르딘 보상, 벨가르딘 클리어 보상, 벨가르딘 클리어 골드, 벨가르딘 코어, 그림자 레이드, 로아 그림자 레이드, 벨가르딘 그림자 레이드, 벨가르딘 노말, 벨가르딘 하드, 벨가르딘 나메, 벨가르딘 상점, 로아 1750, 로아 1770, 로아 1780, 로스트아크 레이드 보상',
+  keywords: '로아 벨가르딘 보상, 로아 벨가르딘 클리어 골드, 로아 그림자 레이드, 로아로골',
 
   openGraph: {
     images: ['/og-image.png'],
-    title: '로아로골 | 벨가르딘 - 그림자 레이드 클리어 보상',
-    description: '로아 그림자 레이드 벨가르딘 노말/하드/나메 난이도별 클리어 골드와 코어·재련 재료 보상, 벨가르딘 상점을 확인하세요.',
+    title: '로아로골 | 로아 벨가르딘 보상 정리',
+    description: '그림자 레이드 벨가르딘의 노말·하드·나메 관문별 클리어 골드와 코어·재련 재료 보상, 상점 교환 목록을 실시간 시세로 정리했습니다.',
     url: '/belgardin',
     siteName: '로아로골',
     locale: 'ko_KR',
@@ -53,24 +52,6 @@ export default function BelgardinLayout({
               "로아 벨가르딘 관문별 코어 획득량 정리",
               "로아 벨가르딘 상점 교환 목록"
             ]
-          })
-        }}
-      />
-      {/* SEO를 위한 JSON-LD 구조화된 데이터 - FAQPage (화면에 렌더링되는 faq-data.ts와 동일한 소스 사용) */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "FAQPage",
-            "mainEntity": faqData.map((item) => ({
-              "@type": "Question",
-              "name": item.q,
-              "acceptedAnswer": {
-                "@type": "Answer",
-                "text": item.a,
-              },
-            })),
           })
         }}
       />
