@@ -3,7 +3,6 @@
 import dynamic from 'next/dynamic';
 import { preload } from 'react-dom';
 import { Container } from 'react-bootstrap';
-import Link from 'next/link';
 import AdBanner from '@/components/ads/AdBanner';
 import DesktopBannerAd from '@/components/ads/DesktopBannerAd';
 import { ADFIT_UNITS } from '@/components/ads/adConfig';
@@ -97,13 +96,6 @@ export default function HomeClient({ initialPrices, initialDate }: {
         {/* 사이트 소개 — 홈의 유일한 h1. 2026-09-04 접기 토글 제거: 항상 노출 */}
         <div className="mt-4 mt-md-5">
           <h1 className="h4 mb-2">로아로골 - 로아 패키지 효율 &amp; 시세 차트</h1>
-          <div className="d-flex flex-wrap gap-2">
-            <Link href="/package" className="btn btn-sm btn-outline-primary">패키지 효율 계산기</Link>
-            <Link href="/weekly-gold" className="btn btn-sm btn-outline-primary">주간 골드 계산기</Link>
-            <Link href="/refining" className="btn btn-sm btn-outline-primary">재련 계산기</Link>
-            <Link href="/hell-reward" className="btn btn-sm btn-outline-primary">지옥의 나락 보상</Link>
-            <Link href="/life-master" className="btn btn-sm btn-outline-primary">생활의 달인</Link>
-          </div>
         </div>
 
         {/* 모바일 인-콘텐츠 광고 3 — 사이트 소개 아래.

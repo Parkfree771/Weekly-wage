@@ -25,6 +25,27 @@ interface AdFitUnitProps {
 // ins 는 마운트 후에만 렌더한다 — 서버 HTML에 포함하면 head 의 애드핏 로더가
 // 하이드레이션 전에 광고를 채워버려(스타일 변경 + 자식 주입) hydration mismatch 가 난다.
 // 로더가 ins 보다 먼저 실행되면 빈 스캔으로 끝나고 아래 per-mount 스크립트가 채운다.
+//
+// 스캔은 페이지 전체의 빈 자리를 한 번에 채우므로, 같은 커밋에 마운트된 자리들은
+// 스크립트를 한 번만 붙인다 (광고 4개 페이지 = 실행 4번 → 1번). 자리마다 스캔이
+// 돌던 것과 채워지는 자리는 동일하다 — 다음 매크로태스크 시점엔 모든 ins 가 DOM 에 있다.
+const ADFIT_SRC = 'https://t1.kakaocdn.net/kas/static/ba.min.js';
+let scanQueued = false;
+
+function queueAdfitScan() {
+  if (scanQueued) return;
+  scanQueued = true;
+  setTimeout(() => {
+    scanQueued = false;
+    const script = document.createElement('script');
+    script.src = ADFIT_SRC;
+    script.async = true;
+    // 실행이 끝난 태그는 쓸모가 없으니 치워서 라우팅마다 body 에 쌓이지 않게 한다
+    script.onload = script.onerror = () => script.remove();
+    document.body.appendChild(script);
+  }, 0);
+}
+
 export default function AdFitUnit({ unit, width, height, className, style }: AdFitUnitProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
@@ -35,17 +56,8 @@ export default function AdFitUnit({ unit, width, height, className, style }: AdF
 
   useEffect(() => {
     if (!mounted) return;
-    const host = hostRef.current;
-    if (!host) return;
-
-    const script = document.createElement('script');
-    script.src = 'https://t1.kakaocdn.net/kas/static/ba.min.js';
-    script.async = true;
-    host.appendChild(script);
-
-    return () => {
-      script.remove();
-    };
+    if (!hostRef.current) return;
+    queueAdfitScan();
   }, [mounted, unit]);
 
   return (
