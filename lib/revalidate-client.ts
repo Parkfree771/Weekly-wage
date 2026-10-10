@@ -14,6 +14,6 @@ export async function revalidatePackage(postId: string, opts: { keepalive?: bool
       keepalive: opts.keepalive,
     });
   } catch {
-    // 실패해도 화면은 이미 반영돼 있고, ISR 은 5분 뒤 스스로 갱신된다
+    // 실패해도 화면은 이미 반영돼 있고, ISR 은 최대 1시간 뒤 스스로 갱신된다
   }
 }

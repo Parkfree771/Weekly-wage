@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { addTodayTempPrice, saveHistoricalPrice, updateMarketTodayPrice, generateAndUploadPriceJson, rolloverAuctionDays } from '@/lib/firestore-admin';
 import { TRACKED_ITEMS, getItemsByCategory, ItemCategory } from '@/lib/items-to-track';
 import { purgePriceCache, PRICE_CACHE_TAG } from '@/lib/cache-purge';
@@ -269,6 +270,11 @@ export async function GET(request: Request) {
       PRICE_CACHE_TAG.latest,
       ...(historyChanged ? [PRICE_CACHE_TAG.history] : []),
     ]);
+    // 홈 "오늘의 시세" 스냅샷 재생성 — 시간당 마지막 회차(:20, engraving 포함)나 전체 수집일 때만.
+    // :10·:15 회차 값도 :20 재생성 때 함께 실린다. 회차마다 하면 재생성이 3배가 된다.
+    if (!categoryFilter || categoryFilter.split(',').includes('engraving')) {
+      revalidatePath('/');
+    }
   }
 
   return NextResponse.json({

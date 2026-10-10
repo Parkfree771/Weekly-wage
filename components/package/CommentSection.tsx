@@ -34,7 +34,7 @@ function keepInView(e: React.FocusEvent<HTMLTextAreaElement>) {
   setTimeout(() => el.scrollIntoView({ block: 'center', behavior: 'smooth' }), 300);
 }
 
-// 댓글 작성·삭제 뒤 ISR 사본을 바로 갱신 — 다음 방문자가 5분 기다리지 않게. 실패해도 화면은 이미 반영됨
+// 댓글 작성·삭제 뒤 ISR 사본을 바로 갱신 — 다음 방문자가 최대 1시간 기다리지 않게. 실패해도 화면은 이미 반영됨
 function revalidateDetail(postId: string) {
   revalidatePackage(postId, { keepalive: true });
 }

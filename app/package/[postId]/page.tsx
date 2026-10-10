@@ -9,14 +9,15 @@ import PackageDetailPage from './PackageDetailClient';
 import AzenaBlessingDetail from '@/components/package/AzenaBlessingDetail';
 import { AZENA_POST_ID, AZENA_TITLE } from '@/lib/azena-blessing';
 
-// ISR: 상세 페이지 렌더(+ Firestore 읽기)를 5분간 재사용해 조회 폭주를 CDN이 흡수.
-// 수정·삭제는 /api/package/revalidate 호출로 즉시 반영된다.
-// 시세·좋아요 상태는 클라이언트에서 실시간 조회하므로 영향 없음.
-export const revalidate = 300;
+// ISR: 상세 페이지 렌더(+ Firestore 읽기)를 1시간 재사용해 조회 폭주를 CDN이 흡수.
+// 수정·삭제·댓글은 /api/package/revalidate 호출로 즉시 반영된다.
+// 시세·좋아요 상태는 클라이언트에서 실시간 조회하므로 영향 없음 — 조회수·반응 숫자도 view POST 응답이나
+// 재방문 stats 조회가 매번 덮어쓴다. 그래서 300초일 필요가 없었다 (2026-10-10, 함수 호출 절감).
+export const revalidate = 3600;
 
 // **이게 없으면 revalidate 는 무시되고 상세가 매 요청 동적 렌더가 된다** (prerender-manifest 의
 // dynamicRoutes 에 등록되지 않아 Cache-Control: private, no-store 로 나감 — 2026-09-17 실측).
-// 빌드 땐 Firestore 가 필요 없는 아제나 한 장만 미리 만들고, 나머지 글은 첫 방문 때 렌더 후 5분 캐시(on-demand ISR).
+// 빌드 땐 Firestore 가 필요 없는 아제나 한 장만 미리 만들고, 나머지 글은 첫 방문 때 렌더 후 1시간 캐시(on-demand ISR).
 export async function generateStaticParams() {
   return [{ postId: AZENA_POST_ID }];
 }
@@ -39,7 +40,7 @@ function toISO(value: any): string | null {
  * 요청당 Firestore 읽기를 1회로 합친다.
  */
 // 없는 글만 null. 읽기 실패는 던진다 — null 로 두면 "없는 글" 페이지가 ISR 에 실려
-// 실제로 있는 글이 5분간 사라져 보이고, 댓글은 방문자마다 클라이언트가 직접 읽게 된다.
+// 실제로 있는 글이 최대 1시간 사라져 보이고, 댓글은 방문자마다 클라이언트가 직접 읽게 된다.
 // 던지면 Next 가 마지막 성공 사본을 유지하고 다음 요청에서 다시 시도한다.
 const getPost = cache(async (postId: string): Promise<PackagePost | null> => {
   const db = getAdminFirestore();
@@ -58,7 +59,7 @@ const getPost = cache(async (postId: string): Promise<PackagePost | null> => {
 });
 
 /**
- * 댓글 — 글과 같이 ISR 로 5분 캐시. 방문자마다 클라이언트가 최대 200건을 읽던 것을 서버 1회로 줄인다.
+ * 댓글 — 글과 같이 ISR 로 1시간 캐시. 방문자마다 클라이언트가 최대 200건을 읽던 것을 서버 1회로 줄인다.
  * 댓글 작성·삭제 직후에는 클라이언트가 /api/package/revalidate 를 불러 바로 갱신한다.
  * 읽기 실패는 던진다(getPost 와 같은 이유 — null 을 캐시하면 방문자마다 클라이언트가 200건씩 읽는다).
  */

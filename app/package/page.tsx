@@ -4,15 +4,17 @@ import { renewPostIcons } from '@/lib/package-shared';
 import type { PackagePost } from '@/types/package';
 import PackageGalleryClient from './PackageGalleryClient';
 
-// ISR: 갤러리 글을 서버에서 한 번에 다 읽어 5분간 재사용한다.
-// - Firestore 읽기가 "방문자당 N회" 에서 "5분당 1회" 로 줄고, 카드가 HTML 에 실려 온다.
+// ISR: 갤러리 글을 서버에서 한 번에 다 읽어 1시간 재사용한다.
+// - Firestore 읽기가 "방문자당 N회" 에서 "1시간당 1회" 로 줄고, 카드가 HTML 에 실려 온다.
+// - 조회·따봉·흠 숫자는 스냅샷이 5분보다 낡으면 클라이언트가 /api/package/stats(CDN 300초, 전원 공유
+//   URL 1개)로 받아 덮는다 — 숫자 신선도는 5분 그대로, 페이지 재생성만 1/12 (2026-10-10, 함수 호출 절감).
 // - 등록·수정·삭제·판매종료는 /api/package/revalidate 가 /package 를 즉시 재생성한다.
 // - 시세(평균가·최저가), 광고, 반응 버튼은 전부 클라이언트에서 지금까지와 같이 동작한다.
 // - **페이지 나누기·정렬·필터는 전부 클라이언트에서 이 배열 위에서 돈다.** 예전엔 6개씩 커서로
 //   이어 읽어서 "판매중" 을 걸어도 그 페이지의 6개 안에서만 걸렸다. 브라우저가 Firestore 를
 //   직접 읽는 경로(2페이지 이후 + firebase SDK 250KB 청크)도 이걸로 사라진다.
 // 상세 페이지(app/package/[postId]/page.tsx)와 같은 방식이다.
-export const revalidate = 300;
+export const revalidate = 3600;
 
 // 한 번에 내려보내는 글 수 상한 — 앱 fetchAllPackagePosts(200) 와 같은 값으로 맞춘다.
 // 실측(2026-09-10): 글 20개 = JSON 35KB(gzip 6.3KB). 100개를 넘어가면 첫 응답이 무거워지므로
@@ -62,12 +64,12 @@ async function loadGallery(): Promise<GalleryData | null> {
     const posts = await applyStatsToPosts(rawPosts, statsPromise);
     return { posts, statsAt: Date.now() };
   } catch (err) {
-    // 실패는 던진다 — null 로 넘기면 "글 없는 갤러리" 가 5분 ISR 에 실리고, 그동안 방문자마다
+    // 실패는 던진다 — null 로 넘기면 "글 없는 갤러리" 가 1시간 ISR 에 실리고, 그동안 방문자마다
     // 클라이언트 예비 경로가 Firestore 를 최대 200건씩 읽는다. 던지면 Next 가 마지막으로
     // 성공한 페이지를 그대로 내보내고 다음 요청에서 다시 시도한다 (첫 렌더부터 실패면 error.tsx).
     console.error('갤러리 서버 조회 실패:', err);
     // 빌드 중 프리렌더에서만은 예전처럼 null — Firestore 한 번 삐끗했다고 배포 전체가 실패하면 안 된다.
-    // 이 빈 사본은 ISR 창(5분)이 지나면 배경 재생성으로 교체된다.
+    // 이 빈 사본은 ISR 창(1시간)이 지나면 배경 재생성으로 교체된다.
     if (process.env.NEXT_PHASE === 'phase-production-build') return null;
     throw err;
   }

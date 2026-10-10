@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import {
   saveHistoricalPrice,
   rolloverAuctionDays,
@@ -183,6 +184,7 @@ export async function GET(request: Request) {
   // heal 은 history/latest 양쪽을 건드릴 수 있으므로 업로드 성공 시 두 태그 모두 퍼지
   if (uploaded) {
     await purgePriceCache([PRICE_CACHE_TAG.latest, PRICE_CACHE_TAG.history]);
+    revalidatePath('/'); // 홈 시세 스냅샷도 복구된 값으로
   }
 
   return NextResponse.json({

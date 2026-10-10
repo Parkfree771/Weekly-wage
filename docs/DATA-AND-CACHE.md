@@ -42,7 +42,8 @@ Neon 무료 플랜은 요청 수가 아니라 **컴퓨트가 깨어 있는 시�
 | 등급 | TTL | 대상 | 갱신 방식 |
 |---|---|---|---|
 | 정적 데이터 | **durable 3600 + 태그 퍼지** | price-data/latest·history | 크론이 쓸 때 태그 퍼지 (이벤트 구동) |
-| 준실시간 | **durable 300** (사이트 표준) | live-prices, package/stats, ISR 페이지 | TTL 만료 |
+| 준실시간 | **durable 300** (사이트 표준) | live-prices, package/stats | TTL 만료 |
+| ISR 페이지 | **3600** | 홈, /package, 패키지 상세 | 홈=크론 업로드 직후 revalidatePath, 패키지=쓰기 직후 /api/package/revalidate. 3600은 백스톱 |
 | 캐릭터 조회 | durable 120 + 캐릭터 태그 | /api/lostark | refresh=1이 태그 퍼지 (**TTL 연장 금지 — 확정**) |
 | POST | 캐시 불가 | view·react·feedback·revalidate | **요청 자체를 줄인다** (아래 3) |
 
@@ -53,6 +54,21 @@ Neon 무료 플랜은 요청 수가 아니라 **컴퓨트가 깨어 있는 시�
 - **TTL을 300 미만으로 줄이는 것 금지.** 신선도가 더 필요하면 TTL 단축이 아니라
   "쓰기 응답에 최신값 동봉 + 세션 캐시(package-stats-client)" 패턴을 쓴다 — 내 행동은 즉시 보이고,
   남의 행동은 최대 5분 늦게 보이는 게 이 사이트의 표준 신선도다.
+
+### ISR 3600 개정 (2026-10-10)
+
+10월 함수 호출이 열흘 만에 한도 50%를 넘었다(9월은 월말에 한도 초과). Function metrics 실측: 하루 약 1만 회,
+폭주 1시간(10-09 19:51~, 초당 5~15건·5~50ms 짧은 요청)을 빼도 시간당 약 260회 — 폭주가 없어도 월 한도를 넘는 수준.
+로그상 바탕 소모는 몇 분마다 묶여 오는 ISR 재생성(4초짜리 렌더 포함)이었다. ISR 페이지는 HTML·RSC 프리페치·
+출발 페이지별 RSC 가 각각 따로 캐시돼, 방문이 끊이지 않으면 **변형마다 300초에 1회씩** 재생성된다.
+
+- **홈**: 시세는 크론이 시간당 올리므로 시간 재생성은 낭비. `collect-prices` 의 :20 회차(engraving 포함)·전체 수집과
+  `heal-prices` 가 업로드 직후 `revalidatePath('/')`. :10·:15 회차 값은 :20 재생성 때 함께 실린다.
+- **/package·상세**: 조회·따봉·흠 숫자는 원래부터 클라이언트가 덮는다(갤러리=스냅샷이 5분보다 낡으면 stats 조회,
+  상세=view POST 응답 또는 재방문 stats 조회). 그래서 페이지 TTL 을 늘려도 **숫자 신선도는 5분 그대로**다.
+  글·댓글 쓰기는 기존대로 /api/package/revalidate 가 즉시 반영.
+- 3600 은 "갱신이 아예 안 되는" 상황을 막는 백스톱이다. 신선도 이유로 300 으로 되돌리지 않는다.
+- 폭주(봇)는 코드가 아니라 Netlify Web security → Rate Limiting 으로 막는다.
 
 ### 숫자가 뒤로 가지 않게 하는 장치 (2026-09-09)
 
@@ -103,7 +119,7 @@ TTL 300 은 그대로 두되, "따봉이 사라졌다 생기는" 문제는 캐�
 | GET /api/inquiry-log | 문의하기 모달을 **열 때만** (세션당 1회) | durable 30일 + `inquiry-log` 태그 — 관리자 쓰기에만 바뀌므로 관리자 쓰기(POST·PATCH·DELETE) 때 퍼지로 갱신. 데이터는 Firestore `inquiryLog` |
 | /api/cron/* | GitHub Actions 시간당 3회 + heal 일 1회 | 월 ~2,300회, 무시 가능 |
 | /api/admin/* | 수동 운영 | 무시 가능 |
-| 페이지 HTML·RSC | 모든 방문·봇 | 정적 페이지는 durable, /package·상세는 ISR 300 |
+| 페이지 HTML·RSC | 모든 방문·봇 | 정적 페이지는 durable, 홈·/package·상세는 ISR 3600 (아래 "ISR 3600 개정") |
 
 이 표에 없는 "페이지뷰마다 자동으로 나가는 요청"을 새로 만들지 않는다.
 만들어야 하면 durable 300 이상 + 이 표에 한 줄 추가가 조건이다.
