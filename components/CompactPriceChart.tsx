@@ -179,8 +179,8 @@ function buildYAxisConfig(stats: YAxisStats, comparisonRange: YAxisRange) {
   const priceRange = dataMax - dataMin;
   const avgPrice = stats.avg;
 
-  // 목표 틱 개수 (5-7개 정도로 제한)
-  const TARGET_TICK_COUNT = 15;
+  // 최대 틱 개수 — 넘치면 단위를 2배씩 키운다 (앱 PriceChart 와 동일)
+  const TARGET_TICK_COUNT = 9;
 
   // 가격대별로 적절한 틱 단위 결정 (틱 개수를 줄이기 위해 더 큰 단위 사용)
   let tickUnit = 1;
@@ -241,89 +241,39 @@ function buildYAxisConfig(stats: YAxisStats, comparisonRange: YAxisRange) {
   const minWithPadding = dataMin - padding;
   const maxWithPadding = dataMax + padding;
 
-  // 평균가(정확한 값)을 기준으로 위아래로 틱 생성
-  const ticks: number[] = [centerTick];
+  const scale = dataMax < 100 ? 100 : 1; // 100 미만은 소수점 오차 방지용 정수 스케일
+  const centerScaled = Math.round(centerTick * scale);
+  const minScaled = minWithPadding * scale;
+  const maxScaled = maxWithPadding * scale;
+  let unitScaled = Math.round(tickUnit * scale);
 
-  if (dataMax < 100) {
-    // 100 미만: 부동소수점 오차 방지
-    const centerTickScaled = Math.round(centerTick * 100); // 소수점 2자리까지 정확히
-    const minScaled = Math.round(minWithPadding * 100);
-    const maxScaled = Math.round(maxWithPadding * 100);
-    let tickUnitScaled = Math.round(tickUnit * 100);
-
-    // 아래쪽 틱 추가
-    let currentTickScaled = centerTickScaled - tickUnitScaled;
-    while (currentTickScaled >= minScaled && ticks.length < TARGET_TICK_COUNT) {
-      ticks.unshift(currentTickScaled / 100);
-      currentTickScaled -= tickUnitScaled;
+  const genTicks = (unit: number) => {
+    const out: number[] = [centerTick];
+    let cur = centerScaled - unit;
+    while (cur >= minScaled) {
+      out.unshift(cur / scale);
+      cur -= unit;
     }
-
-    // 위쪽 틱 추가
-    currentTickScaled = centerTickScaled + tickUnitScaled;
-    while (currentTickScaled <= maxScaled && ticks.length < TARGET_TICK_COUNT) {
-      ticks.push(currentTickScaled / 100);
-      currentTickScaled += tickUnitScaled;
+    cur = centerScaled + unit;
+    while (cur <= maxScaled) {
+      out.push(cur / scale);
+      cur += unit;
     }
+    return out;
+  };
 
-    // 틱이 너무 많으면 간격을 2배로 늘려서 재계산
-    if (ticks.length > TARGET_TICK_COUNT) {
-      tickUnitScaled *= 2;
-      const newTicks = [centerTick];
-
-      currentTickScaled = centerTickScaled - tickUnitScaled;
-      while (currentTickScaled >= minScaled) {
-        newTicks.unshift(currentTickScaled / 100);
-        currentTickScaled -= tickUnitScaled;
-      }
-
-      currentTickScaled = centerTickScaled + tickUnitScaled;
-      while (currentTickScaled <= maxScaled) {
-        newTicks.push(currentTickScaled / 100);
-        currentTickScaled += tickUnitScaled;
-      }
-
-      ticks.length = 0;
-      ticks.push(...newTicks);
-    }
-  } else {
-    // 100 이상
-    let actualTickUnit = tickUnit;
-
-    // 아래쪽 틱 추가
-    let currentTick = centerTick - actualTickUnit;
-    while (currentTick >= minWithPadding && ticks.length < TARGET_TICK_COUNT) {
-      ticks.unshift(currentTick);
-      currentTick -= actualTickUnit;
-    }
-
-    // 위쪽 틱 추가
-    currentTick = centerTick + actualTickUnit;
-    while (currentTick <= maxWithPadding && ticks.length < TARGET_TICK_COUNT) {
-      ticks.push(currentTick);
-      currentTick += actualTickUnit;
-    }
-
-    // 틱이 너무 많으면 간격을 2배로 늘려서 재계산
-    if (ticks.length > TARGET_TICK_COUNT) {
-      actualTickUnit *= 2;
-      const newTicks = [centerTick];
-
-      currentTick = centerTick - actualTickUnit;
-      while (currentTick >= minWithPadding) {
-        newTicks.unshift(currentTick);
-        currentTick -= actualTickUnit;
-      }
-
-      currentTick = centerTick + actualTickUnit;
-      while (currentTick <= maxWithPadding) {
-        newTicks.push(currentTick);
-        currentTick += actualTickUnit;
-      }
-
-      ticks.length = 0;
-      ticks.push(...newTicks);
-    }
+  // 급등·급락으로 변동폭이 커져도 데이터 전체가 축 안에 들어오도록,
+  // 눈금 개수가 넘치면 단위를 2배씩 키워 전 구간을 덮는 눈금을 다시 만든다.
+  // (기존에는 생성 단계에서 개수로 잘라버려 2배 재계산이 안 돌고 축이 최고/최저가를 못 덮었음)
+  let ticks = genTicks(unitScaled);
+  while (ticks.length > TARGET_TICK_COUNT) {
+    unitScaled *= 2;
+    ticks = genTicks(unitScaled);
   }
+  // 단위 확대로 패딩보다 눈금 간격이 커지면 끝 눈금이 데이터에 못 미칠 수 있어 한 칸씩 연장
+  const unitVal = unitScaled / scale;
+  while (ticks[0] > dataMin) ticks.unshift(ticks[0] - unitVal);
+  while (ticks[ticks.length - 1] < dataMax) ticks.push(ticks[ticks.length - 1] + unitVal);
 
   // 도메인 설정 (최소/최대 틱 기준으로 약간의 여유 추가)
   const minTick = ticks[0];
