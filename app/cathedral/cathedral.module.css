@@ -398,7 +398,17 @@
 }
 /* 합계 줄은 3칸을 합쳐 쓰므로 고정 폭에 걸리지 않게 풀어 준다 */
 .pageThemeExtreme .exTableWrap .materialTable tfoot td[colspan] { width: auto; }
-/* 택 1 상자에서 실제로 잡힌 선택지 표시 — 값 큰 순 정렬이라 항상 첫 줄이다 */
+/* 택 1 상자 — 줄을 눌러 고른다. 안 고른 줄은 흐리게, 고른 줄은 테마색으로 칠하고 왼쪽 막대 */
+.pageThemeExtreme .exPickRow { cursor: pointer; }
+.pageThemeExtreme .exPickRow td { opacity: 0.55; transition: opacity 0.12s, background-color 0.12s; }
+.pageThemeExtreme .exPickRow:hover td { opacity: 0.85; background: color-mix(in srgb, var(--rd-line) 7%, var(--ct-bg)); }
+.pageThemeExtreme .exPickRow.exPickRowOn td,
+.pageThemeExtreme .exPickRow.exPickRowOn:hover td {
+  opacity: 1;
+  background: color-mix(in srgb, var(--rd-line) 16%, var(--ct-bg));
+}
+.pageThemeExtreme .exPickRow.exPickRowOn td:first-child { box-shadow: inset 4px 0 0 var(--rd-line); }
+/* 택 1 상자에서 실제로 잡힌 선택지 표시 */
 .pageThemeExtreme .exPickMark {
   display: inline-block; margin-left: 0.35rem; padding: 0.05rem 0.3rem;
   border: 1px solid var(--benefit-up-text, #2a8f5a); border-radius: 4px;

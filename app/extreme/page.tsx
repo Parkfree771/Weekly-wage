@@ -428,7 +428,8 @@ function sortedContents(item: CraftItem, prices: Record<string, number> | null, 
   );
 }
 
-function calcCraftValue(item: CraftItem, prices: Record<string, number>, bcRate: number): number | null {
+/** pick: 택 1 상자에서 사용자가 고른 구성품 이름. 없으면 최고가 */
+function calcCraftValue(item: CraftItem, prices: Record<string, number>, bcRate: number, pick?: string): number | null {
   if (!item.contents || item.contents.length === 0) return null;
   // 시세가 안 잡히는 구성품은 0골로 친다 — 택 1 상자에선 어차피 안 뽑히고,
   // 묶음에선 "없는 값"이 아니라 "보탤 게 없는 값"이라 합계에서 그냥 빠지면 된다.
@@ -442,6 +443,9 @@ function calcCraftValue(item: CraftItem, prices: Record<string, number>, bcRate:
   };
   const values = item.contents.map(unit);
   if (item.pickOne) {
+    const pickIdx = pick === undefined ? -1 : item.contents.findIndex((c) => c.name === pick);
+    const picked = pickIdx >= 0 ? values[pickIdx] : null;
+    if (picked !== null) return picked * (item.valueMultiplier ?? 1);
     const usable = values.filter((v): v is number => v !== null);
     if (usable.length === 0) return null;
     return Math.max(...usable) * (item.valueMultiplier ?? 1);
@@ -450,9 +454,9 @@ function calcCraftValue(item: CraftItem, prices: Record<string, number>, bcRate:
   return (values as number[]).reduce((s, v) => s + v, 0) * (item.valueMultiplier ?? 1);
 }
 
-function evalCraft(item: CraftItem, prices: Record<string, number> | null, bcRate: number): CraftEval | null {
+function evalCraft(item: CraftItem, prices: Record<string, number> | null, bcRate: number, pick?: string): CraftEval | null {
   if (!prices) return null;
-  const value = calcCraftValue(item, prices, bcRate);
+  const value = calcCraftValue(item, prices, bcRate, pick);
   if (value === null) return null;
   const net = item.gold === null ? null : value - item.gold;
   // 혼돈의 주화는 값을 0으로 본다 — 최초 클리어로 2개만 나오고 다른 데 쓸 곳이 없어
@@ -470,6 +474,8 @@ export default function ExtremePage() {
   const [selectedCraftKey, setSelectedCraftKey] = useState<string | null>('act3:core-random');
   // latest.json 시세 — 제작 효율 계산용 (차트·패키지와 같은 모듈 캐시라 추가 요청이 거의 없다)
   const [prices, setPrices] = useState<Record<string, number> | null>(null);
+  // 택 1 상자에서 사용자가 고른 구성품 — 항목 id → 구성품 이름. 없으면 최고가로 잡는다
+  const [craftPicks, setCraftPicks] = useState<Record<string, string>>({});
 
   useEffect(() => {
     let cancelled = false;
@@ -487,11 +493,11 @@ export default function ExtremePage() {
   const craftEvals = useMemo(() => {
     const m = new Map<string, CraftEval>();
     for (const it of CRAFT_ITEMS) {
-      const e = evalCraft(it, prices, bcRate);
+      const e = evalCraft(it, prices, bcRate, craftPicks[it.id]);
       if (e) m.set(it.id, e);
     }
     return m;
-  }, [prices, bcRate]);
+  }, [prices, bcRate, craftPicks]);
 
   // 주화 기준가 — 파결·수결 주머니의 "주화 1개당 순이득" (COIN_BASIS_ID)
   const coinBasis = useMemo(() => {
@@ -919,13 +925,19 @@ export default function ExtremePage() {
                                 줄이 많은 항목만 표 안쪽이 세로로 스크롤된다. */}
                             {sd.contents && (() => {
                               const rows = sortedContents(sd, prices, bcRate);
+                              // 택 1 상자: 사용자가 고른 줄, 없으면 맨 위(최고가) 줄이 '선택'
+                              const userPick = sd.pickOne ? craftPicks[sd.id] : undefined;
+                              const pickedName = sd.pickOne
+                                ? (userPick !== undefined && rows.some((c) => c.name === userPick) ? userPick : rows[0]?.name)
+                                : undefined;
+                              const isAuto = sd.pickOne && pickedName === rows[0]?.name;
                               return (
                                 <div className={styles.shopDetailSection}>
                                   {/* 제목과 종 수를 한 줄로 — 따로 두면 좁아질 때 두 줄로 갈라진다 */}
                                   <div className={styles.shopDetailSectionTitle}>
                                     구성 요소
                                     <span className={styles.exFoldMeta}>
-                                      {sd.pickOne ? ` · ${sd.contents.length}종 중 택 1 (최고가)` : ` · ${sd.contents.length}종`}
+                                      {sd.pickOne ? ` · ${sd.contents.length}종 중 택 1 (눌러서 선택)` : ` · ${sd.contents.length}종`}
                                     </span>
                                   </div>
                                   <div className={styles.exTableWrap}>
@@ -941,17 +953,21 @@ export default function ExtremePage() {
                                         </tr>
                                       </thead>
                                       <tbody>
-                                        {rows.map((c, idx) => {
+                                        {rows.map((c) => {
                                           const unit = contentUnitGold(c, prices, bcRate);
                                           const total = c.amount === undefined ? null : unit * c.amount;
                                           return (
-                                            <tr key={`${c.name}-${c.amount ?? '?'}`}>
+                                            <tr
+                                              key={`${c.name}-${c.amount ?? '?'}`}
+                                              onClick={sd.pickOne ? () => setCraftPicks((prev) => ({ ...prev, [sd.id]: c.name })) : undefined}
+                                              className={sd.pickOne ? `${styles.exPickRow} ${c.name === pickedName ? styles.exPickRowOn : ''}` : undefined}
+                                            >
                                               <td>
                                                 <Image src={c.icon} alt="" width={28} height={28} style={{ borderRadius: '4px', display: 'block', margin: '0 auto' }} />
                                               </td>
                                               <td className={styles.exContentName}>
                                                 {c.name}
-                                                {sd.pickOne && idx === 0 && <span className={styles.exPickMark}>선택</span>}
+                                                {sd.pickOne && c.name === pickedName && <span className={styles.exPickMark}>선택</span>}
                                               </td>
                                               <td>{c.amount === undefined ? '?' : c.amount.toLocaleString()}</td>
                                               <td>{unit > 0 ? (unit >= 1 ? unit.toFixed(1) : unit.toFixed(3)) : '—'}</td>
@@ -968,7 +984,7 @@ export default function ExtremePage() {
                                       {ev !== null && (
                                         <tfoot>
                                           <tr className={styles.subtotalRow}>
-                                            <td colSpan={4}>{sd.pickOne ? '최고가 선택지' : '상자 총 가치'}</td>
+                                            <td colSpan={4}>{sd.pickOne ? (isAuto ? '최고가 선택지' : '선택한 구성품') : '상자 총 가치'}</td>
                                             <td>
                                               <span className={styles.exGoldCell}>
                                                 <Image src="/gold.webp" alt="" width={14} height={14} />
