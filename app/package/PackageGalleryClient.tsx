@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { Container } from 'react-bootstrap';
 import PackageGalleryCard from '@/components/package/PackageGalleryCard';
+import ClosedShopCard from '@/components/package/ClosedShopCard';
 import { useNoPeon } from '@/components/package/useNoPeon';
 import PeonBasisButton from '@/components/package/PeonBasisButton';
 // package-service(→ Firestore SDK ~250KB)는 정적 import 하지 않는다 — 목록은 서버(ISR)가
@@ -58,6 +59,9 @@ const AD_AFTER_CARD_INDEX = [1, 3, 5];
 // 데스크톱은 2열 고정이라 카드 2개가 한 줄이고, 3 = 둘째 줄(카드 3·4) 뒤 = 패키지 4개를 지난 자리다.
 // 하나만 두는 이유는 동시 게재 상한(4개) 때문 — 좌·우 레일과 하단 300×250 을 합치면 딱 4개다.
 const DESKTOP_AD_AFTER_CARD_INDEX = 3;
+
+// 패키지 가뭄 카드 — 신규 패키지가 몇 주째 안 나올 때 1페이지 맨 앞에 끼운다. 다시 나오면 false 로 끈다.
+const SHOW_CLOSED_SHOP_CARD = true;
 
 // 페이지 번호 목록 — 많아지면 [1 … 4 5 6 … 20] 처럼 현재 페이지 주변만 남기고 접는다
 function buildPageList(current: number, total: number): (number | 'gap')[] {
@@ -333,6 +337,10 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
     [visiblePosts, curPage],
   );
 
+  // 가뭄 카드가 그리드 첫 칸을 차지하면 광고 줄을 한 카드 앞당겨 2줄(4칸) 뒤 자리를 지킨다
+  const showClosedShop = SHOW_CLOSED_SHOP_CARD && curPage === 1;
+  const desktopAdAfterIndex = showClosedShop ? DESKTOP_AD_AFTER_CARD_INDEX - 1 : DESKTOP_AD_AFTER_CARD_INDEX;
+
   // 정렬·필터를 바꾸면 1페이지부터 다시 본다
   useEffect(() => { setPage(1); }, [view]);
 
@@ -599,6 +607,7 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
               </div>
             ) : (
               <div className={styles.galleryGrid}>
+                {showClosedShop && <ClosedShopCard />}
                 {pagedPosts.map((post, index) => {
                   // 마지막 카드 뒤에는 붙이지 않는다.
                   const adSlotIndex = AD_AFTER_CARD_INDEX.indexOf(index);
@@ -606,7 +615,7 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
                   // 자리(빈 상자)는 서버 HTML 부터 잡아 둔다 — 마운트 뒤에 줄이 끼어들면 아래 카드가 통째로 밀렸다.
                   // 광고 자체는 지금처럼 데스크톱 뷰포트가 확인된 뒤에만 넣는다(모바일 광고 요청 방지).
                   const showDesktopGridAd =
-                    index === DESKTOP_AD_AFTER_CARD_INDEX &&
+                    index === desktopAdAfterIndex &&
                     index < pagedPosts.length - 1 &&
                     ADFIT_ENABLED &&
                     !!ADFIT_UNITS.galleryBottomDesktop.unit;
