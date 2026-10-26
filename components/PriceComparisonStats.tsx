@@ -50,6 +50,8 @@ type PriceContextType = {
   toggleRegularDots: () => void;  // 일반 날짜 점 표시 토글
   showComparisonLine: boolean;  // 비교선(일반재료×5 회색 점선) 표시 여부
   toggleComparisonLine: () => void;  // 비교선 표시 토글
+  goldValueAdjusted: boolean;  // 골드 가치 반영(지금 골드 기준 환산) 여부
+  toggleGoldValueAdjusted: () => void;
 };
 
 export const PriceContext = createContext<PriceContextType>({
@@ -78,6 +80,8 @@ export const PriceContext = createContext<PriceContextType>({
   toggleRegularDots: () => {},
   showComparisonLine: false,
   toggleComparisonLine: () => {},
+  goldValueAdjusted: false,
+  toggleGoldValueAdjusted: () => {},
 });
 
 const formatPrice = (value: number, isAverage = false, noDecimal = false) => {

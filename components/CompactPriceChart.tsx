@@ -82,6 +82,8 @@ type CompactPriceChartProps = {
   loading: boolean;
   categoryStyle?: CategoryStyle;
   hidePeriodButtons?: boolean;
+  /** 부모(flex 세로) 높이만큼 카드를 늘리고 남는 높이는 차트가 먹는다 — 데스크톱에서 왼쪽 바 높이에 맞춘다 */
+  fillHeight?: boolean;
 };
 
 type PeriodOption = '7d' | '1m' | '2m' | '3m' | '6m' | '1y' | 'all';
@@ -297,9 +299,9 @@ function buildYAxisConfig(stats: YAxisStats, comparisonRange: YAxisRange) {
   };
 }
 
-export default function CompactPriceChart({ selectedItem, history, loading, categoryStyle, hidePeriodButtons = false }: CompactPriceChartProps) {
+export default function CompactPriceChart({ selectedItem, history, loading, categoryStyle, hidePeriodButtons = false, fillHeight = false }: CompactPriceChartProps) {
   const { theme } = useTheme();
-  const { selectedPeriod, setSelectedPeriod, eventRangeActive, filteredHistory, comparisonData, activeReferenceLines, showEventDots, toggleEventDots, showWednesdayDots, toggleWednesdayDots, showRegularDots, toggleRegularDots, showComparisonLine, toggleComparisonLine } = useContext(PriceContext);
+  const { selectedPeriod, setSelectedPeriod, eventRangeActive, filteredHistory, comparisonData, activeReferenceLines, showEventDots, toggleEventDots, showWednesdayDots, toggleWednesdayDots, showRegularDots, toggleRegularDots, showComparisonLine, toggleComparisonLine, goldValueAdjusted, toggleGoldValueAdjusted } = useContext(PriceContext);
 
   // 이벤트 대비 카드로 구간을 잡은 동안에는 어떤 기간 버튼도 켜 두지 않는다 —
   // 차트가 보여 주는 구간과 켜진 버튼이 다르면 무엇이 적용됐는지 알 수 없다.
@@ -976,7 +978,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
   }
 
   return (
-    <Card className="price-chart-card" style={{ color: 'var(--text-primary)', maxWidth: '1400px', margin: '0 auto' }}>
+    <Card className="price-chart-card" style={{ color: 'var(--text-primary)', maxWidth: '1400px', margin: '0 auto', ...(fillHeight ? { flex: 1, width: '100%' } : {}) }}>
       <Card.Header
         className="py-3 d-none d-md-block"
         style={{ backgroundColor: 'var(--card-header-bg)', borderBottom: '1px solid var(--border-color)' }}
@@ -1114,6 +1116,26 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                         </span>
                       </button>
                     )}
+                    {/* 골드 가치 반영 — 켜면 과거 가격을 지금 골드 가치 기준으로 환산 (lib/gold-value.ts).
+                        데스크톱(hidePeriodButtons)은 왼쪽 바 보기모드에 버튼이 있어서 여기선 뺀다. */}
+                    {!hidePeriodButtons && <button
+                      onClick={toggleGoldValueAdjusted}
+                      title={goldValueAdjusted ? '원래 가격으로 보기' : '과거 가격을 지금 골드 가치 기준으로 환산'}
+                      aria-pressed={goldValueAdjusted}
+                      style={{
+                        padding: '3px 9px',
+                        borderRadius: '999px',
+                        border: `1.5px solid ${goldValueAdjusted ? chartColor : 'var(--border-color)'}`,
+                        backgroundColor: goldValueAdjusted ? chartColor : 'transparent',
+                        color: goldValueAdjusted ? '#fff' : 'var(--text-muted)',
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      골드 가치 변화
+                    </button>}
                   </>
                 );
               })()}
@@ -1546,6 +1568,31 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                       </span>
                     </button>
                   )}
+
+                  <button
+                    onClick={toggleGoldValueAdjusted}
+                    aria-pressed={goldValueAdjusted}
+                    style={{
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '7px 8px',
+                      marginTop: '4px',
+                      borderRadius: '7px',
+                      border: `1px solid ${goldValueAdjusted ? chartColor : 'var(--border-color)'}`,
+                      backgroundColor: 'var(--bg-secondary)',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                    }}
+                  >
+                    <span style={{ flex: 1, fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                      골드 가치 변화
+                    </span>
+                    <span style={{ fontSize: '0.68rem', fontWeight: 700, color: goldValueAdjusted ? chartColor : 'var(--text-muted)' }}>
+                      {goldValueAdjusted ? '적용' : '끔'}
+                    </span>
+                  </button>
                 </div>
               )}
             </div>
@@ -1583,7 +1630,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
         </div>
       </Card.Header>
 
-      <Card.Body className="py-0 px-2 px-md-3" style={{ backgroundColor: 'var(--card-bg)' }}>
+      <Card.Body className="py-0 px-2 px-md-3" style={{ backgroundColor: 'var(--card-bg)', ...(fillHeight ? { display: 'flex', flexDirection: 'column' } : {}) }}>
         {loading ? (
           <div className="text-center py-5">
             <Spinner animation="border" variant="success" />
@@ -1601,7 +1648,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
           </div>
         ) : (
           <>
-            {!isMobile && <div style={{ width: '100%', height: '500px', position: 'relative' }}>
+            {!isMobile && <div style={{ width: '100%', position: 'relative', ...(fillHeight ? { flex: 1, minHeight: '500px' } : { height: '500px' }) }}>
               {isZoomed && (
                 <button
                   onClick={resetZoom}

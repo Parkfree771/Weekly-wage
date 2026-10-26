@@ -12,6 +12,8 @@ const MiniPriceChart = dynamic(() => import('./MiniPriceChart'), { ssr: false })
 import { PriceContext } from './PriceComparisonStats';
 import { useTheme } from './ThemeProvider';
 import useIsMobileViewport from './ads/useIsMobileViewport';
+import { adjustHistoryForGoldValue } from '@/lib/gold-value';
+import { GoldValueHover } from './GoldValueMiniChart';
 
 // 카테고리 표시 순서
 const CATEGORY_ORDER: ItemCategory[] = ['refine', 'gem', 'refine_additional', 'engraving', 'accessory', 'bracelet', 'jewel'];
@@ -108,7 +110,7 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
   const [selectedCategory, setSelectedCategory] = useState<ItemCategory>('refine');
   const [selectedSubCategory, setSelectedSubCategory] = useState<RefineAdditionalSubCategory | null>(null);
   const [selectedItem, setSelectedItem] = useState<TrackedItem | null>(null);
-  const [history, setHistory] = useState<PriceEntry[]>([]);
+  const [rawHistory, setHistory] = useState<PriceEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodOption>('1m');
   // 이벤트 대비 카드에서 고른 이벤트(YYYY-MM-DD). 1개면 그 날~오늘, 2개면 두 이벤트 사이.
@@ -134,7 +136,20 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
 
 
   // 비교 차트 데이터 (계승 재료 ↔ 일반 재료)
-  const [comparisonHistory, setComparisonHistory] = useState<PriceEntry[]>([]);
+  const [rawComparisonHistory, setComparisonHistory] = useState<PriceEntry[]>([]);
+
+  // 골드 가치 반영 — 켜면 모든 가격을 지금 골드 가치 기준으로 환산해서 보여준다 (lib/gold-value.ts).
+  // 아래부터는 전부 환산된 history 를 쓰므로 차트·통계·이벤트 카드가 함께 바뀐다.
+  const [goldValueAdjusted, setGoldValueAdjusted] = useState(false);
+  const toggleGoldValueAdjusted = useCallback(() => setGoldValueAdjusted(v => !v), []);
+  const history = useMemo(
+    () => (goldValueAdjusted ? adjustHistoryForGoldValue(rawHistory) : rawHistory),
+    [rawHistory, goldValueAdjusted],
+  );
+  const comparisonHistory = useMemo(
+    () => (goldValueAdjusted ? adjustHistoryForGoldValue(rawComparisonHistory) : rawComparisonHistory),
+    [rawComparisonHistory, goldValueAdjusted],
+  );
   const [comparisonInfo, setComparisonInfo] = useState<{ normalIcon: string; ratio: number } | null>(null);
 
   // 그리드 뷰 관련 state
@@ -564,11 +579,12 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
     showWednesdayDots: chartConfig.showWednesdayDots, toggleWednesdayDots,
     showRegularDots: chartConfig.showRegularDots, toggleRegularDots,
     showComparisonLine: chartConfig.showComparisonLine, toggleComparisonLine,
+    goldValueAdjusted, toggleGoldValueAdjusted,
   }), [
     history, selectedItem, categoryStyle.label, eventSelection, toggleEventSelection, filteredHistory, selectedPeriod,
     handleSetPeriod, comparisonData, isGridView, handleToggleGridView, activeReferenceLines, toggleReferenceLine,
     selectItemById, categoryColor, openChartSettings, chartConfig, toggleEventDots, toggleWednesdayDots,
-    toggleRegularDots, toggleComparisonLine,
+    toggleRegularDots, toggleComparisonLine, goldValueAdjusted, toggleGoldValueAdjusted,
   ]);
 
   const belowLg = useIsMobileViewport(991.98);
@@ -824,11 +840,44 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
                     4분할
                   </button>
                 </div>
+                {/* 골드 가치 변화 — 켜면 모든 가격을 지금 골드 가치 기준으로 환산 (lib/gold-value.ts).
+                    마우스를 올리면 골드 가치 추세 미니 차트가 뜬다. */}
+                <GoldValueHover color={categoryColor}>
+                <button
+                  className="shadow-hard"
+                  onClick={toggleGoldValueAdjusted}
+                  aria-pressed={goldValueAdjusted}
+                  style={{
+                    width: '100%',
+                    marginTop: '6px',
+                    padding: '8px 10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    borderRadius: '8px',
+                    border: `2px solid ${goldValueAdjusted ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color) : 'var(--border-color)'}`,
+                    backgroundColor: goldValueAdjusted
+                      ? (theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg)
+                      : 'transparent',
+                    color: goldValueAdjusted
+                      ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor)
+                      : 'var(--text-secondary)',
+                    fontSize: '0.8rem',
+                    fontWeight: goldValueAdjusted ? 700 : 600,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  <Image src="/gold.webp" alt="" width={18} height={18} />
+                  골드 가치 변화
+                </button>
+                </GoldValueHover>
               </div>
             </div>
 
-            {/* 오른쪽 메인 영역 */}
-            <div style={{ flex: 1, minWidth: 0 }}>
+            {/* 오른쪽 메인 영역 — 세로 flex 라 차트 카드가 왼쪽 바 높이까지 늘어난다 (fillHeight) */}
+            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
               {/* 서브카테고리 (재련 추가 재료) */}
               {selectedCategory === 'refine_additional' && (
                 <div style={{
@@ -1067,6 +1116,7 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
                   loading={loading}
                   categoryStyle={categoryStyle}
                   hidePeriodButtons={true}
+                  fillHeight={true}
                 />
               )}
             </div>
