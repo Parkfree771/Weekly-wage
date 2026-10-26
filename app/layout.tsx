@@ -164,6 +164,14 @@ export default function RootLayout({
             본문 리소스와 대역폭을 다투게 되므로 DNS 단계까지만 앞당긴다. */}
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
         <link rel="dns-prefetch" href="https://display.ad.daum.net" />
+        {/* Google AdSense — 서버 HTML(head)에 포함되어야 애드센스 크롤러가 사이트 확인 가능.
+            async라 렌더링 비차단. (lazyOnload는 HTML에 안 들어가 검증 실패) */}
+        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
+        <script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6944494802169618"
+          crossOrigin="anonymous"
+        />
         {/* 카카오 애드핏 로더 — 서버 HTML(head)에 있어야 심사자가 JS 실행 없이도 광고 설치를 확인한다.
             (AdFitUnit 이 마운트마다 스크립트를 다시 붙이는 건 클라이언트 라우팅으로 새로 생긴
              광고 자리를 채우기 위한 것이고, 첫 로드분은 여기서 처리한다) */}
