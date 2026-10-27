@@ -5,7 +5,6 @@ import Image from 'next/image';
 import { Container, Row, Col, Card, Form } from 'react-bootstrap';
 import AdBanner from '@/components/ads/AdBanner';
 import DesktopBannerAd from '@/components/ads/DesktopBannerAd';
-import { ADFIT_UNITS } from '@/components/ads/adConfig';
 import { RAID_TABLE } from '@/data/rewardTable';
 import styles from './cathedral.module.css';
 
@@ -1218,7 +1217,7 @@ export default function CathedralPage() {
             {/* 데스크톱 728×90 — 상점 아래·가이드 위. 이 페이지의 유일한 가로 배너 자리다.
                 보상 상세 ↔ 상점 경계에도 한 자리 뒀었는데, 본문 한가운데를 끊어서 보기 안 좋다는
                 이유로 2026-09-21 제거했다. 다시 넣지 말 것. */}
-            <DesktopBannerAd adfit={ADFIT_UNITS.refiningResultDesktop} />
+            <DesktopBannerAd />
 
           </Col>
         </Row>

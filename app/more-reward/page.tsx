@@ -10,7 +10,6 @@ import { raidClearRewards } from '@/data/raidClearRewards';
 import { PriceProvider, usePriceData } from '@/contexts/PriceContext';
 import AdBanner from '@/components/ads/AdBanner';
 import DesktopBannerAd from '@/components/ads/DesktopBannerAd';
-import { ADFIT_UNITS } from '@/components/ads/adConfig';
 import styles from './more-reward.module.css';
 
 // 재료 아이콘 (패키지 효율과 동일한 최신 아이콘 사용)
@@ -424,12 +423,12 @@ function MoreRewardInner() {
         {/* 모바일 띠배너 — 두 섹션 카드 사이. 아래 기존 광고(320×100)와 단위가 겹치면
             애드핏이 첫 자리만 채우므로 인-콘텐츠 단위 순번을 따로 쓴다. */}
         <div className="d-block d-lg-none my-2">
-          <AdBanner index={0} />
+          <AdBanner />
         </div>
 
         {/* 데스크톱 728×90 — 두 섹션 카드 사이. 이 페이지의 유일한 데스크톱 애드핏 자리라
             공용 단위(galleryBottomDesktop)를 재사용한다 (리포트는 다른 페이지와 합산). */}
-        <DesktopBannerAd adfit={ADFIT_UNITS.galleryBottomDesktop} />
+        <DesktopBannerAd />
 
         {/* 레이드 클리어 보상 섹션 */}
         <div className={styles.sectionCard}>
@@ -497,9 +496,9 @@ function MoreRewardInner() {
         {/* 페이지 최하단 — 가이드·FAQ 를 다 읽고 내려온 자리(세 번째 모바일 단위) +
             이 페이지의 두 번째 데스크톱 자리. 둘 다 위 자리들과 다른 단위여야 한다 */}
         <div className="d-block d-lg-none mt-3">
-          <AdBanner index={1} />
+          <AdBanner />
         </div>
-        <DesktopBannerAd adfit={ADFIT_UNITS.refiningResultDesktop} />
+        <DesktopBannerAd />
       </div>
     </Container>
   );

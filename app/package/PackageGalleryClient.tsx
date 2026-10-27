@@ -27,7 +27,7 @@ import { useAzenaEventActive } from '@/components/package/useAzenaEvent';
 import { isSaleEnded } from '@/lib/package-sale';
 import type { PackagePost } from '@/types/package';
 import AdBanner from '@/components/ads/AdBanner';
-import AdFitUnit from '@/components/ads/AdFitUnit';
+import AdSenseUnit from '@/components/ads/AdSenseUnit';
 import dynamic from 'next/dynamic';
 
 // 아제나의 축복 카드(418줄 + CSS)는 칩·타일을 눌러 팝업을 열 때만 쓴다 — 첫 로드 묶음에서 뺀다
@@ -35,30 +35,29 @@ const AzenaBlessingGalleryCard = dynamic(() => import('@/components/package/Azen
 import NewLottie from '@/components/NewLottie';
 import useIsMobileViewport from '@/components/ads/useIsMobileViewport';
 import { LEFT_RAIL_SLOT_ID } from '@/components/ads/AdLayout';
-import { ADFIT_ENABLED, ADFIT_UNITS } from '@/components/ads/adConfig';
+import { AD_PREVIEW, ADSENSE_SLOTS, AD_SIZES } from '@/components/ads/adConfig';
 import styles from './package.module.css';
 
 // 집계를 다시 받는 최소 간격 — /api/package/stats 의 CDN s-maxage(300초)와 같은 값.
 // 그보다 자주 물어봐야 같은 캐시가 나오므로 의미가 없다.
 const STATS_REFRESH_MS = 300_000;
 
-// 페이지당 글 6개 고정. 아제나 카드는 갤러리 칸을 차지하지 않는다 —
+// 페이지당 글 5개 고정 — 데스크톱은 카드 한 칸을 광고가 써서 2열 6칸이 맞는다. 아제나 카드는 갤러리 칸을 차지하지 않는다 —
 // 드롭다운 옆 칩(아이콘 + 효율)으로 접어 두고, 누르면 팝업으로 카드를 띄운다.
-const PAGE_SIZE = 6;
+const PAGE_SIZE = 5;
 
 // 모바일 인-콘텐츠 광고를 끼워 넣을 자리 — "이 인덱스의 글 카드 뒤"에 하나씩.
-// 글 2개마다 하나: 글 1·2 → 광고(단위0) → 글 3·4 → 광고(단위1) → 글 5·6 → 광고(단위2) → 나머지 글
-// 공통 하단: 페이지 버튼 → 320×100 광고(구 단일 단위).
-// 동시 게재 최대 4개 — 애드핏 정책 상한("4개 초과 금지")에 맞춘 배치라 더 늘리면 안 된다.
+// 글 2개마다 하나: 글 1·2 → 광고 → 글 3·4 → 광고 → 글 5
+// 공통 하단: 페이지 버튼 → 광고.
 // 사이에 항상 글이 2개씩 끼므로 광고가 연달아 붙는 자리도 생기지 않는다.
 // 페이지를 넘기면 이전 광고 DOM 이 사라지고 새로 로드되므로 페이지 수만큼 노출이 늘어난다.
-// 단위가 모자란 자리는 AdBanner 가 스스로 렌더를 건너뛴다.
-const AD_AFTER_CARD_INDEX = [1, 3, 5];
+const AD_AFTER_CARD_INDEX = [1, 3];
 
-// 데스크톱 갤러리 그리드 안 광고 — "이 인덱스의 카드 뒤" 한 곳에만 전체폭 줄로 들어간다.
-// 데스크톱은 2열 고정이라 카드 2개가 한 줄이고, 3 = 둘째 줄(카드 3·4) 뒤 = 패키지 4개를 지난 자리다.
-// 하나만 두는 이유는 동시 게재 상한(4개) 때문 — 좌·우 레일과 하단 300×250 을 합치면 딱 4개다.
-const DESKTOP_AD_AFTER_CARD_INDEX = 3;
+// 데스크톱 갤러리 그리드 안 광고 — "이 인덱스의 카드 뒤" 카드 한 칸을 광고 칸으로 쓴다.
+// 데스크톱은 2열이라 2 = 둘째 줄 오른쪽 칸(카드1·2 / 카드3·광고 / 카드4·5).
+// 예전엔 전체폭 728×90 띠였다 — 1400 폭에 높이 90 이라 광고 면적이 작아 칸 사각형으로 바꿨다(2026-10-27).
+// 한 곳만 둔다 — 좌·우 레일과 하단 사각 칸까지 합치면 한 화면 광고 밀도가 이미 충분하다.
+const DESKTOP_AD_AFTER_CARD_INDEX = 2;
 
 // 패키지 가뭄 카드 — 신규 패키지가 몇 주째 안 나올 때 1페이지 맨 앞에 끼운다. 다시 나오면 false 로 끈다.
 const SHOW_CLOSED_SHOP_CARD = true;
@@ -327,17 +326,23 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
   // 필터를 걸었을 때 "몇 개 중 몇 개" — 이제 목록 전체가 기준이다
   const isNarrowed = saleFilter !== 'all';
 
-  // 페이지는 걸러낸 결과 위에서 나눈다 — 필터를 걸면 남은 글이 1페이지부터 다시 채워진다
-  const totalPages = Math.max(1, Math.ceil(visiblePosts.length / PAGE_SIZE));
+  // 페이지는 걸러낸 결과 위에서 나눈다 — 필터를 걸면 남은 글이 1페이지부터 다시 채워진다.
+  // 가뭄 카드가 1페이지 첫 칸을 차지하는 동안엔 1페이지만 글을 하나 덜 담아 6칸(가뭄+글4+광고)을 맞춘다.
+  const firstPageSize = SHOW_CLOSED_SHOP_CARD ? PAGE_SIZE - 1 : PAGE_SIZE;
+  const totalPages = Math.max(
+    1,
+    1 + Math.ceil(Math.max(0, visiblePosts.length - firstPageSize) / PAGE_SIZE),
+  );
   // 필터로 목록이 줄면 지금 페이지가 범위를 벗어날 수 있어 항상 클램프해서 쓴다
   const curPage = Math.min(page, totalPages);
   const hasNext = curPage < totalPages;
-  const pagedPosts = useMemo(
-    () => visiblePosts.slice((curPage - 1) * PAGE_SIZE, curPage * PAGE_SIZE),
-    [visiblePosts, curPage],
-  );
+  const pagedPosts = useMemo(() => {
+    const start = curPage === 1 ? 0 : firstPageSize + (curPage - 2) * PAGE_SIZE;
+    const end = curPage === 1 ? firstPageSize : start + PAGE_SIZE;
+    return visiblePosts.slice(start, end);
+  }, [visiblePosts, curPage, firstPageSize]);
 
-  // 가뭄 카드가 그리드 첫 칸을 차지하면 광고 줄을 한 카드 앞당겨 2줄(4칸) 뒤 자리를 지킨다
+  // 가뭄 카드가 그리드 첫 칸을 차지하면 광고 칸을 한 카드 앞당겨 둘째 줄 오른쪽 자리를 지킨다
   const showClosedShop = SHOW_CLOSED_SHOP_CARD && curPage === 1;
   const desktopAdAfterIndex = showClosedShop ? DESKTOP_AD_AFTER_CARD_INDEX - 1 : DESKTOP_AD_AFTER_CARD_INDEX;
 
@@ -617,8 +622,7 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
                   const showDesktopGridAd =
                     index === desktopAdAfterIndex &&
                     index < pagedPosts.length - 1 &&
-                    ADFIT_ENABLED &&
-                    !!ADFIT_UNITS.galleryBottomDesktop.unit;
+                    (AD_PREVIEW || !!ADSENSE_SLOTS.desktopSquare);
                   return (
                     <React.Fragment key={post.id}>
                       <PackageGalleryCard
@@ -628,31 +632,30 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
                         /* 실시간 최저가로 덮인 동안에만 평균가를 함께 넘긴다 — 카드가 변동폭을 표시한다 */
                         basePrices={livePrices ? latestPrices : undefined}
                       />
-                      {/* 모바일 전용(d-md-none). 자리마다 다른 애드핏 단위를 받는다 —
-                          같은 단위를 반복하면 애드핏이 첫 자리만 채우고 나머지는 안 나온다. */}
+                      {/* 모바일 전용(d-md-none). */}
                       {showAd && (
                         <div className={`d-block d-md-none ${styles.mobileAdSlot} ${styles.betweenCardsAd}`}>
-                          <AdBanner index={adSlotIndex} />
+                          <AdBanner />
                         </div>
                       )}
-                      {/* 데스크톱 전용(d-md-block) — 패키지 4개(2줄) 뒤 전체폭 가로 배너.
-                          전체폭 1400px 띠라 가로로 긴 728×90 이 맞는다. 정사각형에 가까운 규격은
-                          양옆이 550px 씩 비어 붕 뜨고 세로만 250px 잡아먹는다.
+                      {/* 데스크톱 전용(d-md-block) — 카드 한 칸 자리의 사각 광고.
+                          칸은 카드와 같은 상자에 "광고" 표시를 단다 — 콘텐츠와 구별되지 않게 꾸미는 건 정책 위반.
                           d-none 으로 숨겨도 모바일에서 마운트·광고 요청은 나가므로
                           뷰포트(≥768)가 확인될 때만 렌더한다. key={page}: 페이지마다 새 광고. */}
                       {showDesktopGridAd && (
-                        <div
-                          className={`d-none d-md-block ${styles.inGridAdSlot}`}
-                          style={{ minHeight: ADFIT_UNITS.galleryBottomDesktop.height }}
-                        >
-                          {isMobileMd === false && (
-                            <AdFitUnit
-                              key={`ad-ingrid-${curPage}`}
-                              unit={ADFIT_UNITS.galleryBottomDesktop.unit}
-                              width={ADFIT_UNITS.galleryBottomDesktop.width}
-                              height={ADFIT_UNITS.galleryBottomDesktop.height}
-                            />
-                          )}
+                        <div className={`d-none d-md-block ${styles.gridCellAd}`}>
+                          <div className={styles.gridCellAdBody}>
+                            <span className={styles.gridCellAdLabel}>광고</span>
+                            {isMobileMd === false && (
+                              <AdSenseUnit
+                                key={`ad-ingrid-${curPage}`}
+                                className={styles.gridCellAdUnit}
+                                slot={ADSENSE_SLOTS.desktopSquare}
+                                size={AD_SIZES.desktopGridCell}
+                                label="갤러리 카드 칸"
+                              />
+                            )}
+                          </div>
                         </div>
                       )}
                     </React.Fragment>
@@ -732,28 +735,26 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
               </nav>
             )}
 
-            {/* 페이지 버튼 아래 320×100 — index 없이 호출하면 단일 인-콘텐츠 단위를 쓴다.
+            {/* 페이지 버튼 아래 모바일 광고.
                 key={page}: 페이지를 넘길 때마다 새 광고를 받는다 (가운데 띠배너들은 글 목록이
                 갈리면서 저절로 리마운트되지만 이 자리는 페이지 버튼처럼 남는 요소라 직접 갈아줘야 한다) */}
             <div key={`ad-bottom-${curPage}`} className={`d-block d-md-none ${styles.mobileAdSlot} ${styles.belowPagerAd}`}>
               <AdBanner />
             </div>
 
-            {/* 데스크톱 — 페이지 버튼 아래 300×250 (모바일은 위 320×100 이 담당).
-                728×90 은 위 그리드 줄로 올라갔다. 같은 단위를 한 페이지에 두 번 넣으면
-                애드핏이 첫 자리만 채우므로 여기는 다른 단위·다른 규격이어야 한다.
-                단위 미발급 동안(unit 빈 문자열) 자리째 렌더하지 않는다. key={page}: 페이지마다 새 광고.
+            {/* 데스크톱 — 페이지 버튼 아래 336×280 칸 (모바일은 위 AdBanner 가 담당).
+                가로 띠는 위 그리드 줄에 있다. 슬롯 미발급 동안 자리째 렌더하지 않는다. key={page}: 페이지마다 새 광고.
                 d-md-block 으로 숨겨도 모바일에서 마운트·요청은 나가므로 뷰포트(≥768)가 확인될 때만 렌더 */}
-            {ADFIT_ENABLED && ADFIT_UNITS.packageGalleryBottomSquare.unit && isMobileMd === false && (
+            {(AD_PREVIEW || !!ADSENSE_SLOTS.desktopSquare) && isMobileMd === false && (
               <div
                 className={`d-none d-md-block ${styles.desktopAdSlot}`}
-                style={{ minHeight: ADFIT_UNITS.packageGalleryBottomSquare.height }}
+                style={{ minHeight: AD_SIZES.desktopGallerySquare.height }}
               >
-                <AdFitUnit
+                <AdSenseUnit
                   key={`ad-bottom-desktop-${curPage}`}
-                  unit={ADFIT_UNITS.packageGalleryBottomSquare.unit}
-                  width={ADFIT_UNITS.packageGalleryBottomSquare.width}
-                  height={ADFIT_UNITS.packageGalleryBottomSquare.height}
+                  slot={ADSENSE_SLOTS.desktopSquare}
+                  size={AD_SIZES.desktopGallerySquare}
+                  label="갤러리 페이저 아래"
                 />
               </div>
             )}

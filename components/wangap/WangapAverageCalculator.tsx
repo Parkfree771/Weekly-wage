@@ -43,7 +43,6 @@ import {
 } from '../../lib/specialRefining';
 import AdBanner from '../ads/AdBanner';
 import DesktopBannerAd from '../ads/DesktopBannerAd';
-import { ADFIT_UNITS } from '../ads/adConfig';
 
 // 기본 재료 5종 (숨결 제외 — 숨결은 보조 재료 섹션에서 별도 표시)
 const BASE_MATERIAL_KEYS: OptMatKey[] = ['파괴석결정', '수호석결정', '위대한돌파석', '상급아비도스', '운명파편'];
@@ -709,12 +708,12 @@ export default function WangapAverageCalculator({ adsActive = true }: { adsActiv
             단위가 겹치면 애드핏이 첫 자리만 채우므로 인-콘텐츠 단위 순번을 따로 쓴다. */}
         {adsActive && (
           <div className="d-block d-lg-none my-2">
-            <AdBanner index={0} />
+            <AdBanner />
           </div>
         )}
 
         {/* 데스크톱 728×90 — 여정(목표) 카드 아래. 재련 목표 아래와 같은 단위지만 페이지가 달라 중복 아님 */}
-        {adsActive && <DesktopBannerAd adfit={ADFIT_UNITS.galleryBottomDesktop} />}
+        {adsActive && <DesktopBannerAd />}
 
         {/* ===== 예상 소모 재료 (재련 평균 시뮬과 동일한 카드) ===== */}
         {/* popupOverflowCard: 숨결 "최적" 팝업이 카드 위 경계를 넘어가므로 이 카드만 클리핑 해제 */}
@@ -1016,12 +1015,12 @@ export default function WangapAverageCalculator({ adsActive = true }: { adsActiv
             이미 쓴다 — 같은 단위가 한 페이지에 겹치면 애드핏이 첫 자리만 채운다 */}
         {adsActive && (
           <div className="d-block d-lg-none my-2">
-            <AdBanner index={2} />
+            <AdBanner />
           </div>
         )}
 
         {/* 데스크톱 728×90 — 결과 카드 아래. 같은 페이지의 목표 아래 자리와 다른 단위 필수 */}
-        {adsActive && <DesktopBannerAd adfit={ADFIT_UNITS.refiningResultDesktop} />}
+        {adsActive && <DesktopBannerAd />}
       </div>
 
     </div>

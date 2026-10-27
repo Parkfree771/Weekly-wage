@@ -7,7 +7,6 @@ import CharacterSearch from '@/components/CharacterSearch';
 import { PriceProvider } from '@/contexts/PriceContext';
 import AdBanner from '@/components/ads/AdBanner';
 import DesktopBannerAd from '@/components/ads/DesktopBannerAd';
-import { ADFIT_UNITS } from '@/components/ads/adConfig';
 import type { CharacterGoldCalc } from '@/components/RaidCalculator';
 import styles from './weekly-gold.module.css';
 
@@ -155,7 +154,7 @@ export default function WeeklyGoldPage() {
               <div className="d-block d-lg-none my-3">
                 <AdBanner />
               </div>
-              <DesktopBannerAd adfit={ADFIT_UNITS.galleryBottomDesktop} />
+              <DesktopBannerAd />
 
               {/* 더보기 손익 계산 섹션 (de-box, 주간 레이드와 너비 1180px 통일) */}
               <div style={{ maxWidth: '1180px', margin: 'clamp(2.5rem, 5vw, 3.5rem) auto 0' }}>
@@ -170,9 +169,9 @@ export default function WeeklyGoldPage() {
               {/* 더보기 손익 ↔ 가이드 경계 광고 — 계산을 다 끝내고 읽을거리로 넘어가는 자리.
                   위 자리와 반드시 다른 단위여야 한다 (같은 단위면 애드핏이 첫 자리만 채운다) */}
               <div className="d-block d-lg-none my-3">
-                <AdBanner index={0} />
+                <AdBanner />
               </div>
-              <DesktopBannerAd adfit={ADFIT_UNITS.refiningResultDesktop} />
+              <DesktopBannerAd />
             </PriceProvider>
 
           </Col>

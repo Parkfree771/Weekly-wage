@@ -24,7 +24,6 @@ import { refreshCharacter, updateCharacterImages } from '@/lib/user-service';
 import NicknameModal from '@/components/auth/NicknameModal';
 import AdBanner from '@/components/ads/AdBanner';
 import DesktopBannerAd from '@/components/ads/DesktopBannerAd';
-import { ADFIT_UNITS } from '@/components/ads/adConfig';
 import GemEvolutionCard from '@/components/GemEvolutionCard';
 import GoldSplitBar from '@/components/GoldSplitBar';
 import { raids, upcomingRaids, getRaidNewLabel } from '@/data/raids';
@@ -1732,7 +1731,7 @@ export default function MyPage() {
             모바일은 해당 없음(DesktopBannerAd 가 lg 미만에서 자체 숨김, 래퍼 여백도 CSS 에서 lg 이상만).
             이 자리 높이만큼 사이드 레일 기준값(AdLayout /mypage adTop·appPromoTop)도 함께 내렸다. */}
         <div className={styles.topAd}>
-          <DesktopBannerAd adfit={ADFIT_UNITS.galleryBottomDesktop} />
+          <DesktopBannerAd />
         </div>
 
         {/* 데모 안내 */}
@@ -2747,12 +2746,7 @@ export default function MyPage() {
               )}
               </div>
               {/* 모바일 인-콘텐츠 광고 — 앱 주간숙제(캐릭터 2개마다 1개, 1개뿐이면 그 아래)와 동일.
-                  자리마다 반드시 다른 애드핏 단위를 줘야 한다. 예전엔 전부 index 없이(= 같은
-                  mobileInContent 단위) 불렀는데, 원정대가 6명이면 같은 ID 가 한 페이지에 3번
-                  들어가 애드핏이 첫 자리만 채우고 나머지는 display:none 으로 남았다.
-                  → 자리 순번(adSlot)으로 단위를 갈라 쓴다: 0·1·2 는 ADFIT_INCONTENT_UNITS,
-                    3 은 index 없는 단일 단위. 쓸 단위가 4개뿐이라 5번째 자리부터는 렌더하지 않는다
-                    (빈 자리를 남기느니 안 넣는 편이 낫고, 동시 게재 상한도 4개다). */}
+                  최대 4자리(캐릭터 8명분)까지만 — 그 아래로 계속 붙이면 광고 밀도만 올라간다. */}
               {(() => {
                 const adSlot =
                   displayCharacters.length === 1 ? 0
@@ -2761,9 +2755,7 @@ export default function MyPage() {
                 if (adSlot < 0 || adSlot > 3) return null;
                 return (
                   <div className="d-block d-lg-none my-2">
-                    {adSlot === 3
-                      ? <AdBanner />
-                      : <AdBanner index={adSlot} />}
+                    <AdBanner />
                   </div>
                 );
               })()}

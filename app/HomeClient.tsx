@@ -5,7 +5,6 @@ import { preload } from 'react-dom';
 import { Container } from 'react-bootstrap';
 import AdBanner from '@/components/ads/AdBanner';
 import DesktopBannerAd from '@/components/ads/DesktopBannerAd';
-import { ADFIT_UNITS } from '@/components/ads/adConfig';
 import styles from './page.module.css';
 import type { DashboardPrice } from '@/components/PriceDashboard';
 
@@ -61,10 +60,9 @@ export default function HomeClient({ initialPrices, initialDate }: {
             <PriceComparisonStats />
           </div>
 
-          {/* 데스크톱 728×90 — 통계 바와 이벤트 대비 카드 사이. 콘텐츠가 바뀌는 경계라 자연스럽다.
-              홈에서는 galleryBottomDesktop 을 여기서만 쓰므로 한 페이지 한 단위 원칙에 어긋나지 않는다. */}
+          {/* 데스크톱 가로 띠 — 통계 바와 이벤트 대비 카드 사이. 콘텐츠가 바뀌는 경계라 자연스럽다. */}
           <div className={`${styles.homeBlock} ${styles.homeAdBlock} d-none d-lg-block`}>
-            <DesktopBannerAd adfit={ADFIT_UNITS.galleryBottomDesktop} />
+            <DesktopBannerAd />
           </div>
 
           {/* 모바일 인-콘텐츠 광고 — 앱 홈(통계 바 아래)과 동일 위치 */}
@@ -78,33 +76,20 @@ export default function HomeClient({ initialPrices, initialDate }: {
           </div>
 
           {/* 이벤트 대비 카드 ↔ 매수가 보드 경계 광고 (데스크톱·모바일 각각).
-              위아래 콘텐츠가 서로 다른 이야기라 경계로 자연스럽고, 앞뒤로 광고가 붙지 않는다.
-
-              데스크톱 728×90 — 이 페이지 위쪽 자리가 이미 galleryBottomDesktop 을 쓰므로
-              반드시 다른 단위여야 한다. 같은 단위를 한 페이지에 두 번 넣으면 애드핏이 첫 자리만 채운다. */}
+              위아래 콘텐츠가 서로 다른 이야기라 경계로 자연스럽고, 앞뒤로 광고가 붙지 않는다. */}
           <div className={`${styles.homeBlock} ${styles.homeAdBlock} d-none d-lg-block`}>
-            <DesktopBannerAd adfit={ADFIT_UNITS.refiningResultDesktop} />
+            <DesktopBannerAd />
           </div>
 
-          {/* 모바일 320×50 — 홈의 세 번째 인-콘텐츠 자리. index 0 은 아래 보드 밑 자리가 쓰고 있어 1 을 준다
-              (index 마다 다른 단위를 꺼내야 애드핏이 두 자리 다 채운다). */}
+          {/* 모바일 — 홈의 두 번째 인-콘텐츠 자리. */}
           <div className={`${styles.homeBlock} ${styles.homeAdBlock} d-block d-lg-none`}>
-            <AdBanner index={1} />
+            <AdBanner />
           </div>
         </PriceChartProvider>
 
         {/* 사이트 소개 — 홈의 유일한 h1. 2026-09-04 접기 토글 제거: 항상 노출 */}
         <div className="mt-4 mt-md-5">
           <h1 className="h4 mb-2">로아로골 - 로아 패키지 효율 &amp; 시세 차트</h1>
-        </div>
-
-        {/* 모바일 인-콘텐츠 광고 3 — 사이트 소개 아래.
-            원래 매수가 보드 아래에 있었는데 보드를 없애면서(2026-09-21) 이리로 내렸다.
-            그냥 두면 바로 위 이벤트 대비 자리(index 1)와 광고 두 개가 연달아 붙는다.
-            index 를 줘야 띠배너 배열에서 다른 단위를 꺼낸다 — 같은 단위를 한 페이지에
-            두 번 넣으면 애드핏이 첫 자리만 채운다. */}
-        <div className={`${styles.homeBlock} ${styles.homeAdBlock} d-block d-lg-none`}>
-          <AdBanner index={0} />
         </div>
 
       </Container>

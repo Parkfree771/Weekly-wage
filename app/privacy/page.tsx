@@ -122,10 +122,16 @@ export default function PrivacyPolicy() {
                     <li>웹사이트 방문 통계 분석</li>
                     <li>광고 게재 및 효과 측정</li>
                   </ul>
-                  <h6 className="mt-3">제3자 광고 쿠키 (카카오 애드핏)</h6>
+                  <h6 className="mt-3">제3자 광고 쿠키 (Google 애드센스)</h6>
                   <p className="mb-2">
-                    본 사이트는 카카오 애드핏을 통해 광고를 게재합니다. 광고 사업자는 쿠키를 사용해
-                    관심사 기반 광고를 게재할 수 있으며, 사용자는 웹브라우저 설정에서 쿠키 저장을 거부할 수 있습니다.
+                    본 사이트는 Google 애드센스를 통해 광고를 게재합니다. Google 을 포함한 제3자 공급업체는
+                    쿠키를 사용해 사용자의 본 사이트 및 다른 사이트 방문 기록을 바탕으로 광고를 게재합니다.
+                    Google 은 광고 쿠키를 사용해 Google 및 파트너가 이러한 방문 기록에 기반한 광고를 게재할 수 있도록 합니다.
+                  </p>
+                  <p className="mb-2">
+                    사용자는 <a href="https://adssettings.google.com" target="_blank" rel="noopener noreferrer">Google 광고 설정</a>에서
+                    맞춤 광고를 해제하거나, <a href="https://www.aboutads.info" target="_blank" rel="noopener noreferrer">www.aboutads.info</a>에서
+                    제3자 공급업체의 맞춤 광고 쿠키 사용을 해제할 수 있습니다. 웹브라우저 설정에서 쿠키 저장을 거부할 수도 있습니다.
                   </p>
                 </div>
               </section>
@@ -198,7 +204,7 @@ export default function PrivacyPolicy() {
                   <p className="mb-2"><strong>2. 웹사이트 이용 데이터:</strong></p>
                   <ul className="mb-3">
                     <li>Google Analytics를 통한 방문자 통계 (페이지 조회수, 방문 시간 등)</li>
-                    <li>카카오 애드핏을 통한 광고 표시 및 클릭 데이터</li>
+                    <li>Google 애드센스를 통한 광고 표시 및 클릭 데이터</li>
                   </ul>
                   <p className="small text-muted mb-0">
                     ※ 비로그인 사용자의 경우, 캐릭터 검색 정보는 서버에 저장되지 않으며

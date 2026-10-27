@@ -9,7 +9,6 @@ import ClassIcon from '@/components/tier/ClassIcon';
 import EngravingCorrectionBox from '@/components/engraving/EngravingCorrectionBox';
 import AdBanner from '@/components/ads/AdBanner';
 import DesktopBannerAd from '@/components/ads/DesktopBannerAd';
-import { ADFIT_UNITS } from '@/components/ads/adConfig';
 import styles from './page.module.css';
 
 // 표본 부족 등으로 페이지에서 숨길 스펙 (현재 없음 — 보정 빌드로 노출)
@@ -568,7 +567,7 @@ export default function EngravingPage() {
       </div>
 
       {/* 데스크톱 728×90 — 직업 카드 목록 아래·가이드 위. 이 페이지의 첫 데스크톱 자리 */}
-      <DesktopBannerAd adfit={ADFIT_UNITS.galleryBottomDesktop} />
+      <DesktopBannerAd />
     </div>
   );
 }

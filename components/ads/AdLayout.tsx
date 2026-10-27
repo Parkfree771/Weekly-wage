@@ -1,10 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import AdPlaceholder from './AdPlaceholder';
-import AdFitUnit from './AdFitUnit';
-import { AD_PREVIEW, ADFIT_ENABLED, ADFIT_UNITS } from './adConfig';
+import AdSenseUnit from './AdSenseUnit';
+import { AD_PREVIEW, ADSENSE_SLOTS, AD_SIZES } from './adConfig';
 import AppSidebarPromo from '../AppSidebarPromo';
 import { SITE_ZOOM_EVENT, getSiteZoom } from '../ZoomControl';
 
@@ -22,10 +21,9 @@ function getPageConfig(pathname: string): PageConfig {
   // adTop 212 = 코드 기반 계산값 — Container mt-md-3(16) + PriceDashboard "오늘의 시세"
   // 카드 줄(헤더~32 + 가로스크롤 카드 140+패딩8≈148) + mb-3(16) ≈ 212, 그 아래
   // "카테고리" 상자 상단과 나란히 맞춤. body zoom 적용 전 논리 px라 zoom 배율과 무관하게 유효.
-  // appPromoTop 0 = 프로모를 레일 맨 꼭대기에 붙임 — 프로모 실제 높이(zoom 역보정 후 약 166px)가
-  // 목표 지점(212*0.85≈180px)에 거의 맞닿을 만큼 커서 여유가 매우 빠듯함(약 14px). 조금이라도
-  // 내려서 시작하면 최소 여백으로 강제 보정되며 왼쪽과 어긋나므로 0으로 최대한 당겨둠.
-  if (pathname === '/') return { contentWidth: 1400, adTop: 212, appPromoTop: 0 };
+  // 2026-10-27: 사이드 앱 프로모 제거로 도킹형(appPromoTop)을 빼고 adTop 으로 바로 세운다 —
+  // 도킹형일 땐 광고가 프로모 높이(약 166px)+간격 아래로 밀려 카테고리보다 조금 낮았다.
+  if (pathname === '/') return { contentWidth: 1400, adTop: 212 };
   // adTop 200 = "검색창" 상자 상단과 나란히(직접 요청으로 기존 110에서 크게 내림).
   // appPromoTop 0 = 도킹 모드로 전환 — 왼쪽 인기 페이지 박스·오른쪽 앱 프로모를 레일 위에 얹고
   // 광고는 그 아래로. (예전엔 튜닝값이 없어 광고가 뜨면 프로모를 아예 숨겼다)
@@ -113,9 +111,10 @@ function isRailPage(pathname: string): boolean {
   return RAIL_PAGES.has(pathname) || pathname.startsWith('/package/');
 }
 
-// 앱 다운로드 사이드바 프로모를 붙일 페이지 — 광고 레일이 있는 페이지도 포함되며,
-// appPromoTop이 지정된 페이지는 같은 레일 칸 위쪽에 어깨를 맞춰 공존한다(아래 promoLeft 계산 참고)
-// /mypage는 제목 아래 가로 배너로 앱을 노출했었으나 그 배너를 제거해서(2026-08-22) 여기로 합류.
+// 레일 위쪽에 앱 프로모 칸(도킹형)을 두던 페이지. 2026-10-27 사이드 앱 프로모는 없앴지만
+// 이 페이지들의 광고 높이(appPromoTop + 프로모 높이 + 간격)는 그 칸 기준으로 맞춰져 있어,
+// 프로모를 보이지 않는 자리 채움으로만 남긴다(아래 renderPromoSlot). 왼쪽 자리 채움 위에는
+// /package 의 아제나 타일이 포털로 얹힌다.
 const APP_PROMO_PAGES = new Set(['/', '/refining', '/wangap', '/package', '/mypage']);
 
 // 앱 프로모 세로 위치 기본값 — 상단 네비(52px) 바로 아래 고정 간격. 페이지별로 다른 콘텐츠 블록에
@@ -134,12 +133,9 @@ export default function AdLayout({ children }: { children: React.ReactNode }) {
   const promoTunedForRail = pageConfig.appPromoTop !== undefined;
   const [isMobile, setIsMobile] = useState(false);
   const [railsWide, setRailsWide] = useState(false);
-  const [promoLeft, setPromoLeft] = useState<number | null>(null);
   // body zoom(0.85)이 실제로 걸리는 폭(≥1024px)인지 — 광고 슬롯 zoom 역보정 적용 여부에 사용.
   // isMobile(<768px) 기준과 달라서 별도로 추적(768~1023px 구간엔 zoom이 아예 안 걸림).
   const [desktopZoomActive, setDesktopZoomActive] = useState(false);
-  const shellRef = useRef<HTMLDivElement>(null);
-  const dockedPromoRef = useRef<HTMLDivElement>(null);
 
   // 사이드 레일 비활성 — 등록/수정 폼 화면.
   const railsDisabled =
@@ -173,87 +169,30 @@ export default function AdLayout({ children }: { children: React.ReactNode }) {
   // 실제 모드에선 해당 슬롯 ID가 있어야 자리를 차지(빈 자리 방지).
   const railsVisible =
     isRailPage(pathname) &&
-    (AD_PREVIEW || (ADFIT_ENABLED && !!ADFIT_UNITS.sidebarLeft.unit)) &&
+    (AD_PREVIEW || !!ADSENSE_SLOTS.rail) &&
     !railsDisabled && railsWide && !isMobile;
-  // 메인도 이제 양쪽 레일에 광고 — 오른쪽은 앱 프로모와 도킹(아래 dockedPromo)되어 나란히 공존
   const rightRailAdVisible = railsVisible;
-  // 앱 다운로드 프로모 — 오른쪽에 실제 광고가 뜨는 페이지는 promoTunedForRail(=appPromoTop 지정)일 때만
-  // 공존. 지정이 없으면 겹칠 수 있으니 예전처럼 숨김.
-  const showPromo =
-    APP_PROMO_PAGES.has(pathname) && !railsDisabled && railsWide && !isMobile &&
-    (!rightRailAdVisible || promoTunedForRail);
-  // 도킹형 — 오른쪽 광고 레일과 같은 sticky 박스 안에 나란히 넣어 스크롤 시 완전히 같이 움직임
-  // (fixed와 sticky가 따로 놀던 문제 해결). 광고가 실제로 뜨는 페이지에서만 의미가 있음.
-  const dockedPromo = showPromo && rightRailAdVisible && promoTunedForRail;
-  // 플로팅형 — 레일이 없거나(메인 오른쪽은 스페이서) 도킹 대상이 아닐 때, 기존처럼 fixed로 띄움.
-  const floatingPromo = showPromo && !dockedPromo;
-
-  // 앱 프로모 가로 위치 (플로팅형 전용) — zoom 배율로 역산하지 않고 실측(getBoundingClientRect)으로
-  // 계산 오차를 없앰. 오른쪽에 레일(스페이서 포함)이 있으면 그 칸에 맞춤, 없으면 콘텐츠 오른쪽 끝에 붙임.
-  // 도킹형은 aside 내부 일반 flow로 렌더되므로 이 계산이 필요 없음.
-  useEffect(() => {
-    if (!floatingPromo) {
-      setPromoLeft(null);
-      return;
-    }
-    const measure = () => {
-      const shell = shellRef.current;
-      if (!shell) return;
-      const rail = shell.querySelector('.side-rail-right');
-      if (rail) {
-        // 레일 광고(160px, zoom 역보정으로 실제 화면에서도 160px)가 레일 안에서 가운데 정렬되는
-        // 것과 똑같이 맞춤. 레일 자체도 body zoom을 받으므로 선언폭(220) 대신 실측 폭을 사용.
-        const railRect = rail.getBoundingClientRect();
-        setPromoLeft(railRect.left + (railRect.width - 160) / 2);
-        return;
-      }
-      const main = shell.querySelector('.content-shell-main');
-      if (!main) return;
-      setPromoLeft(main.getBoundingClientRect().right + 10);
-    };
-    measure();
-    const raf = requestAnimationFrame(measure); // 레일 마운트 직후 레이아웃 안정화 후 한 번 더 측정
-    window.addEventListener('resize', measure);
-    window.addEventListener(SITE_ZOOM_EVENT, measure);
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener('resize', measure);
-      window.removeEventListener(SITE_ZOOM_EVENT, measure);
-    };
-  }, [floatingPromo, railsVisible]);
+  // 도킹형 — 레일 위쪽에 (보이지 않는) 프로모 칸을 두고 그 아래 광고. appPromoTop 이 지정된 페이지만.
+  const dockedPromo =
+    APP_PROMO_PAGES.has(pathname) && railsVisible && promoTunedForRail;
 
   // 도킹형 레일에서 프로모 아래 광고까지의 간격(px).
   // 좌우가 같은 마크업이라 이 값이 양쪽에 똑같이 걸린다 → 실측 보정이 필요 없다.
   // 광고 세로 위치를 조정하고 싶으면 페이지별 appPromoTop(getPageConfig)을 움직이면 된다.
   const PROMO_AD_GAP = 24;
 
-  // 사이드 레일 한 칸 내용 — 표준 세로 규격 160×600(와이드 스카이스크래퍼) 고정.
-  // (미리보기=placeholder, 실제=AdFitUnit 고정 사이즈, key로 라우트마다 갱신)
+  // 사이드 레일 한 칸 내용 — 표준 세로 규격 160×600(와이드 스카이스크래퍼) 칸, key로 라우트마다 갱신.
   // 실제 화면 px가 160×600 그대로 나오도록 zoom 역보정 래퍼로 감쌈(위 AD_ZOOM_COMPENSATE 참고).
-  // side: 좌·우가 같은 페이지에 동시에 뜨므로 애드핏 단위를 반드시 따로 쓴다.
+  // 애드센스는 같은 단위를 좌우에 함께 넣어도 둘 다 채운다.
   const renderRail = (side: 'left' | 'right') => {
-    const adfitUnit = side === 'left' ? ADFIT_UNITS.sidebarLeft : ADFIT_UNITS.sidebarRight;
-    const ad = AD_PREVIEW ? (
-      <AdPlaceholder
-        label={`광고 · 사이드 ${side === 'left' ? '좌' : '우'}`}
-        sub={
-          ADFIT_ENABLED && adfitUnit.unit
-            ? `애드핏 ${adfitUnit.width}×${adfitUnit.height}\n${adfitUnit.unit}`
-            : '160 × 600 (스카이스크래퍼)'
-        }
-        style={{ width: '160px', height: '600px', minHeight: '600px', margin: '0 auto', whiteSpace: 'pre-line' }}
-      />
-    ) : ADFIT_ENABLED && adfitUnit.unit ? (
-      // 애드핏 레일 단위도 160×600 이라 레일 폭을 그대로 쓴다.
-      <AdFitUnit
+    const ad = (
+      <AdSenseUnit
         key={pathname}
-        unit={adfitUnit.unit}
-        width={adfitUnit.width}
-        height={adfitUnit.height}
-        style={{ margin: '0 auto' }}
+        slot={ADSENSE_SLOTS.rail}
+        size={AD_SIZES.rail}
+        label={`사이드 ${side === 'left' ? '좌' : '우'}`}
       />
-    ) : null;
-    if (!ad) return null;
+    );
     if (!desktopZoomActive) return ad;
     return (
       <div style={{ width: '160px', height: '600px', margin: '0 auto', zoom: AD_ZOOM_COMPENSATE }}>
@@ -265,23 +204,14 @@ export default function AdLayout({ children }: { children: React.ReactNode }) {
   const layoutStyle: React.CSSProperties =
     railsVisible ? { maxWidth: `${contentWidth + AD_EXTRA}px` } : {};
 
-  // 도킹형 프로모 칸. 오른쪽은 실제 프로모, 왼쪽은 같은 높이의 보이지 않는 복제본이다.
-  // (인기 페이지 박스를 잠깐 뒀었지만 상단 네비 불꽃 배지로 대체되어 원래 방식으로 복귀)
-  //
-  // 예전엔 왼쪽 sticky top 을 52+adTop 으로 따로 잡아 정지 상태 높이만 맞췄는데,
-  // 오른쪽은 기본값(top:56)이라 스크롤하면 오른쪽이 먼저 붙고 왼쪽은 한참 뒤에 붙어 어긋났다.
-  // 좌우를 "같은 구조 · 같은 sticky 기준점"으로 만들면 보정 없이 항상 같이 움직인다.
-  // 왼쪽은 오른쪽 프로모와 같은 높이를 잡기 위한 숨김 복제본. 그 위에 페이지가 포털로
+  // 도킹형 프로모 칸 — 좌우 모두 보이지 않는 자리 채움이다(사이드 앱 프로모는 2026-10-27 제거).
+  // 좌우가 같은 높이라 광고가 양쪽에서 같은 높이에 선다. 왼쪽에는 페이지가 포털로
   // 자기 위젯을 얹을 수 있게 절대 배치 슬롯(LEFT_RAIL_SLOT_ID)을 겹쳐 둔다 — 크기는 그대로,
   // visibility 만 다시 켜서 자식만 보이게 한다. (현재 /package 의 아제나 타일이 쓴다)
   const renderPromoSlot = (side: 'left' | 'right') => (
     <div
-      ref={side === 'right' ? dockedPromoRef : undefined}
-      style={{
-        marginTop: `${appPromoTop}px`,
-        ...(side === 'left' ? { visibility: 'hidden' as const, position: 'relative' as const } : null),
-      }}
-      aria-hidden={side === 'left' || undefined}
+      style={{ marginTop: `${appPromoTop}px`, visibility: 'hidden', position: 'relative' }}
+      aria-hidden
     >
       {desktopZoomActive ? (
         <div style={{ width: '160px', margin: '0 auto', zoom: AD_ZOOM_COMPENSATE }}>
@@ -301,8 +231,10 @@ export default function AdLayout({ children }: { children: React.ReactNode }) {
   );
 
   // 도킹형 레일 한 칸 — 좌우가 완전히 같은 마크업이라 위치 보정이 필요 없다.
+  // 레일은 스크롤을 따라오지 않는다(.side-rail-sticky 미사용) — 애드센스는 따라오는 광고를
+  // 화면에 하나만, 좌우 대칭 없이 허용한다. 양쪽 레일을 sticky 로 되돌리지 말 것.
   const renderDockedRail = (side: 'left' | 'right') => (
-    <div className="side-rail-sticky">
+    <div>
       {renderPromoSlot(side)}
       <div style={{ marginTop: `${PROMO_AD_GAP}px` }}>{renderRail(side)}</div>
     </div>
@@ -310,13 +242,13 @@ export default function AdLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <div className="content-shell" style={layoutStyle} ref={shellRef}>
+      <div className="content-shell" style={layoutStyle}>
         {railsVisible && (
           <aside
             className="side-rail side-rail-left"
             style={{ paddingTop: dockedPromo ? undefined : `${adTop}px` }}
           >
-            {dockedPromo ? renderDockedRail('left') : <div className="side-rail-sticky">{renderRail('left')}</div>}
+            {dockedPromo ? renderDockedRail('left') : <div>{renderRail('left')}</div>}
           </aside>
         )}
         <main className="content-shell-main" style={{ minHeight: 'calc(100vh - 200px)' }}>
@@ -328,23 +260,13 @@ export default function AdLayout({ children }: { children: React.ReactNode }) {
             style={{ paddingTop: dockedPromo ? undefined : `${adTop}px` }}
           >
             {dockedPromo ? (
-              // 도킹형 — 프로모+광고를 같은 sticky 박스에 쌓음. 왼쪽도 같은 구조라 좌우가 한 몸으로 움직인다.
               renderDockedRail('right')
             ) : (
-              rightRailAdVisible && <div className="side-rail-sticky">{renderRail('right')}</div>
+              rightRailAdVisible && <div>{renderRail('right')}</div>
             )}
           </aside>
         )}
       </div>
-      {/* 앱 다운로드 프로모 (플로팅형) — content-shell 밖에서 position:fixed로 떠 있음.
-          content-shell/main의 폭·정렬을 절대 건드리지 않음 (레이아웃과 완전히 분리).
-          오른쪽 레일이 있으면 그 레일과 같은 칸(promoLeft가 레일 폭 안에서 가운데 정렬),
-          없으면 콘텐츠 오른쪽 끝에 붙임. 세로 위치는 appPromoTop. */}
-      {floatingPromo && promoLeft != null && (
-        <div className="app-promo-fixed-rail" style={{ left: `${promoLeft}px`, top: `${appPromoTop}px` }}>
-          <AppSidebarPromo />
-        </div>
-      )}
     </>
   );
 }

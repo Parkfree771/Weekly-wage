@@ -7,7 +7,6 @@ import CharacterSearch from '@/components/CharacterSearch';
 import { PriceProvider } from '@/contexts/PriceContext';
 import AdBanner from '@/components/ads/AdBanner';
 import DesktopBannerAd from '@/components/ads/DesktopBannerAd';
-import { ADFIT_UNITS } from '@/components/ads/adConfig';
 // 제목·검색창·카드 톤을 주간 골드 페이지와 동일하게 맞춘다 (같은 래퍼 스타일 재사용).
 import styles from '@/app/weekly-gold/weekly-gold.module.css';
 
@@ -137,9 +136,9 @@ export default function ExpeditionGoldPage() {
 
             {/* 본문 ↔ 가이드 경계 광고 — 계산 결과를 다 본 뒤 읽을거리로 넘어가는 자리 */}
             <div className="d-block d-lg-none my-3">
-              <AdBanner index={0} />
+              <AdBanner />
             </div>
-            <DesktopBannerAd adfit={ADFIT_UNITS.galleryBottomDesktop} />
+            <DesktopBannerAd />
           </Col>
         </Row>
       </Container>

@@ -794,7 +794,6 @@
    font-size 0 은 마크업 사이 공백 텍스트 노드가 줄상자를 만드는 것까지 막는다.
    광고 자리를 새로 만들 때도 이 두 줄을 같이 넣을 것 — 안 넣으면 위아래가 어긋나 보인다. */
 .mobileAdSlot,
-.inGridAdSlot,
 .desktopAdSlot {
   font-size: 0;
 }
@@ -818,40 +817,49 @@
 
 .mobileAdSlot :global(ins),
 .mobileAdSlot :global(iframe),
-.inGridAdSlot :global(ins),
-.inGridAdSlot :global(iframe),
 .desktopAdSlot :global(ins),
 .desktopAdSlot :global(iframe) {
   vertical-align: top;
 }
 
-/* 데스크톱 갤러리 그리드 안 — 패키지 4개(2줄) 뒤 전체폭 가로 배너 자리.
-   grid-column 1/-1: 2열 그리드에서 줄 전체를 차지한다. 셀 개수가 짝수로 유지돼
-   마지막 줄에 빈 칸이 생기지 않는다(카드 한 칸을 광고로 바꾸면 7셀 홀수가 되어 항상 빔).
-   (그리드 아이템은 트랙 폭만큼 stretch 되므로 zoom 을 걸어도 폭이 넘치지 않는다) */
-/* 정렬·zoom 은 하단 배너 자리(.desktopAdSlot)와 완전히 같은 방식으로 맞춘다 —
-   zoom 과 text-align 을 같은 요소에 걸어야 가운데가 정확히 맞는다.
-   래퍼를 따로 두고 안쪽만 zoom 하면 바깥이 zoom 전 크기로 정렬을 계산해 어긋난다.
-   flex 정렬은 쓰지 말 것 — 이 자리는 부트스트랩 d-md-block(display:block !important)을
-   함께 쓰므로 display:flex 가 덮여 justify-content 가 통째로 무시된다.
-   line-height 0: ins 는 인라인이라 기준선 아래 여백이 광고 밑에 붙는다.
-   min-height 는 컴포넌트가 adConfig 의 규격 높이로 직접 넣는다 — 규격을 바꿨을 때
-   CSS 상수가 따로 남아 어긋나는 걸 막는다 (광고 충전 시 아래 카드 밀림 방지). */
-.inGridAdSlot {
-  grid-column: 1 / -1;
-  text-align: center;
-  line-height: 0;
-  /* 그리드 gap(1.25rem)이 위아래로 이미 붙으므로 총량은 최소로 둔다.
-     다만 모바일 카드 사이 자리와 같은 이유로 위를 조금 더 준다 — 카드 그림자가
-     아래로 떨어져서 대칭으로 두면 광고가 아래 카드 쪽에 쏠려 보인다. */
-  padding-top: 0.5rem;
-  padding-bottom: 0;
+/* 데스크톱 갤러리 그리드 안 — 카드 한 칸 자리의 사각 광고.
+   바깥(.gridCellAd)은 카드와 같은 상자라 줄 높이에 맞춰 늘어난다(그리드 stretch).
+   바깥에는 부트스트랩 d-md-block(display:block !important)이 붙어 flex 를 못 거므로
+   가운데 정렬은 안쪽 .gridCellAdBody 가 맡는다. */
+.gridCellAd {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 0.75rem;
 }
 
-/* body zoom 0.85(≥1024px) 역보정 — 그대로 두면 728×90 이 화면에서 619×77 로 나가
-   규격 미달이 된다. 레일·하단 배너와 같은 방식. */
+.gridCellAdBody {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 100%;
+}
+
+.gridCellAdLabel {
+  font-size: 0.72rem;
+  line-height: 1;
+  color: var(--text-secondary);
+}
+
+/* 라벨 아래 남는 칸 전체를 광고가 쓴다 — 광고(ins)는 이 칸에 width·height 100% 로 깔린다.
+   align-self stretch: 부모 flex 가 align-items center 라 그대로 두면 폭이 내용 폭으로 줄어든다. */
+.gridCellAdUnit {
+  flex: 1;
+  align-self: stretch;
+  line-height: 0;
+}
+
+/* body zoom 0.85(≥1024px) 역보정 — 그대로 두면 칸 안 광고가 화면에서 0.85 배로 줄어 나간다.
+   레일·하단 사각과 같은 방식. zoom 은 % 크기를 키우지 않으므로 칸을 넘치지 않는다. */
 @media (min-width: 1024px) {
-  .inGridAdSlot {
+  .gridCellAdUnit {
     zoom: 1.1765;
   }
 }

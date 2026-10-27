@@ -50,7 +50,6 @@ import {
 } from '../../lib/advancedRefiningData';
 import styles from './RefiningCalculator.module.css';
 import DesktopBannerAd from '@/components/ads/DesktopBannerAd';
-import { ADFIT_UNITS } from '@/components/ads/adConfig';
 // 재료 카드 컴포넌트 — MaterialCard.tsx로 분리 (완갑 평균 시뮬과 공용)
 import MaterialCard from './MaterialCard';
 import {
@@ -4072,11 +4071,11 @@ export default function RefiningCalculator({
           {/* 모바일 띠배너 — 목표 설정 바로 아래. 같은 페이지의 다른 자리와 단위가 겹치면
               애드핏이 첫 자리만 채우므로 인-콘텐츠 단위 순번을 따로 쓴다. */}
           <div className="d-block d-lg-none my-2">
-            <AdBanner index={0} />
+            <AdBanner />
           </div>
 
           {/* 데스크톱 728×90 — 목표 카드 아래 (갤러리 하단과 공용 단위, 페이지가 달라 중복 아님) */}
-          <DesktopBannerAd adfit={ADFIT_UNITS.galleryBottomDesktop} />
+          <DesktopBannerAd />
 
           {/* 재료 소모량 표시 */}
           {searched && equipments.length > 0 && materials && (
@@ -5075,7 +5074,7 @@ export default function RefiningCalculator({
 
             {/* 데스크톱 728×90 — 결과 카드 아래. 목표 아래 자리와 같은 페이지라 별도 단위 필수
                 (refiningResultDesktop — 미발급 동안은 자리째 렌더 안 됨) */}
-            <DesktopBannerAd adfit={ADFIT_UNITS.refiningResultDesktop} />
+            <DesktopBannerAd />
             </>
           )}
         </>

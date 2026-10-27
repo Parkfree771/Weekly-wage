@@ -4,7 +4,6 @@ import { Container, Row, Col } from 'react-bootstrap';
 import LifeCraftCalculator from '@/components/life-master/LifeCraftCalculator';
 import AdBanner from '@/components/ads/AdBanner';
 import DesktopBannerAd from '@/components/ads/DesktopBannerAd';
-import { ADFIT_UNITS } from '@/components/ads/adConfig';
 
 export default function LifeMasterPage() {
   return (
@@ -39,9 +38,9 @@ export default function LifeMasterPage() {
                 LifeCraftCalculator 안쪽 자리가 index 없는 단일 단위를 쓰므로 여기는 index 0 이어야 한다
                 (같은 단위를 한 페이지에 두 번 넣으면 애드핏이 첫 자리만 채운다). */}
             <div className="d-block d-lg-none my-3">
-              <AdBanner index={0} />
+              <AdBanner />
             </div>
-            <DesktopBannerAd adfit={ADFIT_UNITS.galleryBottomDesktop} />
+            <DesktopBannerAd />
           </Col>
         </Row>
 

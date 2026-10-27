@@ -4,7 +4,6 @@ import dynamic from 'next/dynamic';
 import { Container, Row, Col } from 'react-bootstrap';
 import AdBanner from '@/components/ads/AdBanner';
 import DesktopBannerAd from '@/components/ads/DesktopBannerAd';
-import { ADFIT_UNITS } from '@/components/ads/adConfig';
 
 const HellRewardCalculator = dynamic(
   () => import('@/components/hell-reward/HellRewardCalculator'),
@@ -38,9 +37,9 @@ export default function HellRewardPage() {
 
             {/* 계산기 ↔ 가이드 경계 광고 — 결과를 다 본 뒤 읽을거리로 넘어가는 자리 */}
             <div className="d-block d-lg-none my-3">
-              <AdBanner index={0} />
+              <AdBanner />
             </div>
-            <DesktopBannerAd adfit={ADFIT_UNITS.galleryBottomDesktop} />
+            <DesktopBannerAd />
           </Col>
         </Row>
       </Container>

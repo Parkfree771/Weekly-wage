@@ -2,98 +2,49 @@
 
 // 미리보기 모드.
 // true  = 실제 광고 대신 "여기에 광고 들어감" placeholder(자리/크기)만 표시. 배치 확인용.
-// false = 실제 광고(<ins>) 동작. (단, 아래 슬롯/단위 ID가 채워진 자리에만 렌더됨)
-//
-// 애드핏은 승인 전에는 광고를 안 내려보내고 <ins> 가 display:none 으로 남으므로,
-// 심사 중에 false 로 둬도 빈 박스가 생기지 않는다. 승인되는 즉시 자동으로 채워진다.
+// false = 실제 광고(<ins>) 동작. (단, 아래 슬롯 ID가 채워진 자리에만 렌더됨)
 export const AD_PREVIEW = false;
 
 // 모바일 뷰포트 초기 배율 — app/layout.tsx 의 viewport.initialScale 이 이 값을 쓴다.
-// 페이지를 축소 렌더하므로 광고를 그대로 두면 320×100 이 256×80 으로 나가 규격 미달이 된다.
-// (2026-07-28 애드핏 매체 심사 보류 사유) 광고 컨테이너에 역배율을 걸어 실제 화면 px 를 복원한다.
+// 페이지를 축소 렌더하므로 광고를 그대로 두면 300×250 이 240×200 으로 나가 규격 미달이 된다.
+// (2026-07-28 애드핏 매체 심사 보류 사유가 정확히 이것) 광고 컨테이너에 역배율을 걸어 실제 화면 px 를 복원한다.
 // 데스크톱이 body zoom 0.85 에 AD_ZOOM_COMPENSATE 를 거는 것과 같은 방식.
 export const MOBILE_VIEWPORT_SCALE = 0.8;
 export const MOBILE_AD_ZOOM_COMPENSATE = 1 / MOBILE_VIEWPORT_SCALE;
 
 // 모바일 본문 인-콘텐츠 광고(AdBanner) 사용 여부.
-// 모바일은 하단 앵커를 없애고 앱(AdMob BannerAdBar)과 같은 위치의 인-콘텐츠만 사용.
+// 모바일은 하단 앵커를 코드로 두지 않고 앱(AdMob BannerAdBar)과 같은 위치의 인-콘텐츠만 쓴다.
 export const MOBILE_INCONTENT = true;
 
-// ── 카카오 애드핏 ──
-// true  = 애드핏 광고를 내보낸다 (애드핏 승인 후 켤 것)
-// false = 애드핏 자리를 렌더하지 않는다
-export const ADFIT_ENABLED = true;
+// ── 구글 애드센스 ──
+export const ADSENSE_CLIENT = 'ca-pub-6944494802169618';
 
-// 애드핏 광고단위 ID (애드핏 > 광고단위에서 발급). 규격이 고정이라 크기도 같이 둔다.
-// 빈 unit 은 렌더하지 않는다.
+// 광고 단위 ID(data-ad-slot, 콘솔 > 광고 > 광고 단위별 > 디스플레이 광고에서 발급).
+// 빈 슬롯은 렌더하지 않는다.
 //
-// 자리마다 단위를 따로 둔다. 규격이 같아도 합치면 (1) 같은 ID 가 한 페이지에 두 번
-// 들어가고(애드핏은 1페이지 1단위가 원칙) (2) 리포트가 합산돼 어느 자리가 수익이
-// 나는지 구분할 수 없다.
-export const ADFIT_UNITS = {
-  // 모바일 본문 320×100 — index 없이 AdBanner 를 부르는 모든 자리에서 쓰는 단일 단위
-  // (홈·계산기류 본문, 패키지 갤러리 페이지 버튼 아래 등. 페이지당 한 번만 불러야 한다).
-  // 한 페이지에 광고가 여러 개인 자리는 320×50 띠배너 ADFIT_INCONTENT_UNITS 를 index 로 받는다.
-  mobileInContent: { unit: 'DAN-bo9jwUZBhdAH4HWn', width: 320, height: 100 },
-  // 모바일 햄버거 드로어 자리 — 비워 둔다 (현재 드로어 광고를 렌더하는 곳이 없다).
-  //
-  // 여기 있던 DAN-5AUDzC6VzTXU6X8H(320×100)를 2026-09-21 에 패키지 갤러리 첫 인-콘텐츠로
-  // 재활용했더니 그 자리만 광고가 안 채워졌다. 같은 페이지의 나머지 세 자리는 전부 정상이었고
-  // 코드 경로도 자리마다 같으므로, 발급만 해 두고 한 번도 노출된 적 없던 그 단위 자체 문제로 보고
-  // 새 단위(DAN-HcRDLCdAdQSBLtJP)로 교체했다.
-  // → 쓰지 않고 묵혀 둔 단위를 다른 자리에 돌려쓰지 말 것. 자리를 늘릴 땐 새로 발급하는 편이 빠르다.
-  mobileDrawer: { unit: '', width: 320, height: 100 },
-  sidebarLeft: { unit: 'DAN-LhB3sf1lcaZ0pCFD', width: 160, height: 600 },     // PC 레일 좌
-  sidebarRight: { unit: 'DAN-cf5UrXPfQYUZYdhv', width: 160, height: 600 },    // PC 레일 우
-  // 패키지 상세 PC 좌측 칼럼(340px) — 계산 결과 카드 아래 남는 공간. 모바일에서는 렌더하지 않는다.
-  packageDetailSquare: { unit: 'DAN-9tfnO1mRCb1HDe0S', width: 250, height: 250 },
-  // 데스크톱 728×90 가로 배너 "목표 아래" 공용 — 패키지 갤러리(그리드 첫 줄 뒤 전체폭) ·
-  // 재련 평균 시뮬(목표 카드 아래) · 완갑 평균 시뮬(여정 카드 아래) ·
-  // 더보기 효율(두 섹션 카드 사이) · 홈 · 마이페이지 · 패키지 상세.
-  // 페이지가 달라 같은 단위를 써도 되지만 리포트는 전 자리 합산으로 나온다.
-  galleryBottomDesktop: { unit: 'DAN-Lhv3yJ7AdoJ1LBwZ', width: 728, height: 90 },
-  // 데스크톱 728×90 "결과 아래" 공용 — 재련·완갑 평균 시뮬의 예상 소모 재료 카드 아래.
-  // 같은 페이지의 목표 아래 자리와 함께 나가므로 별도 단위다 (같은 단위 반복이면 첫 자리만 채워짐).
-  refiningResultDesktop: { unit: 'DAN-XWlARWwdT4rTl87p', width: 728, height: 90 },
-  // 패키지 갤러리 데스크톱 "페이저 아래" 300×250.
-  // 원래 이 자리에 728×90 이 있었는데, 그리드 안 줄 자리(전체폭 1400px)에 728×90 을 올리면서
-  // 자리를 맞바꿨다 — 같은 단위를 한 페이지에 두 번 넣으면 애드핏이 첫 자리만 채우기 때문이다.
-  // 정사각형에 가까운 규격은 전체폭 띠 한가운데에서는 양옆이 크게 비어 붕 뜨지만,
-  // 페이지 맨 아래에서는 밀려날 콘텐츠가 가이드 본문뿐이라 세로 250px 을 감당할 수 있다.
-  // 소재 새로고침 미설정 — 페이지 버튼을 누를 때마다 key 가 바뀌어 이미 새 광고를 받는다.
-  packageGalleryBottomSquare: { unit: 'DAN-kyVf0sEBwSwVTHcy', width: 300, height: 250 },
+// 애드센스는 같은 단위를 한 페이지에 여러 번 넣어도 전부 채운다(애드핏과 다름).
+// 자리 종류별로만 나누는 건 리포트에서 어느 종류가 버는지 구분하기 위해서다.
+export const ADSENSE_SLOTS = {
+  mobileInContent: '7066956784', // 모바일 본문 전 자리
+  desktopHorizontal: '1926310741', // PC 가로 띠(목표 아래·결과 아래)
+  desktopSquare: '7923200898', // PC 사각(패키지 상세 좌측·갤러리 카드 칸·갤러리 페이저 아래)
+  rail: '6748226739', // PC 좌우 레일(좌우 공용)
 };
 
-// 한 페이지에 인-콘텐츠 광고가 여러 번 들어가는 자리(패키지 갤러리: 카드 2개마다 1개)용.
-// 노출 순서대로 앞에서부터 하나씩 꺼내 쓴다.
+// 자리별 광고 칸 크기 — 반응형 단위를 이 칸에 맞춰 띄운다(CSS 로 칸 크기를 정하는 방식).
+// 칸보다 작은 소재가 오면 가운데 정렬되고, 칸을 넘는 소재는 오지 않는다.
+// width 가 '100%' 인 자리는 부모 폭을 따른다(maxWidth 까지).
 //
-// 반드시 자리마다 다른 단위여야 한다. 같은 단위 ID 를 한 페이지에 여러 번 넣으면 애드핏이
-// 첫 자리만 채우고 나머지 <ins> 는 display:none 으로 남긴다 — "두어 개만 나오고 그 뒤로는
-// 안 나온다" 는 증상이 정확히 이것이다.
-//
-// 배열 길이 = 그 페이지에서 실제로 나갈 수 있는 광고 개수다. 단위가 모자라면 남는 자리는
-// 아예 렌더하지 않는다(빈 박스가 생기는 것보다 낫다).
-//
-// 목표 구성: 320×50 띠배너 3개 (카드 2개 → 광고 → 3개 → 광고 → 3개 → 광고).
-// 지금은 1개라 첫 자리만 나가고, 2·3번 자리는 렌더 자체를 건너뛴다(빈 박스 없음).
-//
-// width/height 는 "콘솔에 등록된 규격"을 그대로 적는 것이지 여기서 정하는 값이 아니다.
-// 단위를 추가하면 아래 주석을 풀고 ID 를 채우기만 하면 된다.
-//
-// MOBILE_AD_ZOOM_COMPENSATE 역보정은 그대로 둘 것. 모바일 뷰포트가 0.8 로 축소 렌더돼서
-// 빼면 320×50 이 화면에서 256×40 으로 나간다
-// (2026-07-28 애드핏 심사 보류 사유가 정확히 이것 — 320×100 이 256×80 으로 나갔다).
-//
-// 목표 규격은 세 자리 모두 320×100 이다 (2026-09-21 결정 — 자리마다 두께가 다르면
-// 스크롤하며 카드를 비교할 때 리듬이 흔들린다). width/height 는 애드핏 콘솔에 등록된
-// 규격을 그대로 적는 값이라, 여기 숫자만 100 으로 바꾸면 규격 불일치로 광고가 안 채워진다.
-// 반드시 320×100 으로 발급한 단위 ID 로 교체할 것.
-//
-// 2026-09-21: 세 자리 모두 320×100 으로 통일 완료.
-// 자리를 내준 구 320×50 단위(DAN-Dh2QTY00kZEzZjcQ · DAN-gceZS4W9pO1EXNBI ·
-// DAN-4kNsokjK16GLvNCx)는 유휴 상태다 — 다시 쓸 일이 없으면 콘솔에서 정리할 것.
-export const ADFIT_INCONTENT_UNITS = [
-  { unit: 'DAN-HcRDLCdAdQSBLtJP', width: 320, height: 100 },
-  { unit: 'DAN-8VBNfDsX666bO2Kg', width: 320, height: 100 },
-  { unit: 'DAN-sM9Xq1pUGzV8YekD', width: 320, height: 100 },
-];
+// 모바일 250: 구글 성과 상위 300×250 이 들어가는 높이. 320×100 소재도 같은 칸에서 경쟁한다.
+// 레일은 따라오지 않는다 — 애드센스는 스크롤을 따라오는 광고를 화면에 하나만, 좌우 대칭 없이 허용한다.
+export const AD_SIZES = {
+  mobileInContent: { width: '100%', maxWidth: 336, height: 250 },
+  desktopHorizontal: { width: '100%', maxWidth: 970, height: 90 },
+  desktopGallerySquare: { width: 336, height: 280 },
+  // 갤러리 카드 칸 — 칸을 꽉 채운다(같은 줄 카드 높이에 따라 칸 크기가 달라진다). 칸이 작아도 250 은 확보.
+  desktopGridCell: { width: '100%', height: '100%', minHeight: 250 },
+  desktopSideSquare: { width: 250, height: 250 },
+  rail: { width: 160, height: 600 },
+} as const;
+
+export type AdSize = { width: number | string; maxWidth?: number; height: number | string; minHeight?: number };

@@ -17,7 +17,6 @@ import {
 import styles from './bracelet.module.css';
 import AdBanner from '@/components/ads/AdBanner';
 import DesktopBannerAd from '@/components/ads/DesktopBannerAd';
-import { ADFIT_UNITS } from '@/components/ads/adConfig';
 
 export default function BraceletPage() {
   const [phase, setPhase] = useState<SimPhase>('input');
@@ -447,7 +446,7 @@ export default function BraceletPage() {
         </div>
 
         {/* 데스크톱 728×90 — 시뮬 아래·가이드 위. 이 페이지의 첫 데스크톱 자리 */}
-        <DesktopBannerAd adfit={ADFIT_UNITS.galleryBottomDesktop} />
+        <DesktopBannerAd />
       </Container>
     </div>
   );
