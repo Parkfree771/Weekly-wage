@@ -823,14 +823,12 @@
 }
 
 /* 데스크톱 갤러리 그리드 안 — 카드 한 칸 자리의 사각 광고.
-   바깥(.gridCellAd)은 카드와 같은 상자라 줄 높이에 맞춰 늘어난다(그리드 stretch).
+   카드 상자(배경·테두리)를 일부러 쓰지 않는다 — 애드센스 정책상 광고 주변을 콘텐츠와
+   비슷하게 꾸며 혼동시키면 안 된다. 칸은 줄 높이에 맞춰 늘어나고(그리드 stretch)
    바깥에는 부트스트랩 d-md-block(display:block !important)이 붙어 flex 를 못 거므로
    가운데 정렬은 안쪽 .gridCellAdBody 가 맡는다. */
 .gridCellAd {
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 0.75rem;
+  padding: 0.75rem 0;
 }
 
 .gridCellAdBody {
