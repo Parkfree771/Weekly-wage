@@ -41,8 +41,9 @@ export const AD_SIZES = {
   mobileInContent: { width: '100%', maxWidth: 336, height: 250 },
   desktopHorizontal: { width: '100%', maxWidth: 970, height: 90 },
   desktopGallerySquare: { width: 336, height: 280 },
-  // 갤러리 카드 칸 — 칸을 꽉 채운다(같은 줄 카드 높이에 따라 칸 크기가 달라진다). 칸이 작아도 250 은 확보.
-  desktopGridCell: { width: '100%', height: '100%', minHeight: 250 },
+  // 갤러리 카드 칸 — 폭은 칸을 꽉 채우고 높이는 280 고정, 칸 안에서 세로 가운데.
+  // 높이까지 칸에 맞췄더니(100%) 소재가 칸보다 낮을 때 위에 붙고 아래가 크게 비었다.
+  desktopGridCell: { width: '100%', height: 280 },
   desktopSideSquare: { width: 250, height: 250 },
   rail: { width: 160, height: 600 },
 } as const;

@@ -848,10 +848,9 @@
   color: var(--text-secondary);
 }
 
-/* 라벨 아래 남는 칸 전체를 광고가 쓴다 — 광고(ins)는 이 칸에 width·height 100% 로 깔린다.
+/* 광고는 칸 폭을 꽉 채우고(높이는 adConfig 고정값) 라벨과 함께 칸 세로 가운데에 선다.
    align-self stretch: 부모 flex 가 align-items center 라 그대로 두면 폭이 내용 폭으로 줄어든다. */
 .gridCellAdUnit {
-  flex: 1;
   align-self: stretch;
   line-height: 0;
 }
