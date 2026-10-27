@@ -3,7 +3,7 @@
 import { useState, ReactNode } from 'react';
 import { GOLD_VALUE_POINTS } from '@/lib/gold-value';
 
-// 골드 가치 변화 추세 미니 차트 — 왼쪽 바 "골드 가치 변화" 버튼에 마우스를 올리면 뜬다.
+// 골드 가치 변화 추세 미니 차트 — 왼쪽 바 "원화로 보기" 버튼에 마우스를 올리면 뜬다.
 // 점 몇 개뿐이라 Recharts 대신 SVG 로 직접 그린다. 값은 lib/gold-value.ts 한 곳에서 온다.
 
 const W = 280;

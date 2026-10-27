@@ -1,5 +1,5 @@
 import { useTheme } from './ThemeProvider';
-import { useMemo, useCallback, useContext, useState, useEffect } from 'react';
+import { useMemo, useCallback, useContext, useState, useEffect, ReactNode } from 'react';
 import Image from 'next/image';
 import { Card, Spinner } from 'react-bootstrap';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceArea } from 'recharts';
@@ -8,6 +8,8 @@ import { PRICE_EVENTS, SPECIAL_EVENT_DOT_COLOR_BY_CATEGORY } from '@/lib/price-e
 import { PriceContext } from './PriceComparisonStats';
 import { ColoredItemName } from '@/lib/components/ColoredItemName';
 import TrendArrow from './TrendArrow';
+import WonPrice from './WonPrice';
+import { GOLD_VALUE_POINTS, getGoldValueAt } from '@/lib/gold-value';
 import type { TooltipProps, CustomDotProps } from '@/types/recharts';
 
 /** 차트 날짜 키(YYYY-MM-DD) → 축·툴팁 표시(M/D) */
@@ -127,8 +129,8 @@ function RatePair({ label, rate, valueSize, arrowSize }: {
  * 글자(→·~) 대신 SVG 인 이유는 폰트마다 글리프 높이가 달라 숫자와 기준선이 어긋나기 때문.
  */
 function RangeEndpoints({ first, last, up, valueSize, arrowSize, color }: {
-  first: string;
-  last: string;
+  first: ReactNode;
+  last: ReactNode;
   up: boolean;
   valueSize: string;
   arrowSize: number;
@@ -301,7 +303,7 @@ function buildYAxisConfig(stats: YAxisStats, comparisonRange: YAxisRange) {
 
 export default function CompactPriceChart({ selectedItem, history, loading, categoryStyle, hidePeriodButtons = false, fillHeight = false }: CompactPriceChartProps) {
   const { theme } = useTheme();
-  const { selectedPeriod, setSelectedPeriod, eventRangeActive, filteredHistory, comparisonData, activeReferenceLines, showEventDots, toggleEventDots, showWednesdayDots, toggleWednesdayDots, showRegularDots, toggleRegularDots, showComparisonLine, toggleComparisonLine, goldValueAdjusted, toggleGoldValueAdjusted } = useContext(PriceContext);
+  const { selectedPeriod, setSelectedPeriod, eventRangeActive, filteredHistory, comparisonData, activeReferenceLines, showEventDots, toggleEventDots, showWednesdayDots, toggleWednesdayDots, showRegularDots, toggleRegularDots, showComparisonLine, toggleComparisonLine, wonMode, toggleWonMode } = useContext(PriceContext);
 
   // 이벤트 대비 카드로 구간을 잡은 동안에는 어떤 기간 버튼도 켜 두지 않는다 —
   // 차트가 보여 주는 구간과 켜진 버튼이 다르면 무엇이 적용됐는지 알 수 없다.
@@ -340,6 +342,8 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
 
   // 현재 아이템의 커스텀 가격선
   const currentCustomLines = selectedItem ? customPriceLines[selectedItem.id] : undefined;
+  // 차트에 그리는 가격선 — 골드로 입력한 값이라 원화 환산 중에는 숨긴다
+  const chartCustomLines = wonMode ? undefined : currentCustomLines;
 
   // 가격선 저장
   const savePriceLines = () => {
@@ -568,6 +572,12 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
   }, []);
 
   const formatPrice = useCallback((value: number) => {
+    // 원화 환산 — 싼 재료는 1원도 안 돼서 소수점을 남긴다 (formatWon 과 같은 자릿수)
+    if (wonMode) {
+      const a = Math.abs(value);
+      if (a >= 10) return Math.round(value).toLocaleString('ko-KR');
+      return value.toLocaleString('ko-KR', { maximumFractionDigits: a >= 1 ? 1 : 2 });
+    }
     // 악세, 보석 카테고리는 소수점 없이 표시
     if (categoryStyle?.label === '악세' || categoryStyle?.label === '팔찌' || categoryStyle?.label === '보석') {
       return Math.round(value).toLocaleString('ko-KR');
@@ -576,9 +586,10 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
       return value.toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     }
     return Math.round(value).toLocaleString('ko-KR');
-  }, [categoryStyle]);
+  }, [categoryStyle, wonMode]);
 
-  const formatTooltipPrice = useCallback((value: number) => {
+  const formatTooltipPrice = useCallback((value: number): ReactNode => {
+    if (wonMode) return <WonPrice value={value} />;
     // 악세, 보석 카테고리는 소수점 없이 표시
     if (categoryStyle?.label === '악세' || categoryStyle?.label === '팔찌' || categoryStyle?.label === '보석') {
       return Math.round(value).toLocaleString('ko-KR') + ' G';
@@ -591,7 +602,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
       return Math.round(value).toLocaleString('ko-KR') + ' G';
     }
     return value.toLocaleString('ko-KR') + ' G';
-  }, [categoryStyle]);
+  }, [categoryStyle, wonMode]);
 
   const stats = useMemo(() => {
     if (filteredHistory.length === 0) return null;
@@ -969,6 +980,54 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
   const effectiveXTicks = isZoomed ? visibleXTicks : xAxisTicks;
   const effectiveAvg = isZoomed ? visibleAveragePrice : averagePrice;
 
+  // 골드 가치 구간 — 원화로 보기 중에만, 지금 보이는 범위를 lib/gold-value.ts 점 날짜로
+  // 나눈다. 구간마다 차트 위 여백에 "100골드 = 14원 → 10원" 알약 배지, 점 날짜에는 세로 점선.
+  // X축이 날짜 문자열(카테고리)이라 점 날짜가 데이터에 없으면 그 뒤 첫 날짜에 붙인다.
+  const goldValueSegments = (() => {
+    if (!wonMode || effectiveData.length < 2) return null;
+    const keys: string[] = effectiveData.map(d => d.날짜);
+    const lastIdx = keys.length - 1;
+    const bounds = [0];
+    GOLD_VALUE_POINTS.forEach(p => {
+      const i = keys.findIndex(k => k >= p.date);
+      if (i > 0 && i < lastIdx && i !== bounds[bounds.length - 1]) bounds.push(i);
+    });
+    bounds.push(lastIdx);
+    const fmt = (v: number) => String(Math.round(v * 10) / 10);
+    const segments = [];
+    for (let i = 0; i < bounds.length - 1; i++) {
+      const from = fmt(getGoldValueAt(keys[bounds[i]]));
+      const to = fmt(getGoldValueAt(keys[bounds[i + 1]]));
+      segments.push({
+        x1: keys[bounds[i]],
+        x2: keys[bounds[i + 1]],
+        label: from === to ? `100골드 = ${from}원` : `100골드 = ${from}원 → ${to}원`,
+      });
+    }
+    return { segments, lines: bounds.slice(1, -1).map(i => keys[i]) };
+  })();
+
+  /** 구간 배지 — ReferenceArea 의 label 로 그려서 구간 가운데 위(차트 위 여백)에 띄운다. 구간보다 넓으면 생략 */
+  const renderGoldValueBadge = (viewBox: { x?: number; y?: number; width?: number } | undefined, text: string, fontSize: number) => {
+    if (!viewBox || viewBox.x == null || viewBox.y == null || viewBox.width == null) return null;
+    // 한글은 1em, 숫자·기호는 0.62em 정도로 폭을 어림한다
+    const textW = [...text].reduce((w, ch) => w + (/[가-힣]/.test(ch) ? fontSize : fontSize * 0.62), 0);
+    const padX = fontSize * 0.75;
+    const w = textW + padX * 2;
+    const h = fontSize * 1.75;
+    if (w > viewBox.width) return null;
+    const cx = viewBox.x + viewBox.width / 2;
+    const top = viewBox.y - h - 3;
+    return (
+      <g pointerEvents="none">
+        <rect x={cx - w / 2} y={top} width={w} height={h} rx={h / 2} style={{ fill: 'var(--card-bg)' }} stroke={chartColor} strokeWidth={1.5} />
+        <text x={cx} y={top + h / 2} textAnchor="middle" dominantBaseline="central" fill={chartColor} fontSize={fontSize} fontWeight={800}>
+          {text}
+        </text>
+      </g>
+    );
+  };
+
   if (!selectedItem) {
     return (
       <div className="text-center py-5">
@@ -1116,25 +1175,25 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                         </span>
                       </button>
                     )}
-                    {/* 골드 가치 반영 — 켜면 과거 가격을 지금 골드 가치 기준으로 환산 (lib/gold-value.ts).
+                    {/* 원화 환산 — 그 날 가격을 그 날의 원화 가치로 (lib/gold-value.ts).
                         데스크톱(hidePeriodButtons)은 왼쪽 바 보기모드에 버튼이 있어서 여기선 뺀다. */}
                     {!hidePeriodButtons && <button
-                      onClick={toggleGoldValueAdjusted}
-                      title={goldValueAdjusted ? '원래 가격으로 보기' : '과거 가격을 지금 골드 가치 기준으로 환산'}
-                      aria-pressed={goldValueAdjusted}
+                      onClick={toggleWonMode}
+                      title={wonMode ? '골드로 보기' : '그 날 가격을 원화로 환산'}
+                      aria-pressed={wonMode}
                       style={{
                         padding: '3px 9px',
                         borderRadius: '999px',
-                        border: `1.5px solid ${goldValueAdjusted ? chartColor : 'var(--border-color)'}`,
-                        backgroundColor: goldValueAdjusted ? chartColor : 'transparent',
-                        color: goldValueAdjusted ? '#fff' : 'var(--text-muted)',
+                        border: `1.5px solid ${wonMode ? chartColor : 'var(--border-color)'}`,
+                        backgroundColor: wonMode ? chartColor : 'transparent',
+                        color: wonMode ? '#fff' : 'var(--text-muted)',
                         fontSize: '0.72rem',
                         fontWeight: 700,
                         cursor: 'pointer',
                         whiteSpace: 'nowrap',
                       }}
                     >
-                      골드 가치 변화
+                      원화로 보기
                     </button>}
                   </>
                 );
@@ -1320,13 +1379,13 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                 [ ] 드래그 확대
               </span>
             </span>
-            {currentCustomLines?.sellPrice != null && (
+            {chartCustomLines?.sellPrice != null && (
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                 <svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke="#10b981" strokeWidth="2.5" strokeDasharray="8 4" /></svg>
                 판매가
               </span>
             )}
-            {currentCustomLines?.buyPrice != null && (
+            {chartCustomLines?.buyPrice != null && (
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                 <svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke="#f59e0b" strokeWidth="2.5" strokeDasharray="8 4" /></svg>
                 구매가
@@ -1570,8 +1629,8 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                   )}
 
                   <button
-                    onClick={toggleGoldValueAdjusted}
-                    aria-pressed={goldValueAdjusted}
+                    onClick={toggleWonMode}
+                    aria-pressed={wonMode}
                     style={{
                       width: '100%',
                       display: 'flex',
@@ -1580,17 +1639,17 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                       padding: '7px 8px',
                       marginTop: '4px',
                       borderRadius: '7px',
-                      border: `1px solid ${goldValueAdjusted ? chartColor : 'var(--border-color)'}`,
+                      border: `1px solid ${wonMode ? chartColor : 'var(--border-color)'}`,
                       backgroundColor: 'var(--bg-secondary)',
                       cursor: 'pointer',
                       textAlign: 'left',
                     }}
                   >
                     <span style={{ flex: 1, fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                      골드 가치 변화
+                      원화로 보기
                     </span>
-                    <span style={{ fontSize: '0.68rem', fontWeight: 700, color: goldValueAdjusted ? chartColor : 'var(--text-muted)' }}>
-                      {goldValueAdjusted ? '적용' : '끔'}
+                    <span style={{ fontSize: '0.68rem', fontWeight: 700, color: wonMode ? chartColor : 'var(--text-muted)' }}>
+                      {wonMode ? '적용' : '끔'}
                     </span>
                   </button>
                 </div>
@@ -1672,7 +1731,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                 </button>
               )}
               <ResponsiveContainer width="100%" height="100%" minHeight={500}>
-                <LineChart data={effectiveData} onMouseDown={handleZoomMouseDown} onMouseMove={handleZoomMouseMove} onMouseUp={handleZoomMouseUp} style={{ cursor: isSelecting ? 'crosshair' : 'default', userSelect: 'none' }} margin={{ top: 25, right: 10, left: 0, bottom: 0 }}>
+                <LineChart data={effectiveData} onMouseDown={handleZoomMouseDown} onMouseMove={handleZoomMouseMove} onMouseUp={handleZoomMouseUp} style={{ cursor: isSelecting ? 'crosshair' : 'default', userSelect: 'none' }} margin={{ top: goldValueSegments ? 38 : 25, right: 10, left: 0, bottom: 0 }}>
                   <defs><linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={chartColor} stopOpacity={0.4}/><stop offset="95%" stopColor={chartColor} stopOpacity={0.05}/></linearGradient></defs>
                   <CartesianGrid strokeDasharray="5 5" stroke="var(--border-color)" strokeWidth={1} vertical={true} horizontal={true} />
                   <XAxis dataKey="날짜" ticks={effectiveXTicks} tick={(props) => { const { x, y, payload } = props; const dataIndex = effectiveData.findIndex(d => d.날짜 === payload.value); if (dataIndex < 0) return null; const data = effectiveData[dataIndex]; const eventLabel = data.eventLabel || ''; const eventColor = data.eventColor || '#ef4444'; return (<g transform={`translate(${x},${y})`}><text x={0} y={0} dy={10} textAnchor="end" fill="var(--text-primary)" fontSize={16} fontWeight="700" fontFamily="var(--font-mono), monospace" transform="rotate(-35)">{toAxisLabel(payload.value)}</text>{eventLabel && (<text x={0} y={12} dy={10} textAnchor="end" fill={eventColor} fontSize={12} fontWeight="700" transform="rotate(-35)">{eventLabel}</text>)}</g>); }} height={80} stroke="var(--text-secondary)" strokeWidth={2} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} />
@@ -1693,17 +1752,33 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                     <ReferenceLine y={stats.avg} stroke="#6b7280" strokeDasharray="8 4" strokeWidth={2} />
                   )}
                   {/* 커스텀 가격선 - 판매가 (녹색) */}
-                  {currentCustomLines?.sellPrice && (
-                    <ReferenceLine y={currentCustomLines.sellPrice} stroke="#10b981" strokeDasharray="10 5" strokeWidth={2.5} />
+                  {chartCustomLines?.sellPrice && (
+                    <ReferenceLine y={chartCustomLines.sellPrice} stroke="#10b981" strokeDasharray="10 5" strokeWidth={2.5} />
                   )}
                   {/* 커스텀 가격선 - 구매가 (주황) */}
-                  {currentCustomLines?.buyPrice && (
-                    <ReferenceLine y={currentCustomLines.buyPrice} stroke="#f59e0b" strokeDasharray="10 5" strokeWidth={2.5} />
+                  {chartCustomLines?.buyPrice && (
+                    <ReferenceLine y={chartCustomLines.buyPrice} stroke="#f59e0b" strokeDasharray="10 5" strokeWidth={2.5} />
                   )}
                   {/* 비교 라인 (일반 재료 × 5) - 점선 */}
                   {comparisonData && showComparisonLine && (
                     <Line type="monotone" dataKey="비교가격" stroke={comparisonColor} strokeWidth={2} strokeDasharray="8 4" dot={false} activeDot={{ r: 6, fill: comparisonColor, stroke: 'var(--card-bg)', strokeWidth: 2 }} connectNulls isAnimationActive={false} />
                   )}
+                  {/* 골드 가치 구간 — 경계 점선 + 한 칸씩 걸러 옅은 줄무늬 + 위쪽 배지 */}
+                  {goldValueSegments?.lines.map(x => (
+                    <ReferenceLine key={`gv-${x}`} x={x} stroke={chartColor} strokeOpacity={0.55} strokeDasharray="4 4" strokeWidth={1.5} />
+                  ))}
+                  {goldValueSegments?.segments.map((seg, i) => (
+                    <ReferenceArea
+                      key={`gvs-${seg.x1}`}
+                      x1={seg.x1}
+                      x2={seg.x2}
+                      fill={chartColor}
+                      fillOpacity={i % 2 === 0 ? 0.06 : 0}
+                      strokeOpacity={0}
+                      ifOverflow="visible"
+                      label={(props: { viewBox?: { x?: number; y?: number; width?: number } }) => renderGoldValueBadge(props.viewBox, seg.label, 13)}
+                    />
+                  ))}
                   <Line type="monotone" dataKey="가격" stroke={chartColor} strokeWidth={4} dot={<CustomDot />} activeDot={{ r: 9, fill: chartColor, stroke: 'var(--card-bg)', strokeWidth: 4 }} fill="url(#colorPrice)" isAnimationActive={false} />
                   {/* 드래그 선택 영역 (확대 미리보기) */}
                   {isSelecting && refAreaLeft && refAreaRight && refAreaLeft !== refAreaRight && (
@@ -1737,7 +1812,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                 </button>
               )}
               <ResponsiveContainer width="100%" height="100%" minHeight={350}>
-                <LineChart data={effectiveData} onMouseDown={handleZoomMouseDown} onMouseMove={handleZoomMouseMove} onMouseUp={handleZoomMouseUp} style={{ cursor: isSelecting ? 'crosshair' : 'default', userSelect: 'none' }} margin={{ top: 10, right: 5, left: 0, bottom: 0 }}>
+                <LineChart data={effectiveData} onMouseDown={handleZoomMouseDown} onMouseMove={handleZoomMouseMove} onMouseUp={handleZoomMouseUp} style={{ cursor: isSelecting ? 'crosshair' : 'default', userSelect: 'none' }} margin={{ top: goldValueSegments ? 26 : 10, right: 5, left: 0, bottom: 0 }}>
                   <defs><linearGradient id="colorPriceMobile" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={chartColor} stopOpacity={0.3}/><stop offset="95%" stopColor={chartColor} stopOpacity={0.05}/></linearGradient></defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" strokeWidth={0.5} vertical={false} horizontal={true} />
                   <XAxis dataKey="날짜" ticks={effectiveXTicks} tick={(props) => { const { x, y, payload } = props; const dataIndex = effectiveData.findIndex(d => d.날짜 === payload.value); if (dataIndex < 0) return null; const data = effectiveData[dataIndex]; const eventLabel = data.eventLabel || ''; const eventColor = data.eventColor || '#ef4444'; return (<g transform={`translate(${x},${y})`}><text x={0} y={0} dy={8} textAnchor="end" fill="var(--text-primary)" fontSize={9} fontWeight="700" fontFamily="var(--font-mono), monospace" transform="rotate(-45)">{toAxisLabel(payload.value)}</text>{eventLabel && (<text x={0} y={8} dy={8} textAnchor="end" fill={eventColor} fontSize={7} fontWeight="700" transform="rotate(-45)">{eventLabel}</text>)}</g>); }} height={55} stroke="var(--text-secondary)" strokeWidth={1.5} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} />
@@ -1758,17 +1833,33 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                     <ReferenceLine y={stats.avg} stroke="#6b7280" strokeDasharray="6 3" strokeWidth={1.5} />
                   )}
                   {/* 커스텀 가격선 - 판매가 (녹색) - 모바일 */}
-                  {currentCustomLines?.sellPrice && (
-                    <ReferenceLine y={currentCustomLines.sellPrice} stroke="#10b981" strokeDasharray="8 4" strokeWidth={2} />
+                  {chartCustomLines?.sellPrice && (
+                    <ReferenceLine y={chartCustomLines.sellPrice} stroke="#10b981" strokeDasharray="8 4" strokeWidth={2} />
                   )}
                   {/* 커스텀 가격선 - 구매가 (주황) - 모바일 */}
-                  {currentCustomLines?.buyPrice && (
-                    <ReferenceLine y={currentCustomLines.buyPrice} stroke="#f59e0b" strokeDasharray="8 4" strokeWidth={2} />
+                  {chartCustomLines?.buyPrice && (
+                    <ReferenceLine y={chartCustomLines.buyPrice} stroke="#f59e0b" strokeDasharray="8 4" strokeWidth={2} />
                   )}
                   {/* 비교 라인 (일반 재료 × 5) - 점선 */}
                   {comparisonData && showComparisonLine && (
                     <Line type="monotone" dataKey="비교가격" stroke={comparisonColor} strokeWidth={1.5} strokeDasharray="6 3" dot={false} activeDot={{ r: 4, fill: comparisonColor, stroke: 'var(--card-bg)', strokeWidth: 1 }} connectNulls isAnimationActive={false} />
                   )}
+                  {/* 골드 가치 구간 — 경계 점선 + 한 칸씩 걸러 옅은 줄무늬 + 위쪽 배지 */}
+                  {goldValueSegments?.lines.map(x => (
+                    <ReferenceLine key={`gv-${x}`} x={x} stroke={chartColor} strokeOpacity={0.55} strokeDasharray="3 3" strokeWidth={1.5} />
+                  ))}
+                  {goldValueSegments?.segments.map((seg, i) => (
+                    <ReferenceArea
+                      key={`gvs-${seg.x1}`}
+                      x1={seg.x1}
+                      x2={seg.x2}
+                      fill={chartColor}
+                      fillOpacity={i % 2 === 0 ? 0.06 : 0}
+                      strokeOpacity={0}
+                      ifOverflow="visible"
+                      label={(props: { viewBox?: { x?: number; y?: number; width?: number } }) => renderGoldValueBadge(props.viewBox, seg.label, 9)}
+                    />
+                  ))}
                   <Line type="monotone" dataKey="가격" stroke={chartColor} strokeWidth={2.5} dot={<CustomDotMobile />} activeDot={{ r: 6, fill: chartColor, stroke: 'var(--card-bg)', strokeWidth: 2 }} fill="url(#colorPriceMobile)" isAnimationActive={false} />
                   {/* 드래그 선택 영역 (확대 미리보기) - 모바일 */}
                   {isSelecting && refAreaLeft && refAreaRight && refAreaLeft !== refAreaRight && (

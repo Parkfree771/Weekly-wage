@@ -1,8 +1,7 @@
-// 골드 가치 변화 반영 — 시세 차트의 "골드 가치 반영" 토글이 쓰는 원본.
+// 골드 가치 변화 — 시세 차트의 "원화로 보기" 토글이 쓰는 원본.
 //
 // 값은 100골드의 원화 가치(원). 사장님이 주기적으로 점을 추가한다 (정확한 값이 아니라 추세용).
 // 점 사이는 직선 보간, 첫 점 이전·마지막 점 이후는 끝 값을 그대로 쓴다.
-// 토글을 켜면 과거 가격 × (그 날 가치 / 최신 가치) — 모든 가격을 "지금 골드" 기준으로 환산한다.
 // 새 점을 추가할 때: date 는 YYYY-MM-DD, 날짜순으로 넣는다.
 
 export type GoldValuePoint = {
@@ -39,12 +38,28 @@ export const getGoldValueAt = (date: string): number => {
   return LATEST;
 };
 
-/** 그 날 가격을 지금 골드 가치 기준으로 바꾸는 배율 */
-export const getGoldValueFactor = (date: string): number => getGoldValueAt(date) / LATEST;
 
-/** 히스토리 전체를 지금 골드 가치 기준으로 환산 */
-export const adjustHistoryForGoldValue = <T extends { price: number; timestamp: string; date?: string }>(history: T[]): T[] =>
+// ─── 원화 환산 ───
+// 토글을 켜면 그 날 가격 × (그 날 100골드 가치 / 100) — "그때 돈으로 얼마였나" 를 원화로 보여준다.
+// 골드 값어치가 떨어진 만큼 원화 선은 골드 선보다 더 가파르게 내려간다.
+
+/** 그 날 가격(골드)을 원화로 */
+export const goldToWonAt = (gold: number, date: string): number => gold * getGoldValueAt(date) / 100;
+
+/** 히스토리 전체를 그 날의 원화 가치로 환산 */
+export const convertHistoryToWon = <T extends { price: number; timestamp: string; date?: string }>(history: T[]): T[] =>
   history.map(entry => ({
     ...entry,
-    price: entry.price * getGoldValueFactor(entry.date || entry.timestamp.slice(0, 10)),
+    price: goldToWonAt(entry.price, entry.date || entry.timestamp.slice(0, 10)),
   }));
+
+/**
+ * 원화 표기 — 자릿수 그대로("8,700원"). 싼 재료는 1원도 안 돼서 소수점을 남긴다
+ * (10원 미만 1자리, 1원 미만 2자리).
+ */
+export const formatWon = (won: number): string => {
+  const a = Math.abs(won);
+  if (a >= 10) return `${Math.round(won).toLocaleString('ko-KR')}원`;
+  if (a >= 1) return `${won.toLocaleString('ko-KR', { maximumFractionDigits: 1 })}원`;
+  return `${won.toLocaleString('ko-KR', { maximumFractionDigits: 2 })}원`;
+};

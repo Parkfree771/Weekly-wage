@@ -3,6 +3,7 @@
 import { useMemo, createContext, useContext } from 'react';
 import { Card } from 'react-bootstrap';
 import type { TrackedItem } from '@/lib/items-to-track';
+import WonPrice from './WonPrice';
 
 type PriceEntry = {
   price: number;
@@ -50,8 +51,8 @@ type PriceContextType = {
   toggleRegularDots: () => void;  // 일반 날짜 점 표시 토글
   showComparisonLine: boolean;  // 비교선(일반재료×5 회색 점선) 표시 여부
   toggleComparisonLine: () => void;  // 비교선 표시 토글
-  goldValueAdjusted: boolean;  // 골드 가치 반영(지금 골드 기준 환산) 여부
-  toggleGoldValueAdjusted: () => void;
+  wonMode: boolean;  // 원화 환산 여부 — 켜지면 history 가격이 원 단위다
+  toggleWonMode: () => void;
 };
 
 export const PriceContext = createContext<PriceContextType>({
@@ -80,8 +81,8 @@ export const PriceContext = createContext<PriceContextType>({
   toggleRegularDots: () => {},
   showComparisonLine: false,
   toggleComparisonLine: () => {},
-  goldValueAdjusted: false,
-  toggleGoldValueAdjusted: () => {},
+  wonMode: false,
+  toggleWonMode: () => {},
 });
 
 const formatPrice = (value: number, isAverage = false, noDecimal = false) => {
@@ -109,7 +110,9 @@ const formatPrice = (value: number, isAverage = false, noDecimal = false) => {
 };
 
 export default function PriceComparisonStats() {
-  const { filteredHistory, activeReferenceLines, toggleReferenceLine, categoryColor } = useContext(PriceContext);
+  const { filteredHistory, activeReferenceLines, toggleReferenceLine, categoryColor, wonMode } = useContext(PriceContext);
+  // 원화 환산 중이면 history 가 원 단위라 표기만 바꾼다
+  const fmt = (value: number) => (wonMode ? <WonPrice value={value} /> : formatPrice(value, false, true));
 
   // 통계 계산 (필터링된 기간의 데이터만 사용)
   const stats = useMemo(() => {
@@ -192,7 +195,7 @@ export default function PriceComparisonStats() {
                 boxShadow: '0 1px 4px rgba(0,0,0,0.1)'
               }}
             >
-              <div className="font-numeric" style={{ fontSize: '0.85rem', color: dotColor, fontWeight: '700' }}>{formatPrice(stats.current, false, true)}</div>
+              <div className="font-numeric" style={{ fontSize: '0.85rem', color: dotColor, fontWeight: '700' }}>{fmt(stats.current)}</div>
             </div>
 
             {/* 바 영역 */}
@@ -236,7 +239,7 @@ export default function PriceComparisonStats() {
                 }}
               >
                 <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>최저</div>
-                <div className="font-numeric" style={{ fontSize: '0.8rem', color: '#3b82f6', fontWeight: '600' }}>{formatPrice(stats.min, false, true)}</div>
+                <div className="font-numeric" style={{ fontSize: '0.8rem', color: '#3b82f6', fontWeight: '600' }}>{fmt(stats.min)}</div>
               </div>
               <div
                 onClick={() => toggleReferenceLine('avg')}
@@ -251,7 +254,7 @@ export default function PriceComparisonStats() {
                 }}
               >
                 <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>평균</div>
-                <div className="font-numeric" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>{formatPrice(stats.avg, false, true)}</div>
+                <div className="font-numeric" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>{fmt(stats.avg)}</div>
               </div>
               <div
                 onClick={() => toggleReferenceLine('max')}
@@ -266,7 +269,7 @@ export default function PriceComparisonStats() {
                 }}
               >
                 <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>최고</div>
-                <div className="font-numeric" style={{ fontSize: '0.8rem', color: '#ef4444', fontWeight: '600' }}>{formatPrice(stats.max, false, true)}</div>
+                <div className="font-numeric" style={{ fontSize: '0.8rem', color: '#ef4444', fontWeight: '600' }}>{fmt(stats.max)}</div>
               </div>
             </div>
           </div>
@@ -326,7 +329,7 @@ export default function PriceComparisonStats() {
                 boxShadow: '0 1px 4px rgba(0,0,0,0.1)'
               }}
             >
-              <div className="font-numeric" style={{ fontSize: '0.75rem', color: dotColor, fontWeight: '700' }}>{formatPrice(stats.current, false, true)}</div>
+              <div className="font-numeric" style={{ fontSize: '0.75rem', color: dotColor, fontWeight: '700' }}>{fmt(stats.current)}</div>
             </div>
 
             {/* 바 영역 */}
@@ -369,7 +372,7 @@ export default function PriceComparisonStats() {
                 }}
               >
                 <div style={{ fontSize: '0.5rem', color: 'var(--text-muted)' }}>최저</div>
-                <div className="font-numeric" style={{ fontSize: '0.7rem', color: '#3b82f6', fontWeight: '600' }}>{formatPrice(stats.min, false, true)}</div>
+                <div className="font-numeric" style={{ fontSize: '0.7rem', color: '#3b82f6', fontWeight: '600' }}>{fmt(stats.min)}</div>
               </div>
               <div
                 onClick={() => toggleReferenceLine('avg')}
@@ -384,7 +387,7 @@ export default function PriceComparisonStats() {
                 }}
               >
                 <div style={{ fontSize: '0.5rem', color: 'var(--text-muted)' }}>평균</div>
-                <div className="font-numeric" style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '600' }}>{formatPrice(stats.avg, false, true)}</div>
+                <div className="font-numeric" style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '600' }}>{fmt(stats.avg)}</div>
               </div>
               <div
                 onClick={() => toggleReferenceLine('max')}
@@ -399,7 +402,7 @@ export default function PriceComparisonStats() {
                 }}
               >
                 <div style={{ fontSize: '0.5rem', color: 'var(--text-muted)' }}>최고</div>
-                <div className="font-numeric" style={{ fontSize: '0.7rem', color: '#ef4444', fontWeight: '600' }}>{formatPrice(stats.max, false, true)}</div>
+                <div className="font-numeric" style={{ fontSize: '0.7rem', color: '#ef4444', fontWeight: '600' }}>{fmt(stats.max)}</div>
               </div>
             </div>
           </div>

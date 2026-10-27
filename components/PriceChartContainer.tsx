@@ -12,7 +12,7 @@ const MiniPriceChart = dynamic(() => import('./MiniPriceChart'), { ssr: false })
 import { PriceContext } from './PriceComparisonStats';
 import { useTheme } from './ThemeProvider';
 import useIsMobileViewport from './ads/useIsMobileViewport';
-import { adjustHistoryForGoldValue } from '@/lib/gold-value';
+import { convertHistoryToWon } from '@/lib/gold-value';
 import { GoldValueHover } from './GoldValueMiniChart';
 
 // 카테고리 표시 순서
@@ -138,17 +138,14 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
   // 비교 차트 데이터 (계승 재료 ↔ 일반 재료)
   const [rawComparisonHistory, setComparisonHistory] = useState<PriceEntry[]>([]);
 
-  // 골드 가치 반영 — 켜면 모든 가격을 지금 골드 가치 기준으로 환산해서 보여준다 (lib/gold-value.ts).
+  // 원화 환산 — 켜면 그 날 가격을 그 날의 원화 가치로 바꿔서 보여준다 (lib/gold-value.ts).
   // 아래부터는 전부 환산된 history 를 쓰므로 차트·통계·이벤트 카드가 함께 바뀐다.
-  const [goldValueAdjusted, setGoldValueAdjusted] = useState(false);
-  const toggleGoldValueAdjusted = useCallback(() => setGoldValueAdjusted(v => !v), []);
-  const history = useMemo(
-    () => (goldValueAdjusted ? adjustHistoryForGoldValue(rawHistory) : rawHistory),
-    [rawHistory, goldValueAdjusted],
-  );
+  const [wonMode, setWonMode] = useState(false);
+  const toggleWonMode = useCallback(() => setWonMode(v => !v), []);
+  const history = useMemo(() => (wonMode ? convertHistoryToWon(rawHistory) : rawHistory), [rawHistory, wonMode]);
   const comparisonHistory = useMemo(
-    () => (goldValueAdjusted ? adjustHistoryForGoldValue(rawComparisonHistory) : rawComparisonHistory),
-    [rawComparisonHistory, goldValueAdjusted],
+    () => (wonMode ? convertHistoryToWon(rawComparisonHistory) : rawComparisonHistory),
+    [rawComparisonHistory, wonMode],
   );
   const [comparisonInfo, setComparisonInfo] = useState<{ normalIcon: string; ratio: number } | null>(null);
 
@@ -579,12 +576,12 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
     showWednesdayDots: chartConfig.showWednesdayDots, toggleWednesdayDots,
     showRegularDots: chartConfig.showRegularDots, toggleRegularDots,
     showComparisonLine: chartConfig.showComparisonLine, toggleComparisonLine,
-    goldValueAdjusted, toggleGoldValueAdjusted,
+    wonMode, toggleWonMode,
   }), [
     history, selectedItem, categoryStyle.label, eventSelection, toggleEventSelection, filteredHistory, selectedPeriod,
     handleSetPeriod, comparisonData, isGridView, handleToggleGridView, activeReferenceLines, toggleReferenceLine,
     selectItemById, categoryColor, openChartSettings, chartConfig, toggleEventDots, toggleWednesdayDots,
-    toggleRegularDots, toggleComparisonLine, goldValueAdjusted, toggleGoldValueAdjusted,
+    toggleRegularDots, toggleComparisonLine, wonMode, toggleWonMode,
   ]);
 
   const belowLg = useIsMobileViewport(991.98);
@@ -840,13 +837,13 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
                     4분할
                   </button>
                 </div>
-                {/* 골드 가치 변화 — 켜면 모든 가격을 지금 골드 가치 기준으로 환산 (lib/gold-value.ts).
+                {/* 원화 환산 — 켜면 그 날 가격을 그 날의 원화 가치로 보여준다 (lib/gold-value.ts).
                     마우스를 올리면 골드 가치 추세 미니 차트가 뜬다. */}
                 <GoldValueHover color={categoryColor}>
                 <button
                   className="shadow-hard"
-                  onClick={toggleGoldValueAdjusted}
-                  aria-pressed={goldValueAdjusted}
+                  onClick={toggleWonMode}
+                  aria-pressed={wonMode}
                   style={{
                     width: '100%',
                     marginTop: '6px',
@@ -856,21 +853,21 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
                     justifyContent: 'center',
                     gap: '6px',
                     borderRadius: '8px',
-                    border: `2px solid ${goldValueAdjusted ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color) : 'var(--border-color)'}`,
-                    backgroundColor: goldValueAdjusted
+                    border: `2px solid ${wonMode ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color) : 'var(--border-color)'}`,
+                    backgroundColor: wonMode
                       ? (theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg)
                       : 'transparent',
-                    color: goldValueAdjusted
+                    color: wonMode
                       ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor)
                       : 'var(--text-secondary)',
                     fontSize: '0.8rem',
-                    fontWeight: goldValueAdjusted ? 700 : 600,
+                    fontWeight: wonMode ? 700 : 600,
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
                   }}
                 >
-                  <Image src="/gold.webp" alt="" width={18} height={18} />
-                  골드 가치 변화
+                  <span style={{ fontSize: '0.95rem', fontWeight: 800, lineHeight: 1 }}>₩</span>
+                  원화로 보기
                 </button>
                 </GoldValueHover>
               </div>

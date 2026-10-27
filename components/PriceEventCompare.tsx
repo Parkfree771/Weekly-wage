@@ -19,6 +19,8 @@ import { ColoredItemName } from '@/lib/components/ColoredItemName';
 import TrendArrow from './TrendArrow';
 import { useTheme } from './ThemeProvider';
 import styles from './PriceEventCompare.module.css';
+import { formatWon } from '@/lib/gold-value';
+import WonPrice from './WonPrice';
 
 type PriceEntry = { price: number; timestamp: string; date?: string };
 
@@ -72,7 +74,11 @@ type EventRow = {
 };
 
 export default function PriceEventCompare() {
-  const { history, selectedItem, eventSelection, toggleEventSelection } = useContext(PriceContext);
+  const { history, selectedItem, eventSelection, toggleEventSelection, wonMode } = useContext(PriceContext);
+  // 원화 환산 중이면 history 가 원 단위 — 숫자에 단위를 붙여서 내보낸다
+  const fmtValue = (v: number) => (wonMode ? <WonPrice value={v} /> : fmtGold(v));
+  const fmtWithUnit = (v: number) => (wonMode ? <WonPrice value={v} /> : `${fmtGold(v)} G`);
+  const valueLength = (v: number) => (wonMode ? formatWon(v) : fmtGold(v)).length;
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
@@ -169,7 +175,7 @@ export default function PriceEventCompare() {
 
   // 자릿수가 긴 아이템(보석·악세는 300만대까지 간다)은 카드가 글자를 한 단계 줄여 한 줄에 담는다
   const wide =
-    Math.max(fmtGold(current).length, ...rows.map((r) => fmtGold(r.then).length)) >= 8;
+    Math.max(valueLength(current), ...rows.map((r) => valueLength(r.then))) >= 8;
 
   return (
     <section className={`${styles.card} shadow-hard`} aria-label="특별 이벤트 대비 현재가">
@@ -183,7 +189,7 @@ export default function PriceEventCompare() {
         </div>
         <div className={styles.headNow}>
           <span className={styles.headNowLabel}>현재</span>
-          <span className={`${styles.headNowValue} font-numeric`}>{fmtGold(current)} G</span>
+          <span className={`${styles.headNowValue} font-numeric`}>{fmtWithUnit(current)}</span>
         </div>
       </header>
 
@@ -250,14 +256,14 @@ export default function PriceEventCompare() {
                 <span className={styles.compare}>
                   <span className={styles.side}>
                     <span className={styles.sideLabel}>당시</span>
-                    <b className={`${styles.sideValue} ${styles.thenValue} font-numeric`}>{fmtGold(row.then)}</b>
+                    <b className={`${styles.sideValue} ${styles.thenValue} font-numeric`}>{fmtValue(row.then)}</b>
                   </span>
                   <svg className={styles.cmpArrow} viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M3 12h15M12.5 5.5 19 12l-6.5 6.5" />
                   </svg>
                   <span className={`${styles.side} ${styles.sideNow}`}>
                     <span className={`${styles.sideLabel} ${styles.nowLabel}`}>현재</span>
-                    <b className={`${styles.sideValue} ${styles.nowValue} font-numeric`}>{fmtGold(current)}</b>
+                    <b className={`${styles.sideValue} ${styles.nowValue} font-numeric`}>{fmtValue(current)}</b>
                   </span>
                 </span>
 
@@ -267,7 +273,7 @@ export default function PriceEventCompare() {
                 <span className={styles.foot}>
                   <span className={`${styles.delta} font-numeric`}>
                     {row.diff > 0 ? '+' : row.diff < 0 ? '-' : ''}
-                    {fmtGold(Math.abs(row.diff))} G
+                    {fmtWithUnit(Math.abs(row.diff))}
                   </span>
                   <span className={styles.change}>
                     {dir !== 'flat' && <TrendArrow up={up} size={13} />}
