@@ -443,6 +443,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
         fullDate: dateObj,
         eventLabel,
         eventColor,
+        eventNotes: event?.notes,
         hasEvent: !!eventLabel || dayOfWeek === 3
       });
     });
@@ -714,6 +715,11 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
         <div style={{ fontWeight: '700', color: chartColor, marginBottom: '10px', fontSize: '16px' }}>
           {toAxisLabel(label)} {eventLabel && <span style={{ color: eventColor }}>({eventLabel})</span>}
         </div>
+        {data.eventNotes && data.eventNotes.length > 0 && (
+          <ul style={{ margin: '0 0 10px', paddingLeft: '18px', fontSize: '13px', fontWeight: '600', lineHeight: 1.5, color: 'var(--text-secondary)' }}>
+            {data.eventNotes.map(note => <li key={note}>{note}</li>)}
+          </ul>
+        )}
         <div style={{ fontWeight: '700', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-mono), monospace', fontVariantNumeric: 'tabular-nums' }}>
           <Image src={selectedItem?.icon || ''} alt="" width={20} height={20} style={{ borderRadius: '4px' }} />
           <span>{formatTooltipPrice(mainPrice)}</span>
@@ -782,6 +788,11 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
         <div style={{ fontWeight: '700', color: chartColor, marginBottom: '6px', fontSize: '12px' }}>
           {toAxisLabel(label)} {eventLabel && <span style={{ color: eventColor }}>({eventLabel})</span>}
         </div>
+        {data.eventNotes && data.eventNotes.length > 0 && (
+          <ul style={{ margin: '0 0 6px', paddingLeft: '14px', fontSize: '10px', fontWeight: '600', lineHeight: 1.45, color: 'var(--text-secondary)' }}>
+            {data.eventNotes.map(note => <li key={note}>{note}</li>)}
+          </ul>
+        )}
         <div style={{ fontWeight: '700', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '5px', fontFamily: 'var(--font-mono), monospace', fontVariantNumeric: 'tabular-nums' }}>
           <Image src={selectedItem?.icon || ''} alt="" width={16} height={16} style={{ borderRadius: '3px' }} />
           <span>{formatTooltipPrice(mainPrice)}</span>

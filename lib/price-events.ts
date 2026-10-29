@@ -15,6 +15,8 @@ export type PriceEventInfo = {
   color: string;
   /** 다크 테마용 밝기 보정색. 어두운 색(벨가르딘 등)은 다크 배경에서 묻히므로 반드시 따로 준다 */
   darkColor: string;
+  /** 차트 툴팁에 이벤트 이름 아래로 띄우는 주요 발표 내용 — 한 줄에 하나씩 짧게 */
+  notes?: string[];
 };
 
 // 색은 이벤트 정체성 기준(레이드/방송)으로 하나씩 못 박는다.
@@ -37,6 +39,11 @@ export const PRICE_EVENTS: PriceEventInfo[] = [
   { date: '2026-09-23', label: '익스 3막', color: '#c084fc', darkColor: '#e9d5ff' },
   // 익스 종막 → 자주 (익스트림 페이지의 종막 막 색 '빛과 어둠'과 같은 계열)
   { date: '2026-10-21', label: '익스 종막', color: '#a21caf', darkColor: '#e879f9' },
+  // 로이괜 → 인디고 (하늘색 로아온과 보라 계열 레이드 사이에서 구분되는 남색)
+  {
+    date: '2026-10-29', label: '로이괜', color: '#4f46e5', darkColor: '#818cf8',
+    notes: ['사실상 리셋 발표', '보석 원대화', '보석 레벨 제한 업'],
+  },
 ];
 
 // 차트의 특별 이벤트 점 색상 — 카테고리 선 색·수요일 보색과 모두 구분되는 제3의 강조색.

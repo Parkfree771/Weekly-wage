@@ -12,6 +12,8 @@ export type ChartDataPoint = {
   fullDate: Date;
   eventLabel?: string;
   eventColor?: string;
+  /** 특별 이벤트의 주요 발표 내용 (툴팁에 표시) */
+  eventNotes?: string[];
   hasEvent: boolean;
 };
 
