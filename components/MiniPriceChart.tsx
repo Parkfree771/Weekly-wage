@@ -228,7 +228,7 @@ function MiniPriceChartInner({ item, categoryStyle, isSelected, onClick, slotInd
     const padding = priceRange * 0.1;
 
     return {
-      domain: [stats.min - padding, stats.max + padding],
+      domain: [Math.max(0, stats.min - padding), stats.max + padding], // 가격은 0 밑으로 내려가지 않는다
       ticks: [stats.min, stats.avg, stats.max],
     };
   }, [stats]);

@@ -13,7 +13,6 @@ import RefiningCalculator from '@/components/refining/RefiningCalculator';
 import { parseCombatPowerBase, type CombatPowerBase } from '@/lib/combatPower';
 import dynamic from 'next/dynamic';
 import AdBanner from '@/components/ads/AdBanner';
-import NewLottie from '@/components/NewLottie';
 import styles from './refining.module.css';
 import searchStyles from '@/components/refining/RefiningSimulator.module.css';
 
@@ -246,7 +245,6 @@ export default function RefiningPage() {
                 }}
               >
                 재련 시뮬레이터
-                <NewLottie size={30} />
               </h1>
             </div>
 

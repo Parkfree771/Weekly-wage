@@ -2745,17 +2745,19 @@ export default function MyPage() {
                 <div className={styles.dailySideBox} aria-hidden="true" style={{ visibility: 'hidden' }} />
               )}
               </div>
-              {/* 모바일 인-콘텐츠 광고 — 앱 주간숙제(캐릭터 2개마다 1개, 1개뿐이면 그 아래)와 동일.
-                  최대 4자리(캐릭터 8명분)까지만 — 그 아래로 계속 붙이면 광고 밀도만 올라간다. */}
+              {/* 모바일 인-콘텐츠 광고 — 얇은 띠(320×100). 캐릭터 3명마다 1개, 최대 3자리(9명분).
+                  캐릭터가 3명 미만이면 마지막 캐릭터 아래 1개. (2026-10-30: 300×250 을 2명마다 4자리까지
+                  붙이던 걸 줄였다 — 카드 사이마다 큰 광고가 끼어 숙제 체크가 끊겼다) */}
               {(() => {
+                const n = displayCharacters.length;
                 const adSlot =
-                  displayCharacters.length === 1 ? 0
-                    : charIdx % 2 === 1 ? (charIdx - 1) / 2
+                  n < 3 ? (charIdx === n - 1 ? 0 : -1)
+                    : charIdx % 3 === 2 ? (charIdx - 2) / 3
                       : -1;
-                if (adSlot < 0 || adSlot > 3) return null;
+                if (adSlot < 0 || adSlot > 2) return null;
                 return (
                   <div className="d-block d-lg-none my-2">
-                    <AdBanner />
+                    <AdBanner thin />
                   </div>
                 );
               })()}

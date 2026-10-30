@@ -9,9 +9,11 @@ import {
 
 interface AdBannerProps {
   className?: string;
+  /** 얇은 띠(320×100) — 카드가 길게 이어지는 화면에서 광고가 본문을 덮지 않게(숙제 체크) */
+  thin?: boolean;
 }
 
-export default function AdBanner({ className }: AdBannerProps) {
+export default function AdBanner({ className, thin = false }: AdBannerProps) {
   const pathname = usePathname();
   const isMobile = useIsMobileViewport();
 
@@ -31,8 +33,8 @@ export default function AdBanner({ className }: AdBannerProps) {
       <AdSenseUnit
         key={pathname}
         slot={ADSENSE_SLOTS.mobileInContent}
-        size={AD_SIZES.mobileInContent}
-        label="모바일 본문"
+        size={thin ? AD_SIZES.mobileThin : AD_SIZES.mobileInContent}
+        label={thin ? '모바일 얇은 띠' : '모바일 본문'}
       />
     </div>
   );

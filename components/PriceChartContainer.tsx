@@ -1,14 +1,18 @@
 
 'use client';
 
-import { useState, useEffect, ReactNode, useMemo, useRef, useCallback } from 'react';
+import { Fragment, useState, useEffect, ReactNode, useMemo, useRef, useCallback, type CSSProperties } from 'react';
 import dynamic from 'next/dynamic';
 import { Row, Col } from 'react-bootstrap';
 import Image from 'next/image';
 import { TrackedItem, ItemCategory, getItemsByCategory, RefineAdditionalSubCategory, getItemsBySubCategory, REFINE_ADDITIONAL_SUBCATEGORIES, SUCCESSION_TO_NORMAL_MATERIAL_MAP, SUCCESSION_MATERIAL_START_DATE, findItemById, TRACKED_ITEMS } from '@/lib/items-to-track';
-import ItemSelector, { CATEGORY_STYLES } from './ItemSelector';
+import ItemSelector, { CATEGORY_STYLES, CATEGORY_ICON, ItemChipBody, StarIcon, styleOf, useItemQuotes, type ChartCategory, type ItemQuote } from './ItemSelector';
+import { DEFAULT_FAVORITE_IDS, loadFavorites, saveFavorites } from '@/lib/favorite-items';
+import styles from './PriceChartContainer.module.css';
 const CompactPriceChart = dynamic(() => import('./CompactPriceChart'), { ssr: false });
 const MiniPriceChart = dynamic(() => import('./MiniPriceChart'), { ssr: false });
+// 즐겨찾기 편집 창 — "+ 아이템 추가" 를 누를 때만 받는다
+const FavoritePicker = dynamic(() => import('./FavoritePicker'), { ssr: false });
 import { PriceContext } from './PriceComparisonStats';
 import { useTheme } from './ThemeProvider';
 import useIsMobileViewport from './ads/useIsMobileViewport';
@@ -23,6 +27,12 @@ const TRACKED_ITEMS_MAP = new Map(TRACKED_ITEMS.map(item => [item.id, item]));
 
 // 아이템 ID로 아이템 조회 (최적화)
 const getTrackedItemById = (id: string): TrackedItem | undefined => TRACKED_ITEMS_MAP.get(id);
+
+// 아이템의 실제 카테고리 — 즐겨찾기에서 고른 아이템도 차트 색·이름 색칠은 원래 카테고리를 따른다
+const realCategoryOf = (item: TrackedItem): ItemCategory => findItemById(item.id)?.category ?? 'refine';
+
+// 사이드바·탭 순서 — 즐겨찾기가 맨 위
+const SIDEBAR_ORDER: ChartCategory[] = ['favorite', ...CATEGORY_ORDER];
 
 // 아이템 이름 색상 처리 함수 (악세: 상/중, 팔찌: 숫자+)
 const renderAccessoryItemName = (name: string, category: ItemCategory) => {
@@ -59,6 +69,8 @@ type ChartConfig = {
   showComparisonLine: boolean;  // 비교선(일반재료×5 회색 점선) 표시 여부
 };
 
+// 처음 들어온 사람(저장된 설정 없음)의 표시 — 2026-10-30 확정:
+// 특별 이벤트 점 · 수요일 점 · 일반 날짜 점은 켜고, ×5 비교선은 끈다. 처음 볼 아이템은 운명의 파괴석 결정(아래 초기 로드).
 const getDefaultChartConfig = (): ChartConfig => ({
   defaultItem: null,
   showEventDots: true,
@@ -73,12 +85,15 @@ const loadChartConfig = (): ChartConfig => {
     const saved = localStorage.getItem(CHART_CONFIG_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
+      // 저장된 값이 있으면 그대로(사용자가 고른 것), 빠진 항목만 기본값으로 채운다
+      const defaults = getDefaultChartConfig();
+      const pick = (v: unknown, d: boolean) => (typeof v === 'boolean' ? v : d);
       return {
         defaultItem: parsed.defaultItem || null,
-        showEventDots: parsed.showEventDots !== false,
-        showWednesdayDots: parsed.showWednesdayDots !== false,
-        showRegularDots: parsed.showRegularDots !== false,
-        showComparisonLine: parsed.showComparisonLine === true,
+        showEventDots: pick(parsed.showEventDots, defaults.showEventDots),
+        showWednesdayDots: pick(parsed.showWednesdayDots, defaults.showWednesdayDots),
+        showRegularDots: pick(parsed.showRegularDots, defaults.showRegularDots),
+        showComparisonLine: pick(parsed.showComparisonLine, defaults.showComparisonLine),
       };
     }
   } catch (e) {
@@ -104,10 +119,35 @@ type PriceEntry = {
 
 type PeriodOption = '7d' | '1m' | '2m' | '3m' | '6m' | '1y' | 'all';
 
+const PERIOD_LABELS: Record<PeriodOption, string> = {
+  '7d': '7일', '1m': '1개월', '2m': '2개월', '3m': '3개월', '6m': '6개월', '1y': '1년', 'all': '전체',
+};
+
+// 사이드바 카테고리 옆 종목 수
+const CATEGORY_ITEM_COUNT = Object.fromEntries(
+  CATEGORY_ORDER.map((cat) => [cat, getItemsByCategory(cat).length]),
+) as Record<ItemCategory, number>;
+
 // Provider를 별도로 export - 실제 데이터를 관리
-export function PriceChartProvider({ children, dashboard }: { children: ReactNode; dashboard?: ReactNode }) {
+/**
+ * initialQuotes: 홈 서버(app/page.tsx, ISR)가 추적 종목 전체의 시세를 미리 계산해 넘긴 값.
+ * 아이템 버튼의 현재가·등락이 첫 HTML 부터 찍혀 나간다 — 스피너 없이 보이고 검색 봇도 읽는다.
+ * (아래 시세 히트맵 MarketHeatmap 은 HomeClient 가 같은 값을 따로 넘긴다)
+ * (2026-10 리프레시 전까지는 "오늘의 시세" 카드 줄이 이 역할을 했다)
+ */
+export function PriceChartProvider({ children, initialQuotes }: {
+  children: ReactNode;
+  initialQuotes?: Record<string, ItemQuote>;
+}) {
   const { theme } = useTheme();
-  const [selectedCategory, setSelectedCategory] = useState<ItemCategory>('refine');
+  const [selectedCategory, setSelectedCategory] = useState<ChartCategory>('refine');
+  // 즐겨찾기 — 아이디 목록(순서 유지). 브라우저 저장(lib/favorite-items.ts). 첫 렌더(서버)는 비어 있다
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [showFavPicker, setShowFavPicker] = useState(false);
+  const favoriteItems = useMemo(
+    () => favorites.map((id) => TRACKED_ITEMS_MAP.get(id)).filter((i): i is TrackedItem => !!i),
+    [favorites],
+  );
   const [selectedSubCategory, setSelectedSubCategory] = useState<RefineAdditionalSubCategory | null>(null);
   const [selectedItem, setSelectedItem] = useState<TrackedItem | null>(null);
   const [rawHistory, setHistory] = useState<PriceEntry[]>([]);
@@ -169,6 +209,19 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
     setChartConfig(loaded);
     setTempChartConfig(loaded);
 
+    // 즐겨찾기가 있으면 즐겨찾기 카테고리로 연다(2026-10-30). 처음 볼 아이템이 즐겨찾기 안에 있으면 그것,
+    // 아니면 즐겨찾기 첫 아이템. 처음 볼 아이템을 즐겨찾기 밖의 것으로 정해 두었으면 그 설정이 우선이다.
+    const favs = loadFavorites();
+    setFavorites(favs);
+    const favItems = favs.map((id) => TRACKED_ITEMS_MAP.get(id)).filter((i): i is TrackedItem => !!i);
+    const defaultInFavs = loaded.defaultItem ? favItems.find((i) => i.id === loaded.defaultItem) : undefined;
+    if (favItems.length > 0 && (!loaded.defaultItem || defaultInFavs)) {
+      setSelectedCategory('favorite');
+      setSelectedSubCategory(null);
+      setSelectedItem(defaultInFavs ?? favItems[0]);
+      return;
+    }
+
     // 저장된 기본 아이템이 있으면 해당 아이템으로 설정
     if (loaded.defaultItem) {
       const result = findItemById(loaded.defaultItem);
@@ -182,7 +235,7 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
       }
     }
 
-    // 저장된 아이템이 없으면 기본값 (정수의 돌파석)
+    // 저장된 아이템이 없으면 기본값 (운명의 파괴석 결정)
     const defaultCategoryItems = getItemsByCategory('refine');
     const defaultItem = defaultCategoryItems.find(item => item.id === '66102007') || defaultCategoryItems[0];
     setSelectedItem(defaultItem);
@@ -245,11 +298,13 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
 
   // 현재 카테고리의 아이템 목록
   const currentCategoryItems = useMemo(() => {
+    if (selectedCategory === 'favorite') return favoriteItems;
     if (selectedCategory === 'refine_additional' && selectedSubCategory) {
       return getItemsBySubCategory(selectedSubCategory);
     }
     return getItemsByCategory(selectedCategory);
-  }, [selectedCategory, selectedSubCategory]);
+  }, [selectedCategory, selectedSubCategory, favoriteItems]);
+  const itemQuotes = useItemQuotes(currentCategoryItems, initialQuotes);
 
   // 이 useEffect는 더 이상 카테고리 변경 시 아이템을 자동 선택하지 않음
   // 대신 handleSelectCategory, handleSelectSubCategory에서 직접 처리
@@ -403,7 +458,7 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
     };
   }, [filteredComparisonHistory, comparisonInfo]);
 
-  const handleSelectCategory = useCallback((category: ItemCategory) => {
+  const handleSelectCategory = useCallback((category: ChartCategory) => {
     // 4분할 모드일 때 카테고리 클릭하면 단일 모드로 전환
     if (isGridView) {
       setIsGridView(false);
@@ -411,7 +466,11 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
     setSelectedCategory(category);
     setSelectedSlot(null);
 
-    if (category === 'refine_additional') {
+    if (category === 'favorite') {
+      // 즐겨찾기: 첫 아이템. 비어 있으면 보던 차트를 그대로 둔다("+ 아이템 추가" 만 보인다)
+      setSelectedSubCategory(null);
+      if (favoriteItems.length > 0) setSelectedItem(favoriteItems[0]);
+    } else if (category === 'refine_additional') {
       // 재련 추가 재료: 첫 번째 서브카테고리(무기 보조 재료) 자동 선택 + 첫 아이템
       const firstSubCat = Object.keys(REFINE_ADDITIONAL_SUBCATEGORIES)[0] as RefineAdditionalSubCategory;
       setSelectedSubCategory(firstSubCat);
@@ -426,7 +485,22 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
         setSelectedItem(categoryItems[0]);
       }
     }
-  }, [isGridView]);
+  }, [isGridView, favoriteItems]);
+
+  // 즐겨찾기 넣고 빼기 — 바로 저장
+  const toggleFavorite = useCallback((itemId: string) => {
+    setFavorites((prev) => {
+      const next = prev.includes(itemId) ? prev.filter((id) => id !== itemId) : [...prev, itemId];
+      saveFavorites(next);
+      return next;
+    });
+  }, []);
+  const openFavoritePicker = useCallback(() => setShowFavPicker(true), []);
+  // 기본값으로 되돌리기(편집 창의 "기본값으로")
+  const resetFavorites = useCallback(() => {
+    setFavorites([...DEFAULT_FAVORITE_IDS]);
+    saveFavorites([...DEFAULT_FAVORITE_IDS]);
+  }, []);
 
   const handleSelectSubCategory = useCallback((subCategory: RefineAdditionalSubCategory | null) => {
     // 4분할 모드일 때 서브카테고리 클릭하면 단일 모드로 전환
@@ -558,7 +632,16 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
   }, []);
 
 
-  const categoryStyle = CATEGORY_STYLES[selectedCategory];
+  // 차트·통계 색 — 즐겨찾기에서 고른 아이템은 원래 카테고리 색을 쓴다
+  const categoryStyle = selectedCategory === 'favorite'
+    ? CATEGORY_STYLES[selectedItem ? realCategoryOf(selectedItem) : 'refine']
+    : CATEGORY_STYLES[selectedCategory];
+  // 카테고리 색을 CSS 변수로 내려 준다 — 모듈 CSS(hover·선택 상태)가 이 변수만 본다
+  const catVars = (cs: typeof CATEGORY_STYLES[ItemCategory]) => ({
+    '--cat': theme === 'dark' ? cs.darkThemeColor : cs.color,
+    '--cat-fg': theme === 'dark' ? cs.darkThemeColor : cs.darkColor,
+    '--cat-bg': theme === 'dark' ? cs.darkBg : cs.lightBg,
+  }) as CSSProperties;
 
   // 데스크톱·태블릿·모바일 레이아웃은 CSS(d-lg-block 등)로 하나만 보이지만 셋 다 마운트돼 있어서,
   // 차트(Recharts)가 숨은 것까지 3벌 그려지고 있었다. 지금 보이는 레이아웃에서만 차트를 그린다.
@@ -592,247 +675,95 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
 
   return (
     <PriceContext.Provider value={contextValue}>
-      {dashboard}
       <div className="price-chart-container">
         {/* 데스크톱: 사이드바 레이아웃 */}
         <div className="d-none d-lg-block">
           <div style={{ display: 'flex', gap: '20px' }}>
-            {/* 왼쪽 사이드바 - 카테고리 + 기간선택 + 보기모드 (차트 카드 높이에 맞춰 자동 분배) */}
-            <div style={{
-              width: '170px',
-              flexShrink: 0,
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              gap: '12px',
-            }}>
-              {/* 카테고리 상자 */}
-              <div className="shadow-hard" style={{
-                backgroundColor: 'var(--card-bg)',
-                borderRadius: '12px',
-                border: '1px solid var(--border-color)',
-                padding: '14px',
-              }}>
-                <div style={{
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  color: 'var(--text-muted)',
-                  marginBottom: '12px',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}>
+            {/* 왼쪽 사이드바 - 카테고리 + 기간 + 보기. 카테고리 패널이 남는 높이를 먹어
+                아래 두 패널이 차트 카드 바닥에 맞춰진다 */}
+            <div className={styles.sidebar}>
+              <div className={`${styles.panel} ${styles.panelGrow}`}>
+                <div className={styles.panelHead}>
                   <span>카테고리</span>
-                  {/* 차트 설정 톱니바퀴 */}
-                  <button
-                    onClick={openChartSettings}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      padding: '2px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'var(--text-muted)',
-                      transition: 'color 0.2s',
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
-                    onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
-                    title="차트 설정"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="3"></circle>
-                      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                    </svg>
-                  </button>
                 </div>
-                {CATEGORY_ORDER.map((cat) => {
-                  const catStyle = CATEGORY_STYLES[cat];
-                  const isSelected = selectedCategory === cat;
-                  return (
-                    <button
-                      key={cat}
-                      className="shadow-hard"
-                      onClick={() => handleSelectCategory(cat)}
-                      style={{
-                        display: 'block',
-                        width: '100%',
-                        padding: '10px 12px',
-                        marginBottom: '6px',
-                        borderRadius: '10px',
-                        border: `2px solid ${isSelected ? (theme === 'dark' ? catStyle.darkThemeColor : catStyle.color) : 'var(--border-color)'}`,
-                        backgroundColor: isSelected
-                          ? (theme === 'dark' ? catStyle.darkBg : catStyle.lightBg)
-                          : 'transparent',
-                        color: isSelected
-                          ? (theme === 'dark' ? catStyle.darkThemeColor : catStyle.darkColor)
-                          : 'var(--text-secondary)',
-                        fontSize: '0.85rem',
-                        fontWeight: isSelected ? 700 : 600,
-                        textAlign: 'left',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!isSelected) {
-                          e.currentTarget.style.backgroundColor = theme === 'dark' ? catStyle.darkBg : catStyle.lightBg;
-                          e.currentTarget.style.borderColor = theme === 'dark' ? catStyle.darkThemeColor : catStyle.color;
-                          e.currentTarget.style.color = theme === 'dark' ? catStyle.darkThemeColor : catStyle.darkColor;
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!isSelected) {
-                          e.currentTarget.style.backgroundColor = 'transparent';
-                          e.currentTarget.style.borderColor = 'var(--border-color)';
-                          e.currentTarget.style.color = 'var(--text-secondary)';
-                        }
-                      }}
-                    >
-                      {catStyle.label}
-                    </button>
-                  );
-                })}
+                <div className={styles.catList}>
+                  {SIDEBAR_ORDER.map((cat) => {
+                    const isSelected = selectedCategory === cat;
+                    const isFav = cat === 'favorite';
+                    const btn = (
+                      <button
+                        key={cat}
+                        type="button"
+                        className={`${styles.catBtn} ${isSelected ? styles.catBtnActive : ''}`}
+                        style={catVars(styleOf(cat))}
+                        onClick={() => handleSelectCategory(cat)}
+                        aria-pressed={isSelected}
+                      >
+                        <span className={`${styles.catIcon} ${isFav ? styles.catIconStar : ''}`}>
+                          {isFav ? <StarIcon size={22} /> : CATEGORY_ICON[cat] && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={CATEGORY_ICON[cat]} alt="" width={28} height={28} decoding="async" />
+                          )}
+                        </span>
+                        <span className={styles.catLabel}>
+                          {styleOf(cat).label}
+                          {isFav && <span className={styles.catCountInline}>{favorites.length}</span>}
+                        </span>
+                        {!isFav && <span className={styles.catCount}>{CATEGORY_ITEM_COUNT[cat]}</span>}
+                      </button>
+                    );
+                    if (!isFav) return btn;
+                    // 즐겨찾기 줄 — 오른쪽 끝에 편집(연필). 버튼 안에 버튼을 못 넣어 한 줄 칸에 나란히 겹쳐 둔다
+                    return (
+                      <div key={cat} className={styles.catRowFav}>
+                        {btn}
+                        <button type="button" className={styles.catEdit} onClick={openFavoritePicker} title="즐겨찾기 편집" aria-label="즐겨찾기 편집">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" /></svg>
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
-              {/* 기간선택 상자 */}
-              <div className="shadow-hard" style={{
-                backgroundColor: 'var(--card-bg)',
-                borderRadius: '12px',
-                border: '1px solid var(--border-color)',
-                padding: '14px',
-              }}>
-                <div style={{
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  color: 'var(--text-muted)',
-                  marginBottom: '12px',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                }}>
-                  기간선택
-                </div>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(2, 1fr)',
-                  gap: '6px',
-                }}>
+              {/* 기간 */}
+              <div className={styles.panel} style={catVars(categoryStyle)}>
+                <div className={styles.panelHead}><span>기간</span></div>
+                <div className={styles.segmented}>
                   {(['1m', '2m', '3m', 'all'] as PeriodOption[]).map((period) => {
-                    const periodLabels: Record<PeriodOption, string> = {
-                      '7d': '7일',
-                      '1m': '1개월',
-                      '2m': '2개월',
-                      '3m': '3개월',
-                      '6m': '6개월',
-                      '1y': '1년',
-                      'all': '전체'
-                    };
                     const isSelected = eventSelection.length === 0 && selectedPeriod === period;
                     return (
                       <button
                         key={period}
-                        className="shadow-hard"
+                        type="button"
+                        className={`${styles.segBtn} ${isSelected ? styles.segBtnActive : ''}`}
                         onClick={() => handleSetPeriod(period)}
-                        style={{
-                          padding: '8px 10px',
-                          borderRadius: '8px',
-                          border: `2px solid ${isSelected ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color) : 'var(--border-color)'}`,
-                          backgroundColor: isSelected
-                            ? (theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg)
-                            : 'transparent',
-                          color: isSelected
-                            ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor)
-                            : 'var(--text-secondary)',
-                          fontSize: '0.8rem',
-                          fontWeight: isSelected ? 700 : 600,
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease',
-                        }}
-                        onMouseEnter={(e) => {
-                          if (!isSelected) {
-                            e.currentTarget.style.backgroundColor = theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg;
-                            e.currentTarget.style.borderColor = theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color;
-                            e.currentTarget.style.color = theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor;
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (!isSelected) {
-                            e.currentTarget.style.backgroundColor = 'transparent';
-                            e.currentTarget.style.borderColor = 'var(--border-color)';
-                            e.currentTarget.style.color = 'var(--text-secondary)';
-                          }
-                        }}
+                        aria-pressed={isSelected}
                       >
-                        {periodLabels[period]}
+                        {PERIOD_LABELS[period]}
                       </button>
                     );
                   })}
                 </div>
               </div>
 
-              {/* 보기모드 상자 */}
-              <div className="shadow-hard" style={{
-                backgroundColor: 'var(--card-bg)',
-                borderRadius: '12px',
-                border: '1px solid var(--border-color)',
-                padding: '14px',
-              }}>
-                <div style={{
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  color: 'var(--text-muted)',
-                  marginBottom: '12px',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                }}>
-                  보기모드
-                </div>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(2, 1fr)',
-                  gap: '6px',
-                }}>
+              {/* 보기 */}
+              <div className={styles.panel} style={catVars(categoryStyle)}>
+                <div className={styles.panelHead}><span>보기</span></div>
+                <div className={styles.segmented}>
                   <button
-                    className="shadow-hard"
+                    type="button"
+                    className={`${styles.segBtn} ${!isGridView ? styles.segBtnActive : ''}`}
                     onClick={() => isGridView && handleToggleGridView()}
-                    style={{
-                      padding: '8px 10px',
-                      borderRadius: '8px',
-                      border: `2px solid ${!isGridView ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color) : 'var(--border-color)'}`,
-                      backgroundColor: !isGridView
-                        ? (theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg)
-                        : 'transparent',
-                      color: !isGridView
-                        ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor)
-                        : 'var(--text-secondary)',
-                      fontSize: '0.8rem',
-                      fontWeight: !isGridView ? 700 : 600,
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                    }}
+                    aria-pressed={!isGridView}
                   >
                     단일
                   </button>
                   <button
-                    className="shadow-hard"
+                    type="button"
+                    className={`${styles.segBtn} ${isGridView ? styles.segBtnActive : ''}`}
                     onClick={() => !isGridView && handleToggleGridView()}
-                    style={{
-                      padding: '8px 10px',
-                      borderRadius: '8px',
-                      border: `2px solid ${isGridView ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color) : 'var(--border-color)'}`,
-                      backgroundColor: isGridView
-                        ? (theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg)
-                        : 'transparent',
-                      color: isGridView
-                        ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor)
-                        : 'var(--text-secondary)',
-                      fontSize: '0.8rem',
-                      fontWeight: isGridView ? 700 : 600,
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                    }}
+                    aria-pressed={isGridView}
                   >
                     4분할
                   </button>
@@ -840,254 +771,91 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
                 {/* 원화 환산 — 켜면 그 날 가격을 그 날의 원화 가치로 보여준다 (lib/gold-value.ts).
                     마우스를 올리면 골드 가치 추세 미니 차트가 뜬다. */}
                 <GoldValueHover color={categoryColor}>
-                <button
-                  className="shadow-hard"
-                  onClick={toggleWonMode}
-                  aria-pressed={wonMode}
-                  style={{
-                    width: '100%',
-                    marginTop: '6px',
-                    padding: '8px 10px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '6px',
-                    borderRadius: '8px',
-                    border: `2px solid ${wonMode ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color) : 'var(--border-color)'}`,
-                    backgroundColor: wonMode
-                      ? (theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg)
-                      : 'transparent',
-                    color: wonMode
-                      ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor)
-                      : 'var(--text-secondary)',
-                    fontSize: '0.8rem',
-                    fontWeight: wonMode ? 700 : 600,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                  }}
-                >
-                  <span style={{ fontSize: '0.95rem', fontWeight: 800, lineHeight: 1 }}>₩</span>
-                  원화로 보기
-                </button>
+                  <button
+                    type="button"
+                    className={`${styles.toggleBtn} ${wonMode ? styles.toggleBtnOn : ''}`}
+                    onClick={toggleWonMode}
+                    aria-pressed={wonMode}
+                  >
+                    <span className={styles.toggleMark}>₩</span>
+                    원화로 보기
+                    <span className={styles.toggleSwitch} aria-hidden="true" />
+                  </button>
                 </GoldValueHover>
               </div>
             </div>
 
             {/* 오른쪽 메인 영역 — 세로 flex 라 차트 카드가 왼쪽 바 높이까지 늘어난다 (fillHeight) */}
-            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', ...catVars(categoryStyle) }}>
               {/* 서브카테고리 (재련 추가 재료) */}
               {selectedCategory === 'refine_additional' && (
-                <div style={{
-                  display: 'flex',
-                  gap: '12px',
-                  marginBottom: '16px',
-                }}>
+                <div className={styles.subTabs}>
                   {(Object.keys(REFINE_ADDITIONAL_SUBCATEGORIES) as RefineAdditionalSubCategory[]).map((subCat) => {
-                    const subCatInfo = REFINE_ADDITIONAL_SUBCATEGORIES[subCat];
                     const isSelected = selectedSubCategory === subCat;
                     return (
                       <button
                         key={subCat}
+                        type="button"
+                        className={`${styles.segBtn} ${isSelected ? styles.segBtnActive : ''}`}
                         onClick={() => handleSelectSubCategory(subCat)}
-                        style={{
-                          padding: '10px 20px',
-                          borderRadius: '10px',
-                          border: `2px solid ${isSelected ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color) : 'var(--border-color)'}`,
-                          backgroundColor: isSelected
-                            ? (theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg)
-                            : 'var(--card-bg)',
-                          color: isSelected
-                            ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor)
-                            : 'var(--text-secondary)',
-                          fontSize: '0.95rem',
-                          fontWeight: isSelected ? 700 : 600,
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease',
-                          letterSpacing: '0.3px',
-                        }}
-                        onMouseEnter={(e) => {
-                          if (!isSelected) {
-                            e.currentTarget.style.backgroundColor = theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg;
-                            e.currentTarget.style.borderColor = theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color;
-                            e.currentTarget.style.color = theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor;
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (!isSelected) {
-                            e.currentTarget.style.backgroundColor = 'var(--card-bg)';
-                            e.currentTarget.style.borderColor = 'var(--border-color)';
-                            e.currentTarget.style.color = 'var(--text-secondary)';
-                          }
-                        }}
+                        aria-pressed={isSelected}
                       >
-                        {subCatInfo.label}
+                        {REFINE_ADDITIONAL_SUBCATEGORIES[subCat].label}
                       </button>
                     );
                   })}
                 </div>
               )}
 
-              {/* 아이템 목록 */}
+              {/* 아이템 목록 — 넘치는 쪽 가장자리는 흐리게(fade) + 둥근 화살표 */}
               {(selectedCategory !== 'refine_additional' || selectedSubCategory) && (
-                <div style={{
-                  position: 'relative',
-                  marginBottom: '16px',
-                }}>
-                  {/* 왼쪽 스크롤 버튼 */}
+                <div className={styles.itemRail}>
                   {canScrollLeft && (
-                    <button
-                      onClick={() => scrollItems('left')}
-                      style={{
-                        position: 'absolute',
-                        left: 0,
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        zIndex: 10,
-                        width: '32px',
-                        height: '32px',
-                        borderRadius: '50%',
-                        border: '1px solid var(--border-color)',
-                        backgroundColor: 'var(--card-bg)',
-                        color: 'var(--text-primary)',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        boxShadow: 'var(--shadow-md)',
-                        fontSize: '1rem',
-                        fontWeight: 'bold',
-                      }}
-                    >
-                      ‹
+                    <button type="button" className={`${styles.scrollBtn} ${styles.scrollBtnLeft}`} onClick={() => scrollItems('left')} aria-label="이전 아이템">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
                     </button>
                   )}
-                  {/* 오른쪽 스크롤 버튼 */}
                   {canScrollRight && (
-                    <button
-                      onClick={() => scrollItems('right')}
-                      style={{
-                        position: 'absolute',
-                        right: 0,
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        zIndex: 10,
-                        width: '32px',
-                        height: '32px',
-                        borderRadius: '50%',
-                        border: '1px solid var(--border-color)',
-                        backgroundColor: 'var(--card-bg)',
-                        color: 'var(--text-primary)',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        boxShadow: 'var(--shadow-md)',
-                        fontSize: '1rem',
-                        fontWeight: 'bold',
-                      }}
-                    >
-                      ›
+                    <button type="button" className={`${styles.scrollBtn} ${styles.scrollBtnRight}`} onClick={() => scrollItems('right')} aria-label="다음 아이템">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
                     </button>
                   )}
-                  {/* 스크롤 컨테이너 */}
                   <div
                     ref={itemScrollRef}
                     onScroll={checkItemScroll}
-                    style={{
-                      display: 'flex',
-                      gap: '12px',
-                      overflowX: 'auto',
-                      scrollbarWidth: 'none',
-                      msOverflowStyle: 'none',
-                      padding: '4px 6px 8px 2px',
-                    }}
+                    className={`${styles.chipRow} ${canScrollLeft ? styles.fadeLeft : ''} ${canScrollRight ? styles.fadeRight : ''}`}
                   >
                     {currentCategoryItems.map((item) => {
-                      // 단일 모드: selectedItem과 일치하면 선택
-                      // 4분할 모드: gridItems에 포함되어 있으면 선택
+                      // 단일 모드: selectedItem과 일치하면 선택 / 4분할 모드: gridItems에 포함되어 있으면 선택
                       const isSelected = isGridView
                         ? gridItems.some(gi => gi?.id === item.id)
                         : selectedItem?.id === item.id;
-
-                      const baseShadow = theme === 'dark'
-                        ? '2px 2px 0 0 rgba(107,126,214,0.25), 3px 3px 0 0 rgba(107,126,214,0.12)'
-                        : '2px 2px 0 0 rgba(59,80,181,0.2), 3px 3px 0 0 rgba(59,80,181,0.1)';
-                      const hoverShadow = theme === 'dark'
-                        ? '3px 3px 0 0 rgba(107,126,214,0.3), 4px 4px 0 0 rgba(107,126,214,0.15)'
-                        : '3px 3px 0 0 rgba(59,80,181,0.25), 4px 4px 0 0 rgba(59,80,181,0.12)';
                       return (
                         <button
                           key={item.id}
+                          type="button"
+                          className={`${styles.chip} ${isSelected ? styles.chipActive : ''}`}
                           onClick={() => handleSelectItem(item)}
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            padding: '10px 16px',
-                            borderRadius: '10px',
-                            border: `2px solid ${isSelected ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color) : 'var(--border-color)'}`,
-                            backgroundColor: isSelected
-                              ? (theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg)
-                              : 'var(--card-bg)',
-                            color: isSelected
-                              ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor)
-                              : 'var(--text-secondary)',
-                            fontSize: '0.875rem',
-                            fontWeight: isSelected ? 700 : 600,
-                            cursor: 'pointer',
-                            transition: 'background-color 0.2s, border-color 0.2s, color 0.2s, transform 0.15s, box-shadow 0.15s',
-                            whiteSpace: 'nowrap',
-                            flexShrink: 0,
-                            boxShadow: baseShadow,
-                            transform: 'translate(0, 0)',
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = 'translate(-1px, -1px)';
-                            e.currentTarget.style.boxShadow = hoverShadow;
-                            if (!isSelected) {
-                              e.currentTarget.style.backgroundColor = theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg;
-                              e.currentTarget.style.borderColor = theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color;
-                              e.currentTarget.style.color = theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor;
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = 'translate(0, 0)';
-                            e.currentTarget.style.boxShadow = baseShadow;
-                            if (!isSelected) {
-                              e.currentTarget.style.backgroundColor = 'var(--card-bg)';
-                              e.currentTarget.style.borderColor = 'var(--border-color)';
-                              e.currentTarget.style.color = 'var(--text-secondary)';
-                            }
-                          }}
+                          aria-pressed={isSelected}
                         >
-                          {renderAccessoryItemName(item.name, selectedCategory)}
+                          <ItemChipBody item={item} quote={itemQuotes[item.id]} label={renderAccessoryItemName(item.name, realCategoryOf(item))} />
                         </button>
                       );
                     })}
+                    {selectedCategory === 'favorite' && (
+                      <button type="button" className={`${styles.chip} ${styles.addChip}`} onClick={openFavoritePicker}>
+                        <span className={styles.addPlus} aria-hidden="true">+</span>
+                        {favoriteItems.length === 0 ? '즐겨찾기에 아이템 추가' : '아이템 추가'}
+                      </button>
+                    )}
                   </div>
-                  <style jsx>{`
-                    div::-webkit-scrollbar {
-                      display: none;
-                    }
-                  `}</style>
                 </div>
               )}
 
               {/* 그리드 뷰 안내 */}
               {isGridView && selectedSlot !== null && (
-                <div
-                  style={{
-                    background: `${categoryStyle?.darkThemeColor || 'var(--brand-primary)'}20`,
-                    border: `1px solid ${categoryStyle?.darkThemeColor || 'var(--brand-primary)'}`,
-                    borderRadius: '8px',
-                    padding: '8px 12px',
-                    marginBottom: '12px',
-                    fontSize: '0.8rem',
-                    color: categoryStyle?.darkThemeColor || 'var(--brand-primary)',
-                    textAlign: 'center',
-                  }}
-                >
-                  슬롯 {selectedSlot + 1} 선택됨 - 사이드바에서 아이템을 클릭하세요
+                <div className={styles.slotHint}>
+                  슬롯 {selectedSlot + 1} 선택됨 - 아이템을 클릭하세요
                 </div>
               )}
 
@@ -1140,6 +908,8 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
             onToggleGridView={handleToggleGridView}
             onSlotClick={handleSlotClick}
             showChart={chartLayout === 'tablet'}
+            favoriteCount={favorites.length}
+            onOpenFavoritePicker={openFavoritePicker}
           />
         </div>
 
@@ -1152,6 +922,8 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
             onSelectItem={handleSelectItem}
             selectedSubCategory={selectedSubCategory}
             onSelectSubCategory={handleSelectSubCategory}
+            favoriteItems={favoriteItems}
+            onOpenFavoritePicker={openFavoritePicker}
           />
 
           {/* 그리드 뷰 안내 메시지 */}
@@ -1199,6 +971,10 @@ export function PriceChartProvider({ children, dashboard }: { children: ReactNod
         </div>
       </div>
       {/* 차트 설정 모달 */}
+      {showFavPicker && (
+        <FavoritePicker favorites={favorites} onToggle={toggleFavorite} onReset={resetFavorites} onClose={() => setShowFavPicker(false)} />
+      )}
+
       {showChartSettings && (
         <div
           style={{
@@ -1463,8 +1239,10 @@ function SidebarMobileLayout({
   onToggleGridView,
   onSlotClick,
   showChart,
+  favoriteCount,
+  onOpenFavoritePicker,
 }: {
-  selectedCategory: ItemCategory;
+  selectedCategory: ChartCategory;
   selectedSubCategory: RefineAdditionalSubCategory | null;
   selectedItem: TrackedItem | null;
   currentCategoryItems: TrackedItem[];
@@ -1475,14 +1253,17 @@ function SidebarMobileLayout({
   history: PriceEntry[];
   loading: boolean;
   theme: string;
-  onSelectCategory: (cat: ItemCategory) => void;
+  onSelectCategory: (cat: ChartCategory) => void;
   onSelectSubCategory: (sub: RefineAdditionalSubCategory | null) => void;
   onSelectItem: (item: TrackedItem) => void;
   onToggleGridView: () => void;
   onSlotClick: (index: number) => void;
   showChart: boolean;
+  favoriteCount: number;
+  onOpenFavoritePicker: () => void;
 }) {
   const [showItemSheet, setShowItemSheet] = useState(false);
+  const itemQuotes = useItemQuotes(currentCategoryItems);
 
   return (
     <>
@@ -1494,12 +1275,12 @@ function SidebarMobileLayout({
         paddingBottom: '8px',
         marginBottom: '8px',
       }}>
-        {CATEGORY_ORDER.map((cat) => {
-          const catStyle = CATEGORY_STYLES[cat];
+        {SIDEBAR_ORDER.map((cat) => {
+          const catStyle = styleOf(cat);
           const isSelected = selectedCategory === cat;
           return (
+            <Fragment key={cat}>
             <button
-              key={cat}
               onClick={() => {
                 onSelectCategory(cat);
                 setShowItemSheet(true);
@@ -1521,8 +1302,25 @@ function SidebarMobileLayout({
                 cursor: 'pointer',
               }}
             >
-              {catStyle.label}
+              {cat === 'favorite' && <StarIcon size={14} />}
+              {catStyle.label}{cat === 'favorite' ? ` ${favoriteCount}` : ''}
             </button>
+            {cat === 'favorite' && (
+              <button
+                type="button"
+                onClick={onOpenFavoritePicker}
+                title="즐겨찾기 편집"
+                aria-label="즐겨찾기 편집"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                  width: '34px', borderRadius: '8px', border: '1px dashed var(--border-color)',
+                  background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer',
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" /></svg>
+              </button>
+            )}
+            </Fragment>
           );
         })}
       </div>
@@ -1600,7 +1398,7 @@ function SidebarMobileLayout({
             fontWeight: 600,
             color: theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor,
           }}>
-            {renderAccessoryItemName(selectedItem.name, selectedCategory)}
+            {renderAccessoryItemName(selectedItem.name, realCategoryOf(selectedItem))}
           </span>
           <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
             {showItemSheet ? '▲' : '▼'}
@@ -1623,8 +1421,8 @@ function SidebarMobileLayout({
           {currentCategoryItems.map((item) => {
             const isSelected = selectedItem?.id === item.id;
             const baseShadow = theme === 'dark'
-              ? '2px 2px 0 0 rgba(107,126,214,0.25), 3px 3px 0 0 rgba(107,126,214,0.12)'
-              : '2px 2px 0 0 rgba(59,80,181,0.2), 3px 3px 0 0 rgba(59,80,181,0.1)';
+              ? '0 2px 6px -1px rgba(var(--brand-rgb), 0.25), 0 3px 8px -2px rgba(var(--brand-rgb), 0.12)'
+              : '0 2px 6px -1px rgba(var(--brand-rgb), 0.2), 0 3px 8px -2px rgba(var(--brand-rgb), 0.1)';
             return (
               <button
                 key={item.id}
@@ -1644,7 +1442,7 @@ function SidebarMobileLayout({
                     : 'var(--text-secondary)',
                   fontSize: '0.75rem',
                   fontWeight: isSelected ? 600 : 500,
-                  textAlign: 'center',
+                  textAlign: 'left',
                   cursor: 'pointer',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
@@ -1652,10 +1450,22 @@ function SidebarMobileLayout({
                   boxShadow: baseShadow,
                 }}
               >
-                {renderAccessoryItemName(item.name, selectedCategory)}
+                <ItemChipBody item={item} quote={itemQuotes[item.id]} label={renderAccessoryItemName(item.name, realCategoryOf(item))} />
               </button>
             );
           })}
+          {selectedCategory === 'favorite' && (
+            <button
+              type="button"
+              onClick={onOpenFavoritePicker}
+              style={{
+                padding: '8px 10px', borderRadius: '6px', border: '1px dashed var(--border-color)',
+                background: 'transparent', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer',
+              }}
+            >
+              + 아이템 추가
+            </button>
+          )}
         </div>
       )}
 

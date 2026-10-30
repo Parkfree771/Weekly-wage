@@ -1,0 +1,258 @@
+/* 홈 맨 위 띠 — 알데바란의 바다(2026 겨울).
+ * 공식 배경화면을 잘라 줄인 그림(public/hero/)이 주인공이라 그림 전체에 까는 막(scrim)은 없다.
+ * 오른쪽 아래 LOST ARK 글자 자리만 아주 옅게 눌러 준다.
+ * 그라디언트 바탕은 그림을 받기 전·못 받았을 때의 자리 색이다. */
+
+.hero {
+  --hero-ink: #ffffff;
+  --hero-ink-soft: rgba(255, 255, 255, 0.88);
+  --hero-ink-shadow: 0 1px 2px rgba(4, 28, 48, 0.55), 0 0 10px rgba(4, 28, 48, 0.3);
+  --hero-glass: rgba(8, 38, 64, 0.32);
+  --hero-glass-hover: rgba(8, 38, 64, 0.48);
+  --hero-glass-border: rgba(255, 255, 255, 0.34);
+
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  /* 높이를 바꾸면 components/ads/AdLayout.tsx 홈 adTop 도 다시 잰다 */
+  min-height: 268px;
+  margin-bottom: 16px;
+  border-radius: 20px;
+  background: linear-gradient(172deg, #0f5a94 0%, #2f8fc9 42%, #7cc7e6 74%, #1b8d9e 100%);
+  color: var(--hero-ink);
+  box-shadow: var(--shadow-md);
+}
+
+:global([data-theme="dark"]) .hero {
+  box-shadow: 0 6px 20px -8px rgba(0, 0, 0, 0.6);
+}
+
+.bg {
+  position: absolute;
+  z-index: -2;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* 띠가 그림보다 훨씬 납작해 세로로 1/3 정도만 보인다 — 첨탑·구름·수평선이 들어오는 높이로 맞춘다 */
+  object-position: 70% 46%;
+}
+
+/* 아래쪽만 아주 옅게 — LOST ARK 글자가 밝은 구름 위에서도 떠 보이게. 그림 위쪽은 그대로 */
+.hero::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: linear-gradient(0deg, rgba(4, 30, 46, 0.32) 0%, rgba(4, 30, 46, 0) 42%);
+  pointer-events: none;
+}
+
+:global([data-theme="dark"]) .hero::after {
+  /* 다크 모드에서 띠만 혼자 너무 밝지 않게 살짝 */
+  background:
+    linear-gradient(0deg, rgba(4, 14, 24, 0.45) 0%, rgba(4, 14, 24, 0) 50%),
+    rgba(4, 14, 24, 0.12);
+}
+
+/* 왼쪽 위 — SEASON3 LOSTARK 글자(공식 배경화면에서 오려 낸 PNG) */
+.wordmark {
+  position: absolute;
+  top: 18px;
+  left: 22px;
+  display: block;
+  width: auto;
+  height: 56px;
+  pointer-events: none;
+  /* 흰 글자라 밝은 구름 위에서 묻히지 않게 그림자 */
+  filter: drop-shadow(0 1px 2px rgba(4, 28, 48, 0.55)) drop-shadow(0 0 10px rgba(4, 28, 48, 0.3));
+}
+
+/* 오른쪽 아래 — 출처 */
+.credit {
+  position: absolute;
+  right: 12px;
+  bottom: 6px;
+  font-size: 0.62rem;
+  color: rgba(255, 255, 255, 0.82);
+  text-shadow: var(--hero-ink-shadow);
+  pointer-events: none;
+}
+
+/* ── 왼쪽 아래 — 판매 중 패키지 카드 ── */
+
+.pkgRow {
+  position: absolute;
+  left: 18px;
+  right: 160px;
+  bottom: 18px;
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+}
+
+.pkgRow::-webkit-scrollbar {
+  display: none;
+}
+
+.pkg {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  /* 폭 고정 — 2~3개가 나란히 선다(데스크톱 3개 = 1,100px 남짓) */
+  width: 360px;
+  max-width: 100%;
+  scroll-snap-align: start;
+  padding: 12px 14px;
+  border: 1px solid var(--hero-glass-border);
+  border-radius: 14px;
+  background: var(--hero-glass);
+  -webkit-backdrop-filter: blur(12px) saturate(1.2);
+  backdrop-filter: blur(12px) saturate(1.2);
+  color: var(--hero-ink);
+  text-decoration: none;
+  text-shadow: var(--hero-ink-shadow);
+  transition: background-color 0.15s, transform 0.15s;
+}
+
+.pkg:hover {
+  color: #fff;
+  background: var(--hero-glass-hover);
+  transform: translateY(-1px);
+}
+
+.pkg:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.pkgHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.pkgBadge {
+  flex-shrink: 0;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #22c55e;
+  color: #fff;
+  font-size: 0.66rem;
+  font-weight: 800;
+  text-shadow: none;
+}
+
+.pkgTitle {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.pkgBody {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pkgItems {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  min-width: 0;
+}
+
+.pkgItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.pkgItem img {
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.85);
+  padding: 1px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.pkgQty {
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: var(--hero-ink-soft);
+}
+
+.pkgMore {
+  align-self: center;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--hero-ink-soft);
+}
+
+.pkgNumbers {
+  flex-shrink: 0;
+  display: grid;
+  justify-items: end;
+  gap: 1px;
+}
+
+.pkgPrice {
+  font-size: 0.74rem;
+  color: var(--hero-ink-soft);
+}
+
+.pkgBenefitLabel {
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: var(--hero-ink-soft);
+}
+
+.pkgBenefit {
+  font-size: 1.4rem;
+  font-weight: 900;
+  line-height: 1.05;
+}
+
+/* 하늘 위라 밝은 초록/빨강 — 상승 초록 · 하락 빨강 규칙은 그대로 */
+.pkgGain { color: #bbf7d0; }
+.pkgLoss { color: #fecaca; }
+
+/* 모바일(태블릿 세로 포함)은 패키지 카드를 빼고 그림 + LOST ARK 만 — 좁은 화면에서 카드가 그림을 다 가렸다 */
+@media (max-width: 767.98px) {
+  .pkgRow {
+    display: none;
+  }
+
+  .hero {
+    min-height: 150px;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .hero {
+    min-height: 128px;
+    border-radius: 16px;
+  }
+
+  .wordmark {
+    top: 12px;
+    left: 14px;
+    height: 32px;
+  }
+
+  .credit {
+    right: 10px;
+    bottom: 6px;
+  }
+}

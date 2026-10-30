@@ -1113,7 +1113,7 @@
   margin-top: 0.75rem;
   padding: 0.75rem;
   background: var(--rd-head-soft);
-  border: 1px solid rgba(59, 80, 181, 0.15);
+  border: 1px solid rgba(var(--brand-rgb), 0.15);
   border-radius: 10px;
 }
 

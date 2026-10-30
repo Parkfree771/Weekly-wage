@@ -11,7 +11,7 @@
   gap: 2.5rem;
   padding: clamp(1.5rem, 4vw, 3rem);
   border-radius: 20px;
-  background: linear-gradient(135deg, rgba(59, 80, 181, 0.08) 0%, rgba(232, 114, 42, 0.10) 100%);
+  background: linear-gradient(135deg, rgba(var(--brand-rgb), 0.08) 0%, rgba(232, 114, 42, 0.10) 100%);
   border: 1px solid var(--border-color);
   margin-bottom: 2rem;
 }

@@ -28,11 +28,11 @@ import { isSaleEnded } from '@/lib/package-sale';
 import type { PackagePost } from '@/types/package';
 import AdBanner from '@/components/ads/AdBanner';
 import AdSenseUnit from '@/components/ads/AdSenseUnit';
+import DesktopBannerAd from '@/components/ads/DesktopBannerAd';
 import dynamic from 'next/dynamic';
 
 // 아제나의 축복 카드(418줄 + CSS)는 칩·타일을 눌러 팝업을 열 때만 쓴다 — 첫 로드 묶음에서 뺀다
 const AzenaBlessingGalleryCard = dynamic(() => import('@/components/package/AzenaBlessingGalleryCard'), { ssr: false });
-import NewLottie from '@/components/NewLottie';
 import useIsMobileViewport from '@/components/ads/useIsMobileViewport';
 import { LEFT_RAIL_SLOT_ID } from '@/components/ads/AdLayout';
 import { AD_PREVIEW, ADSENSE_SLOTS, AD_SIZES } from '@/components/ads/adConfig';
@@ -42,25 +42,21 @@ import styles from './package.module.css';
 // 그보다 자주 물어봐야 같은 캐시가 나오므로 의미가 없다.
 const STATS_REFRESH_MS = 300_000;
 
-// 페이지당 글 5개 고정 — 데스크톱은 카드 한 칸을 광고가 써서 2열 6칸이 맞는다. 아제나 카드는 갤러리 칸을 차지하지 않는다 —
-// 드롭다운 옆 칩(아이콘 + 효율)으로 접어 두고, 누르면 팝업으로 카드를 띄운다.
-const PAGE_SIZE = 5;
+// 페이지당 글 6개 고정 — 데스크톱 2열 3줄이 빈칸 없이 맞는다(가뭄 카드를 켜면 1페이지는 가뭄 카드 + 글 5개).
+// 데스크톱 그리드 안 칸 광고는 카드 사이에서 거슬려 뺐다(2026-10-30) — 레일·하단 사각 칸만 남긴다.
+// 아제나 카드는 갤러리 칸을 차지하지 않는다 — 드롭다운 옆 칩(아이콘 + 효율)으로 접어 두고, 누르면 팝업으로 카드를 띄운다.
+const PAGE_SIZE = 6;
 
 // 모바일 인-콘텐츠 광고를 끼워 넣을 자리 — "이 인덱스의 글 카드 뒤"에 하나씩.
-// 글 2개마다 하나: 글 1·2 → 광고 → 글 3·4 → 광고 → 글 5
+// 글 2개마다 하나: 글 1·2 → 광고 → 글 3·4 → 광고 → 글 5·6
 // 공통 하단: 페이지 버튼 → 광고.
 // 사이에 항상 글이 2개씩 끼므로 광고가 연달아 붙는 자리도 생기지 않는다.
 // 페이지를 넘기면 이전 광고 DOM 이 사라지고 새로 로드되므로 페이지 수만큼 노출이 늘어난다.
 const AD_AFTER_CARD_INDEX = [1, 3];
 
-// 데스크톱 갤러리 그리드 안 광고 — "이 인덱스의 카드 뒤" 카드 한 칸을 광고 칸으로 쓴다.
-// 데스크톱은 2열이라 2 = 둘째 줄 오른쪽 칸(카드1·2 / 카드3·광고 / 카드4·5).
-// 예전엔 전체폭 728×90 띠였다 — 1400 폭에 높이 90 이라 광고 면적이 작아 칸 사각형으로 바꿨다(2026-10-27).
-// 한 곳만 둔다 — 좌·우 레일과 하단 사각 칸까지 합치면 한 화면 광고 밀도가 이미 충분하다.
-const DESKTOP_AD_AFTER_CARD_INDEX = 2;
-
 // 패키지 가뭄 카드 — 신규 패키지가 몇 주째 안 나올 때 1페이지 맨 앞에 끼운다. 다시 나오면 false 로 끈다.
-const SHOW_CLOSED_SHOP_CARD = true;
+// 2026-10-30 껐다(반응이 없었다). 다시 켤 일이 있으면 true 로만 바꾸면 된다.
+const SHOW_CLOSED_SHOP_CARD = false;
 
 // 페이지 번호 목록 — 많아지면 [1 … 4 5 6 … 20] 처럼 현재 페이지 주변만 남기고 접는다
 function buildPageList(current: number, total: number): (number | 'gap')[] {
@@ -188,6 +184,8 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
   const deferredCommonRate = useDeferredValue(commonWonPer100Gold);
   // 하단 데스크톱 배너의 뷰포트 판정 (d-md-block 과 같은 768px 기준)
   const isMobileMd = useIsMobileViewport(767.98);
+  // 페이저 아래 광고 — 992 이상은 PC 큰 가로(DesktopBannerAd), 768~991 은 사각 칸
+  const isBelowLg = useIsMobileViewport(991.98);
 
   const handleCommonRateInput = (v: string) => setCommonRateText(v);
   // 입력한 자릿수만큼만 넓힌다 — 고정 폭이면 뒷자리가 잘리거나 빈칸이 남는다
@@ -342,9 +340,7 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
     return visiblePosts.slice(start, end);
   }, [visiblePosts, curPage, firstPageSize]);
 
-  // 가뭄 카드가 그리드 첫 칸을 차지하면 광고 칸을 한 카드 앞당겨 둘째 줄 오른쪽 자리를 지킨다
   const showClosedShop = SHOW_CLOSED_SHOP_CARD && curPage === 1;
-  const desktopAdAfterIndex = showClosedShop ? DESKTOP_AD_AFTER_CARD_INDEX - 1 : DESKTOP_AD_AFTER_CARD_INDEX;
 
   // 정렬·필터를 바꾸면 1페이지부터 다시 본다
   useEffect(() => { setPage(1); }, [view]);
@@ -421,7 +417,6 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
             style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
           >
             로아 패키지 효율
-            <NewLottie size={30} />
           </h1>
           <p className={styles.pageSubtitle}>
             실시간 시세로 계산하는 로스트아크 패키지 효율
@@ -605,9 +600,11 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
           <>
             {pagedPosts.length === 0 ? (
               <div className={styles.emptyState}>
-                <p className={styles.emptyText}>조건에 맞는 패키지가 없습니다</p>
+                <p className={styles.emptyText}>
+                  {view === 'onSale' ? '지금 판매 중인 패키지가 없습니다' : '조건에 맞는 패키지가 없습니다'}
+                </p>
                 <p className={styles.emptySubtext}>
-                  드롭다운을 &quot;업로드순&quot;으로 바꿔보세요
+                  드롭다운을 &quot;업로드순&quot;으로 바꾸면 지난 패키지도 볼 수 있어요
                 </p>
               </div>
             ) : (
@@ -617,12 +614,6 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
                   // 마지막 카드 뒤에는 붙이지 않는다.
                   const adSlotIndex = AD_AFTER_CARD_INDEX.indexOf(index);
                   const showAd = adSlotIndex !== -1 && index < pagedPosts.length - 1;
-                  // 자리(빈 상자)는 서버 HTML 부터 잡아 둔다 — 마운트 뒤에 줄이 끼어들면 아래 카드가 통째로 밀렸다.
-                  // 광고 자체는 지금처럼 데스크톱 뷰포트가 확인된 뒤에만 넣는다(모바일 광고 요청 방지).
-                  const showDesktopGridAd =
-                    index === desktopAdAfterIndex &&
-                    index < pagedPosts.length - 1 &&
-                    (AD_PREVIEW || !!ADSENSE_SLOTS.desktopSquare);
                   return (
                     <React.Fragment key={post.id}>
                       <PackageGalleryCard
@@ -635,27 +626,7 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
                       {/* 모바일 전용(d-md-none). */}
                       {showAd && (
                         <div className={`d-block d-md-none ${styles.mobileAdSlot} ${styles.betweenCardsAd}`}>
-                          <AdBanner />
-                        </div>
-                      )}
-                      {/* 데스크톱 전용(d-md-block) — 카드 한 칸 자리의 사각 광고.
-                          칸은 카드와 같은 상자에 "광고" 표시를 단다 — 콘텐츠와 구별되지 않게 꾸미는 건 정책 위반.
-                          d-none 으로 숨겨도 모바일에서 마운트·광고 요청은 나가므로
-                          뷰포트(≥768)가 확인될 때만 렌더한다. key={page}: 페이지마다 새 광고. */}
-                      {showDesktopGridAd && (
-                        <div className={`d-none d-md-block ${styles.gridCellAd}`}>
-                          <div className={styles.gridCellAdBody}>
-                            <span className={styles.gridCellAdLabel}>광고</span>
-                            {isMobileMd === false && (
-                              <AdSenseUnit
-                                key={`ad-ingrid-${curPage}`}
-                                className={styles.gridCellAdUnit}
-                                slot={ADSENSE_SLOTS.desktopSquare}
-                                size={AD_SIZES.desktopGridCell}
-                                label="갤러리 카드 칸"
-                              />
-                            )}
-                          </div>
+                          <AdBanner thin />
                         </div>
                       )}
                     </React.Fragment>
@@ -739,15 +710,17 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
                 key={page}: 페이지를 넘길 때마다 새 광고를 받는다 (가운데 띠배너들은 글 목록이
                 갈리면서 저절로 리마운트되지만 이 자리는 페이지 버튼처럼 남는 요소라 직접 갈아줘야 한다) */}
             <div key={`ad-bottom-${curPage}`} className={`d-block d-md-none ${styles.mobileAdSlot} ${styles.belowPagerAd}`}>
-              <AdBanner />
+              <AdBanner thin />
             </div>
 
-            {/* 데스크톱 — 페이지 버튼 아래 336×280 칸 (모바일은 위 AdBanner 가 담당).
-                가로 띠는 위 그리드 줄에 있다. 슬롯 미발급 동안 자리째 렌더하지 않는다. key={page}: 페이지마다 새 광고.
-                d-md-block 으로 숨겨도 모바일에서 마운트·요청은 나가므로 뷰포트(≥768)가 확인될 때만 렌더 */}
-            {(AD_PREVIEW || !!ADSENSE_SLOTS.desktopSquare) && isMobileMd === false && (
+            {/* 데스크톱(≥992) — 페이지 버튼 아래 PC 큰 가로(높이 250, 2026-10-30 시험 단위). key: 페이지마다 새 광고 */}
+            <DesktopBannerAd tall refreshKey={`ad-bottom-desktop-${curPage}`} />
+
+            {/* 태블릿 폭(768~991) — 970 띠가 안 들어가 예전처럼 336×280 칸 (모바일은 위 AdBanner 가 담당).
+                d-md-block 으로 숨겨도 모바일에서 마운트·요청은 나가므로 뷰포트가 확인될 때만 렌더 */}
+            {(AD_PREVIEW || !!ADSENSE_SLOTS.desktopSquare) && isMobileMd === false && isBelowLg === true && (
               <div
-                className={`d-none d-md-block ${styles.desktopAdSlot}`}
+                className={`d-none d-md-block d-lg-none ${styles.desktopAdSlot}`}
                 style={{ minHeight: AD_SIZES.desktopGallerySquare.height }}
               >
                 <AdSenseUnit

@@ -30,16 +30,16 @@
   border: 1.5px solid var(--color-primary);
   border-radius: 14px;
   box-shadow:
-    3px 3px 0 0 rgba(59, 80, 181, 0.28),
-    6px 6px 0 0 rgba(59, 80, 181, 0.16),
-    9px 9px 0 0 rgba(59, 80, 181, 0.07);
+    0 3px 8px -2px rgba(var(--brand-rgb), 0.28),
+    0 6px 14px -5px rgba(var(--brand-rgb), 0.16),
+    0 9px 20px -8px rgba(var(--brand-rgb), 0.07);
 }
 
 [data-theme="dark"] .panel {
   box-shadow:
-    3px 3px 0 0 rgba(107, 126, 214, 0.3),
-    6px 6px 0 0 rgba(107, 126, 214, 0.17),
-    9px 9px 0 0 rgba(107, 126, 214, 0.08);
+    0 3px 8px -2px rgba(var(--brand-rgb), 0.3),
+    0 6px 14px -5px rgba(var(--brand-rgb), 0.17),
+    0 9px 20px -8px rgba(var(--brand-rgb), 0.08);
 }
 
 /* ─── 컨트롤 — 레벨/콘텐츠 한 줄, 단계 한 줄. 전부 같은 트랙 패턴 ─── */
@@ -59,14 +59,14 @@
   border: 1.5px solid var(--color-primary);
   border-radius: 12px;
   box-shadow:
-    2px 2px 0 0 rgba(59, 80, 181, 0.24),
-    4px 4px 0 0 rgba(59, 80, 181, 0.12);
+    0 2px 6px -1px rgba(var(--brand-rgb), 0.24),
+    0 4px 10px -3px rgba(var(--brand-rgb), 0.12);
 }
 
 [data-theme="dark"] .field {
   box-shadow:
-    2px 2px 0 0 rgba(107, 126, 214, 0.26),
-    4px 4px 0 0 rgba(107, 126, 214, 0.13);
+    0 2px 6px -1px rgba(var(--brand-rgb), 0.26),
+    0 4px 10px -3px rgba(var(--brand-rgb), 0.13);
 }
 
 .fieldLevel {
@@ -229,19 +229,19 @@
   cursor: pointer;
   line-height: 1;
   box-shadow:
-    2px 2px 0 0 rgba(59, 80, 181, 0.3),
-    4px 4px 0 0 rgba(59, 80, 181, 0.15);
+    0 2px 6px -1px rgba(var(--brand-rgb), 0.3),
+    0 4px 10px -3px rgba(var(--brand-rgb), 0.15);
 }
 
 [data-theme="dark"] .exToggle {
   box-shadow:
-    2px 2px 0 0 rgba(107, 126, 214, 0.32),
-    4px 4px 0 0 rgba(107, 126, 214, 0.16);
+    0 2px 6px -1px rgba(var(--brand-rgb), 0.32),
+    0 4px 10px -3px rgba(var(--brand-rgb), 0.16);
 }
 
 /* 누르는 중 — 단을 한 칸 줄여 버튼이 눌려 들어간 것처럼 */
 .exToggle:active {
-  box-shadow: 1px 1px 0 0 rgba(59, 80, 181, 0.22);
+  box-shadow: 0 1px 2px 0 rgba(var(--brand-rgb), 0.22);
 }
 
 /* 그림 칸 — 버튼에 직접 overflow 를 걸면 사선(::after)과 말풍선까지 잘린다.
@@ -280,16 +280,16 @@
 .exToggleActive {
   background: var(--bg-secondary);
   border-color: #94a3b8;
-  box-shadow: 2px 2px 0 0 rgba(100, 116, 139, 0.2);
+  box-shadow: 0 2px 6px -1px rgba(100, 116, 139, 0.2);
 }
 
 [data-theme="dark"] .exToggleActive {
   border-color: #64748b;
-  box-shadow: 2px 2px 0 0 rgba(148, 163, 184, 0.18);
+  box-shadow: 0 2px 6px -1px rgba(148, 163, 184, 0.18);
 }
 
 .exToggleActive:active {
-  box-shadow: 1px 1px 0 0 rgba(100, 116, 139, 0.16);
+  box-shadow: 0 1px 2px 0 rgba(100, 116, 139, 0.16);
 }
 
 .exToggleActive .exToggleIcon {
@@ -490,14 +490,14 @@
   border-radius: 12px;
   overflow: hidden;
   box-shadow:
-    3px 3px 0 0 rgba(59, 80, 181, 0.26),
-    6px 6px 0 0 rgba(59, 80, 181, 0.13);
+    0 3px 8px -2px rgba(var(--brand-rgb), 0.26),
+    0 6px 14px -5px rgba(var(--brand-rgb), 0.13);
 }
 
 [data-theme="dark"] .rewardCard {
   box-shadow:
-    3px 3px 0 0 rgba(107, 126, 214, 0.28),
-    6px 6px 0 0 rgba(107, 126, 214, 0.14);
+    0 3px 8px -2px rgba(var(--brand-rgb), 0.28),
+    0 6px 14px -5px rgba(var(--brand-rgb), 0.14);
 }
 
 /* 펼친 카드 — 자리는 그대로 두고 테두리만 포인트색으로 올린다.
@@ -512,8 +512,8 @@
   border-color: var(--color-primary);
   box-shadow:
     inset 0 0 0 1px var(--color-primary),
-    3px 3px 0 0 rgba(59, 80, 181, 0.3),
-    6px 6px 0 0 rgba(59, 80, 181, 0.15);
+    0 3px 8px -2px rgba(var(--brand-rgb), 0.3),
+    0 6px 14px -5px rgba(var(--brand-rgb), 0.15);
 }
 
 .rewardCardDisabled {
@@ -530,8 +530,8 @@
 .rewardCardZero.rewardCardTop4 {
   border-color: var(--border-color);
   box-shadow:
-    3px 3px 0 0 rgba(100, 116, 139, 0.16),
-    6px 6px 0 0 rgba(100, 116, 139, 0.08);
+    0 3px 8px -2px rgba(100, 116, 139, 0.16),
+    0 6px 14px -5px rgba(100, 116, 139, 0.08);
 }
 
 /* 메달 띠도 회색으로 — 제외된 카드가 1위 금색 띠를 달고 있으면 안 읽힌다 */
@@ -620,31 +620,31 @@
   border-color: #e0930a;
   box-shadow:
     inset 0 0 0 1px #e0930a,
-    3px 3px 0 0 rgba(224, 147, 10, 0.34),
-    6px 6px 0 0 rgba(224, 147, 10, 0.16);
+    0 3px 8px -2px rgba(224, 147, 10, 0.34),
+    0 6px 14px -5px rgba(224, 147, 10, 0.16);
 }
 
 .rewardCardTop2 {
   border-color: #6b7c93;
   box-shadow:
     inset 0 0 0 1px #6b7c93,
-    3px 3px 0 0 rgba(107, 124, 147, 0.32),
-    6px 6px 0 0 rgba(107, 124, 147, 0.15);
+    0 3px 8px -2px rgba(107, 124, 147, 0.32),
+    0 6px 14px -5px rgba(107, 124, 147, 0.15);
 }
 
 .rewardCardTop3 {
   border-color: #a8743f;
   box-shadow:
     inset 0 0 0 1px #a8743f,
-    3px 3px 0 0 rgba(168, 116, 63, 0.28),
-    6px 6px 0 0 rgba(168, 116, 63, 0.13);
+    0 3px 8px -2px rgba(168, 116, 63, 0.28),
+    0 6px 14px -5px rgba(168, 116, 63, 0.13);
 }
 
 .rewardCardTop4 {
   border-color: #93a3b8;
   box-shadow:
-    3px 3px 0 0 rgba(147, 163, 184, 0.24),
-    6px 6px 0 0 rgba(147, 163, 184, 0.11);
+    0 3px 8px -2px rgba(147, 163, 184, 0.24),
+    0 6px 14px -5px rgba(147, 163, 184, 0.11);
 }
 
 /* 메달 띠도 회색으로 — 제외된 카드가 1위 금색 띠를 달고 있으면 안 읽힌다 */
@@ -749,8 +749,8 @@
   border-color: #f59e0b;
   box-shadow:
     inset 0 0 0 1px #f59e0b,
-    3px 3px 0 0 rgba(245, 158, 11, 0.38),
-    6px 6px 0 0 rgba(245, 158, 11, 0.18);
+    0 3px 8px -2px rgba(245, 158, 11, 0.38),
+    0 6px 14px -5px rgba(245, 158, 11, 0.18);
 }
 .rewardCardTop1::before { background: linear-gradient(90deg, #fbbf24, #d97706); }
 
@@ -758,8 +758,8 @@
   border-color: #94a3b8;
   box-shadow:
     inset 0 0 0 1px #94a3b8,
-    3px 3px 0 0 rgba(148, 163, 184, 0.38),
-    6px 6px 0 0 rgba(148, 163, 184, 0.18);
+    0 3px 8px -2px rgba(148, 163, 184, 0.38),
+    0 6px 14px -5px rgba(148, 163, 184, 0.18);
 }
 .rewardCardTop2::before { background: linear-gradient(90deg, #cbd5e1, #64748b); }
 
@@ -767,8 +767,8 @@
   border-color: #b45309;
   box-shadow:
     inset 0 0 0 1px #b45309,
-    3px 3px 0 0 rgba(180, 83, 9, 0.38),
-    6px 6px 0 0 rgba(180, 83, 9, 0.18);
+    0 3px 8px -2px rgba(180, 83, 9, 0.38),
+    0 6px 14px -5px rgba(180, 83, 9, 0.18);
 }
 .rewardCardTop3::before { background: linear-gradient(90deg, #c2703d, #92400e); }
 
@@ -948,14 +948,14 @@
   border: 1.5px solid var(--color-primary);
   border-radius: 12px;
   box-shadow:
-    3px 3px 0 0 rgba(59, 80, 181, 0.26),
-    6px 6px 0 0 rgba(59, 80, 181, 0.13);
+    0 3px 8px -2px rgba(var(--brand-rgb), 0.26),
+    0 6px 14px -5px rgba(var(--brand-rgb), 0.13);
 }
 
 [data-theme="dark"] .detail {
   box-shadow:
-    3px 3px 0 0 rgba(107, 126, 214, 0.28),
-    6px 6px 0 0 rgba(107, 126, 214, 0.14);
+    0 3px 8px -2px rgba(var(--brand-rgb), 0.28),
+    0 6px 14px -5px rgba(var(--brand-rgb), 0.14);
 }
 
 .detail > .dTotal,

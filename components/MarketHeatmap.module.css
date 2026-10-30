@@ -1,0 +1,212 @@
+/* 홈 시세 히트맵 — 주식 히트맵 스타일.
+ * 칸은 절대 위치(px)로 깐다 — 좌표는 MarketHeatmap.tsx 가 트리맵으로 계산한다.
+ * 칸 색은 등락(인라인 background), 글자는 어떤 색 위에서도 읽히게 흰 글자 + 그림자. */
+
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: var(--shadow-md);
+}
+
+.head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.sub {
+  margin: 4px 0 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.sumUp { color: var(--price-up); }
+.sumDown { color: var(--price-down); }
+
+.legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding-left: 12px;
+  border-left: 1px solid var(--border-color);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.legendBar {
+  width: 96px;
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgb(139, 28, 28), rgb(246, 128, 128) 42%, rgb(150, 158, 170) 50%, rgb(99, 190, 133) 58%, rgb(20, 104, 58));
+}
+
+.map {
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+  background: var(--bg-secondary);
+}
+
+/* 카테고리(섹터) 테두리와 머리줄 — 칸들 뒤에 깔린다 */
+.group {
+  position: absolute;
+  border-radius: 6px;
+  background: rgba(20, 34, 46, 0.86);
+  pointer-events: none;
+}
+
+:global([data-theme="dark"]) .group {
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.groupHead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  overflow: hidden;
+  white-space: nowrap;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.groupName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.groupAvg {
+  opacity: 0.8;
+  font-weight: 600;
+}
+
+.tile {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15em;
+  padding: 2px;
+  overflow: hidden;
+  border: 1px solid rgba(20, 34, 46, 0.86);
+  border-radius: 0;
+  color: #fff;
+  line-height: 1.15;
+  text-align: center;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  transition: filter 0.12s;
+}
+
+:global([data-theme="dark"]) .tile {
+  border-color: rgba(0, 0, 0, 0.6);
+}
+
+.tile:hover {
+  z-index: 2;
+  filter: brightness(1.12);
+  outline: 2px solid #fff;
+  outline-offset: -2px;
+}
+
+.tile:focus-visible {
+  z-index: 2;
+  outline: 2px solid #fff;
+  outline-offset: -3px;
+}
+
+.icon {
+  width: 2.2em;
+  height: 2.2em;
+  margin-bottom: 0.2em;
+  border-radius: 22%;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 1px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.md .icon {
+  width: 1.7em;
+  height: 1.7em;
+  margin-bottom: 0;
+}
+
+.iconSm {
+  width: 70%;
+  max-width: 22px;
+  aspect-ratio: 1;
+  border-radius: 22%;
+  object-fit: cover;
+  opacity: 0.9;
+}
+
+.name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 700;
+  font-size: 0.82em;
+}
+
+/* 악세 등급 글자(상/중) — 빨강·초록 칸 위에서도 금색·보라가 읽히게 어두운 받침 */
+.grade {
+  display: inline-block;
+  padding: 0 0.3em;
+  border-radius: 4px;
+  background: rgba(10, 18, 28, 0.62);
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-shadow: none;
+}
+
+.chg {
+  font-weight: 800;
+  font-size: 0.86em;
+}
+
+.md .chg {
+  font-size: 11px;
+}
+
+.price {
+  font-size: 0.66em;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+@media (max-width: 575.98px) {
+  .card {
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  .legend {
+    display: none;
+  }
+}

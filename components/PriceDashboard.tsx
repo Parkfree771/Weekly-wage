@@ -10,11 +10,11 @@ import { PRICE_ITEMS as DASHBOARD_ITEMS, DASHBOARD_DEFAULT_ITEM_IDS } from '@/da
 import PriceItemName from './PriceItemName';
 import TrendArrow from './TrendArrow';
 
+import { formatShortPrice, smallIcon } from '@/lib/format-price';
+
 const STORAGE_KEY = 'priceDashboardConfig';
 
-// 카드 아이콘은 44px 로 그리는데 원본은 256px(10~27KB)이라, 같은 폴더의 88px(2배) 사본을 쓴다.
-// 사본은 원본 옆에 `이름-88.webp` 로 둔다 — 새 종목을 추가하면서 사본을 안 만들면 onError 가 원본으로 되돌린다.
-const smallIcon = (icon: string) => icon.replace(/\.webp(\?|$)/, '-88.webp$1');
+// 카드 아이콘은 44px 로 그리는데 원본은 256px(10~27KB)이라, 같은 폴더의 88px(2배) 사본(smallIcon)을 쓴다.
 
 
 // 선택된 아이템 ID 목록 (순서대로)
@@ -159,20 +159,7 @@ export default function PriceDashboard({ initialPrices, initialDate }: {
     }
   };
 
-  const formatPrice = (price: number) => {
-    if (price >= 100000) {
-      const man = price / 10000;
-      return man >= 100 ? `${Math.round(man)}만` : `${man.toFixed(1)}만`;
-    }
-    if (price >= 10000) {
-      const man = price / 10000;
-      return `${man.toFixed(2)}만`;
-    }
-    if (price >= 100) {
-      return Math.round(price).toLocaleString('ko-KR');
-    }
-    return price.toLocaleString('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-  };
+  const formatPrice = formatShortPrice;
 
   // 설정 모달 열기
   const openSettings = () => {

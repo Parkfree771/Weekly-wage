@@ -436,7 +436,7 @@ export default function AzenaBlessingDetail() {
             {/* 모바일 띠배너 — 자리마다 다른 애드핏 단위를 받아야 한다.
                 같은 단위를 두 번 넣으면 애드핏이 첫 자리만 채운다 (index 0) */}
             <div className={`d-block d-md-none ${styles.mobileAdSlot}`}>
-              <AdBanner />
+              <AdBanner thin />
             </div>
 
             {/* PC 좌측 250×250 (모바일에서는 CSS 로 숨김) */}
@@ -785,7 +785,7 @@ export default function AzenaBlessingDetail() {
 
         {/* 모바일 띠배너 — 페이지 하단 (index 1: 계산 결과 아래 자리와 다른 단위) */}
         <div className={`d-block d-md-none ${styles.mobileAdSlot}`}>
-          <AdBanner />
+          <AdBanner thin />
         </div>
       </div>
     </Container>

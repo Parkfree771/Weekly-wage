@@ -3,7 +3,9 @@
 // 미리보기 모드.
 // true  = 실제 광고 대신 "여기에 광고 들어감" placeholder(자리/크기)만 표시. 배치 확인용.
 // false = 실제 광고(<ins>) 동작. (단, 아래 슬롯 ID가 채워진 자리에만 렌더됨)
-export const AD_PREVIEW = false;
+// 상수로 두면 켠 채로 배포될 위험이 있어 환경변수로 켠다 — 로컬 .env.local 에 NEXT_PUBLIC_AD_PREVIEW=1.
+// 운영(Netlify)에는 이 변수를 넣지 않는다.
+export const AD_PREVIEW = process.env.NEXT_PUBLIC_AD_PREVIEW === '1';
 
 // 모바일 뷰포트 초기 배율 — app/layout.tsx 의 viewport.initialScale 이 이 값을 쓴다.
 // 페이지를 축소 렌더하므로 광고를 그대로 두면 300×250 이 240×200 으로 나가 규격 미달이 된다.
@@ -29,6 +31,10 @@ export const ADSENSE_SLOTS = {
   desktopHorizontal: '1926310741', // PC 가로 띠(목표 아래·결과 아래)
   desktopSquare: '7923200898', // PC 사각(패키지 상세 좌측·갤러리 카드 칸·갤러리 페이저 아래)
   rail: '6748226739', // PC 좌우 레일(좌우 공용)
+  // PC 큰 가로(높이 250) 시험 단위 — 2026-10-30 시험 시작. 홈 통계 바 아래 · 재련 결과 아래 두 자리만.
+  // 애드센스 단위 "PC 큰 가로". 비우면 PC 가로(desktopHorizontal) 단위로 채운다(빈칸 방지) —
+  // 그때는 보고서에서 얇은 가로와 구분되지 않는다. 1~2주 뒤 두 단위의 RPM 을 비교해 넓힐지 되돌릴지 정한다.
+  desktopTall: '9523131135', // PC 큰 가로(시험) — 홈 통계 바 아래 · 재련 결과 아래
 };
 
 // 자리별 광고 칸 크기 — 반응형 단위를 이 칸에 맞춰 띄운다(CSS 로 칸 크기를 정하는 방식).
@@ -39,13 +45,17 @@ export const ADSENSE_SLOTS = {
 // 레일은 따라오지 않는다 — 애드센스는 스크롤을 따라오는 광고를 화면에 하나만, 좌우 대칭 없이 허용한다.
 export const AD_SIZES = {
   mobileInContent: { width: '100%', maxWidth: 336, height: 250 },
+  // 모바일 얇은 띠 — 320×100(구글 성과 상위)·320×50 이 들어간다. 목록이 길게 이어지는 화면(숙제 체크)용
+  mobileThin: { width: '100%', maxWidth: 320, height: 100 },
   desktopHorizontal: { width: '100%', maxWidth: 970, height: 90 },
+  // 큰 가로 — 970×250(빌보드)·728×90·300×250 이 같은 칸에서 경쟁한다
+  desktopTall: { width: '100%', maxWidth: 970, height: 250 },
   desktopGallerySquare: { width: 336, height: 280 },
-  // 갤러리 카드 칸 — 폭은 칸을 꽉 채우고 높이는 280 고정, 칸 안에서 세로 가운데.
-  // 높이까지 칸에 맞췄더니(100%) 소재가 칸보다 낮을 때 위에 붙고 아래가 크게 비었다.
-  desktopGridCell: { width: '100%', height: 280 },
   desktopSideSquare: { width: 250, height: 250 },
   rail: { width: 160, height: 600 },
+  // 넓은 화면 레일 — 300×600(하프페이지). 구글이 꼽는 성과 상위 크기(300×250·336×280·728×90·300×600·320×100)
+  // 중 하나이고 160×600 은 "기타 지원 크기"다. 같은 반응형 단위(rail 슬롯)를 칸만 넓혀 띄운다.
+  railWide: { width: 300, height: 600 },
 } as const;
 
 export type AdSize = { width: number | string; maxWidth?: number; height: number | string; minHeight?: number };

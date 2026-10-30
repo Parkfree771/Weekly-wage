@@ -5072,9 +5072,9 @@ export default function RefiningCalculator({
               </Card.Body>
             </Card>
 
-            {/* 데스크톱 728×90 — 결과 카드 아래. 목표 아래 자리와 같은 페이지라 별도 단위 필수
-                (refiningResultDesktop — 미발급 동안은 자리째 렌더 안 됨) */}
-            <DesktopBannerAd />
+            {/* 데스크톱 가로 — 결과 카드 아래. 2026-10-30 큰 가로(높이 250) 시험 자리 —
+                결과를 다 본 뒤라 계산기를 밀어내지 않는다(목표 아래 자리는 얇은 그대로) */}
+            <DesktopBannerAd tall />
             </>
           )}
         </>

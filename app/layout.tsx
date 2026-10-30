@@ -21,6 +21,7 @@ const notoSansKr = Noto_Sans_KR({
   preload: true,
   adjustFontFallback: true,
   fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+  variable: "--font-kr",
 });
 
 const jetbrainsMono = JetBrains_Mono({
@@ -184,7 +185,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${notoSansKr.className} ${jetbrainsMono.variable} ${outfit.variable}`}>
+      <body className={`${notoSansKr.className} ${notoSansKr.variable} ${jetbrainsMono.variable} ${outfit.variable}`}>
         <ThemeProvider>
           <ConsoleFilter />
           <AuthProvider>

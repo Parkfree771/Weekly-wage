@@ -1,0 +1,503 @@
+/* 홈 시세 차트 — 데스크톱 사이드바(카테고리·기간·보기모드)와 아이템 줄.
+ *
+ * 카테고리 색은 요소마다 인라인 CSS 변수로 내려 준다:
+ *   --cat     : 강조색(테두리·점·막대)
+ *   --cat-fg  : 강조 글자색
+ *   --cat-bg  : 옅은 바탕
+ * 테마(라이트/다크)에 맞는 값은 JS 가 골라 넣는다 — 여기서는 변수만 쓴다.
+ * hover 를 JS(onMouseEnter)로 칠하던 걸 전부 여기로 옮겼다. */
+
+/* ── 사이드바 ─────────────────────────────────────────── */
+
+.sidebar {
+  width: 232px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.panel {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 14px;
+  box-shadow: var(--shadow-sm);
+}
+
+/* 카테고리 패널은 남는 세로 공간을 먹어 아래 두 패널을 차트 바닥에 붙인다.
+   목록도 같이 늘어나 줄 간격이 벌어진다 — 패널 아래에 빈칸이 남지 않게 */
+.panelGrow {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.panelGrow .catList {
+  flex: 1;
+}
+
+.panelHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 4px 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.catList {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.catBtn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 52px;
+  max-height: 72px;
+  padding: 7px 12px 7px 14px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 1rem;
+  font-weight: 600;
+  white-space: nowrap;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.catIcon {
+  flex-shrink: 0;
+  display: inline-flex;
+  width: 38px;
+  height: 38px;
+  padding: 2px;
+  border-radius: 9px;
+  background: var(--bg-secondary);
+  box-shadow: inset 0 0 0 1px rgba(var(--brand-rgb), 0.08);
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+
+.catIcon img {
+  width: 100%;
+  height: 100%;
+  border-radius: 7px;
+  object-fit: cover;
+  filter: saturate(0.85);
+  transition: filter 0.15s;
+}
+
+.catLabel {
+  flex: 1;
+  min-width: 0;
+}
+
+.catCount {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.catBtn:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.catBtn:hover .catIcon img {
+  filter: none;
+}
+
+.catBtn:focus-visible,
+.segBtn:focus-visible,
+.chip:focus-visible,
+.toggleBtn:focus-visible {
+  outline: 2px solid var(--cat, var(--color-primary));
+  outline-offset: 2px;
+}
+
+.catBtnActive,
+.catBtnActive:hover {
+  background: var(--cat-bg);
+  color: var(--cat-fg);
+  font-weight: 700;
+}
+
+/* 선택 표시 — 왼쪽 막대. 테두리 대신 막대라 목록이 덜 시끄럽다 */
+.catBtnActive::before {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 12px;
+  bottom: 12px;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--cat);
+}
+
+.catBtnActive .catIcon {
+  box-shadow: 0 0 0 2px var(--cat);
+}
+
+.catBtnActive .catIcon img {
+  filter: none;
+}
+
+.catBtnActive .catCount {
+  color: var(--cat-fg);
+  opacity: 0.75;
+}
+
+/* 세그먼트 컨트롤 — 기간·보기모드 */
+.segmented {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 3px;
+  padding: 3px;
+  border-radius: 11px;
+  background: var(--bg-secondary);
+}
+
+.segBtn {
+  padding: 9px 6px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s, box-shadow 0.15s;
+}
+
+.segBtn:hover {
+  color: var(--text-primary);
+}
+
+.segBtnActive,
+.segBtnActive:hover {
+  background: var(--card-bg);
+  color: var(--cat-fg);
+  font-weight: 700;
+  box-shadow: 0 1px 2px rgba(16, 58, 92, 0.08), 0 1px 4px rgba(16, 58, 92, 0.08);
+}
+
+:global([data-theme="dark"]) .segBtnActive {
+  background: var(--card-body-bg-blue);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+}
+
+/* 원화로 보기 — 켜고 끄는 토글 */
+.toggleBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 10px;
+  padding: 9px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.toggleBtn:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.toggleMark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  font-size: 0.88rem;
+  font-weight: 800;
+  line-height: 1;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.toggleSwitch {
+  margin-left: auto;
+  position: relative;
+  width: 26px;
+  height: 15px;
+  border-radius: 999px;
+  background: var(--text-disabled);
+  transition: background-color 0.15s;
+}
+
+.toggleSwitch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  transition: transform 0.18s ease;
+}
+
+.toggleBtnOn,
+.toggleBtnOn:hover {
+  border-color: var(--cat);
+  background: var(--cat-bg);
+  color: var(--cat-fg);
+  font-weight: 700;
+}
+
+.toggleBtnOn .toggleMark {
+  background: var(--cat);
+  color: #fff;
+}
+
+.toggleBtnOn .toggleSwitch {
+  background: var(--cat);
+}
+
+.toggleBtnOn .toggleSwitch::after {
+  transform: translateX(11px);
+}
+
+/* ── 메인 영역: 서브카테고리 · 아이템 줄 ─────────────────── */
+
+.subTabs {
+  display: inline-grid;
+  grid-auto-flow: column;
+  gap: 3px;
+  padding: 3px;
+  margin-bottom: 12px;
+  border-radius: 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  align-self: flex-start;
+}
+
+.subTabs .segBtn {
+  padding: 9px 20px;
+  font-size: 0.95rem;
+}
+
+.subTabs .segBtnActive {
+  background: var(--cat-bg);
+  box-shadow: none;
+}
+
+.itemRail {
+  position: relative;
+  margin-bottom: 14px;
+}
+
+/* 넘치는 쪽 가장자리를 흐리게 — 화살표만 있을 때보다 "더 있다"가 잘 읽힌다 */
+.chipRow {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 4px 2px 8px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-behavior: smooth;
+}
+
+.chipRow::-webkit-scrollbar {
+  display: none;
+}
+
+.fadeRight {
+  -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 64px), transparent);
+  mask-image: linear-gradient(90deg, #000 calc(100% - 64px), transparent);
+}
+
+.fadeLeft {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 64px);
+  mask-image: linear-gradient(90deg, transparent, #000 64px);
+}
+
+.fadeLeft.fadeRight {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 64px, #000 calc(100% - 64px), transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 64px, #000 calc(100% - 64px), transparent);
+}
+
+.chip {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 18px 10px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  font-size: 0.96rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s, background-color 0.15s;
+}
+
+.chip:hover {
+  border-color: var(--cat);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.chip:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+.chipActive,
+.chipActive:hover {
+  border-color: var(--cat);
+  background: var(--cat-bg);
+  color: var(--cat-fg);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--cat) 18%, transparent), var(--shadow-sm);
+}
+
+.scrollBtn {
+  position: absolute;
+  top: calc(50% - 2px);
+  transform: translateY(-50%);
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.scrollBtn:hover {
+  transform: translateY(-50%) scale(1.06);
+  box-shadow: var(--shadow-lg);
+}
+
+.scrollBtnLeft {
+  left: -6px;
+}
+
+.scrollBtnRight {
+  right: -6px;
+}
+
+.slotHint {
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--cat);
+  border-radius: 10px;
+  background: var(--cat-bg);
+  color: var(--cat-fg);
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+/* 즐겨찾기 — 사이드바 별 칸, 아이템 줄 끝 "+ 아이템 추가" */
+.catIconStar {
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, #facc15 16%, var(--card-bg));
+}
+
+.addChip {
+  gap: 10px;
+  padding: 10px 18px 10px 10px;
+  border-style: dashed;
+  background: transparent;
+  color: var(--text-muted);
+  box-shadow: none;
+}
+
+.addChip:hover {
+  border-color: #e5b400;
+  color: var(--text-primary);
+}
+
+.addPlus {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: var(--bg-secondary);
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* 즐겨찾기 줄 — 카테고리 버튼 위 오른쪽 끝에 편집(연필) 버튼을 겹쳐 둔다 */
+.catRowFav {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 52px;
+  max-height: 72px;
+}
+
+.catRowFav > .catBtn {
+  padding-right: 48px;
+}
+
+.catCountInline {
+  margin-left: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.catEdit {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--border-color);
+  border-radius: 9px;
+  background: var(--card-bg);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background-color 0.15s;
+}
+
+.catEdit:hover {
+  border-color: #e5b400;
+  color: #9a7300;
+  background: color-mix(in srgb, #facc15 14%, var(--card-bg));
+}
+
+.catEdit:focus-visible {
+  outline: 2px solid #e5b400;
+  outline-offset: 2px;
+}

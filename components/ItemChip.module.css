@@ -1,0 +1,96 @@
+/* 아이템 버튼 내용 — 아이콘 | 이름 / 현재가 · 등락 배지.
+ * 데스크톱 아이템 줄(PriceChartContainer)과 모바일 바텀시트(ItemSelector)가 같이 쓴다. */
+
+.body {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  text-align: left;
+}
+
+.iconTile {
+  flex-shrink: 0;
+  display: inline-flex;
+  width: 42px;
+  height: 42px;
+  padding: 2px;
+  border-radius: 10px;
+  background: var(--bg-secondary);
+  box-shadow: inset 0 0 0 1px rgba(var(--brand-rgb), 0.08);
+}
+
+.iconTile img {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.quote {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 20px;
+  font-size: 0.86rem;
+}
+
+.price {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.price::after {
+  content: 'G';
+  margin-left: 1px;
+  font-size: 0.85em;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.chg {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 7px 1px 5px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.up {
+  color: var(--price-up);
+  background: var(--color-success-light);
+}
+
+.down {
+  color: var(--price-down);
+  background: var(--color-danger-light);
+}
+
+.flat {
+  color: var(--text-muted);
+  background: var(--neutral-bg);
+}
+
+/* 시세를 아직 못 받았을 때 줄 높이를 지키는 자리표시 */
+.skeleton {
+  display: inline-block;
+  width: 84px;
+  height: 12px;
+  border-radius: 4px;
+  background: var(--bg-secondary);
+}

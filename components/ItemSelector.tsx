@@ -1,26 +1,25 @@
 'use client';
 
 import { ItemCategory, TrackedItem, getItemsByCategory, RefineAdditionalSubCategory, REFINE_ADDITIONAL_SUBCATEGORIES, getItemsBySubCategory } from '@/lib/items-to-track';
-import { getBookBonusLines } from '@/lib/refiningData';
-import React, { useMemo, useState, useContext } from 'react';
+import React, { useMemo, useState, useContext, useEffect } from 'react';
 import { useTheme } from './ThemeProvider';
 import { Offcanvas } from 'react-bootstrap';
 import { PriceContext, PeriodOption } from './PriceComparisonStats';
+import TrendArrow from './TrendArrow';
+import { formatShortPrice, smallIcon } from '@/lib/format-price';
+import { PRICE_ITEMS } from '@/data/priceItems';
+import chipStyles from './ItemChip.module.css';
+import mStyles from './ItemSelector.module.css';
 
-// 그리드 아이콘 SVG 컴포넌트
-function GridIcon({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
-      <rect x="3" y="3" width="8" height="8" rx="1" />
-      <rect x="13" y="3" width="8" height="8" rx="1" />
-      <rect x="3" y="13" width="8" height="8" rx="1" />
-      <rect x="13" y="13" width="8" height="8" rx="1" />
-    </svg>
-  );
-}
+// 버튼 아이콘 — 시세 표시 목록(PRICE_ITEMS)에 있는 종목은 그쪽 아이콘의 88px 사본을 쓴다(사본이 있는 게 확인된 목록).
+// 나머지는 원본을 그대로 쓴다. 서버 HTML 에 실리는 img 라 onError 로 갈아끼우는 방식은 하이드레이션 전에
+// 에러가 나면 안 먹는다 — 그래서 없는 사본을 시도하지 않는 쪽으로 고른다.
+const PRICE_ITEM_ICON = new Map(PRICE_ITEMS.map((p) => [p.id, smallIcon(p.icon)]));
+export const chipIcon = (item: TrackedItem) => PRICE_ITEM_ICON.get(item.id) ?? item.icon;
 
 export const CATEGORY_STYLES: Record<ItemCategory, { label: string; color: string; darkColor: string; lightBg: string; darkThemeColor: string; darkBg: string; }> = {
-  refine: { label: '재련 재료', color: '#4F63D2', darkColor: '#3B50B5', lightBg: '#eef1fb', darkThemeColor: '#7B8EF0', darkBg: '#1a1f3d' },
+  // 재련 재료 = 사이트 기본색 계열(알데바란의 바다 청색). 다른 카테고리는 아이템 정체성 색이라 그대로 둔다.
+  refine: { label: '재련 재료', color: '#1f7fc0', darkColor: '#13609c', lightBg: '#eaf4fa', darkThemeColor: '#5cb3e0', darkBg: '#14293a' },
   gem: { label: '젬', color: '#8A2BE2', darkColor: '#4B0082', lightBg: '#F5EEFF', darkThemeColor: '#c084fc', darkBg: '#3c2a4a' },
   refine_additional: { label: '재련 추가 재료', color: '#34d399', darkColor: '#059669', lightBg: '#d1fae5', darkThemeColor: '#34d399', darkBg: '#064e3b' },
   engraving: { label: '유물 각인서', color: '#ff9b7a', darkColor: '#E11D48', lightBg: '#fff1f2', darkThemeColor: '#f87171', darkBg: '#4d222a' },
@@ -31,6 +30,47 @@ export const CATEGORY_STYLES: Record<ItemCategory, { label: string; color: strin
 
 // 카테고리 표시 순서 정의
 const CATEGORY_ORDER: ItemCategory[] = ['refine', 'gem', 'refine_additional', 'engraving', 'accessory', 'bracelet', 'jewel'];
+
+// 카테고리 대표 이미지 — 그 카테고리를 대표하는 종목 아이콘을 빌려 쓴다(데스크톱 사이드바·모바일 탭 공용)
+const CATEGORY_ICON_ITEM: Record<ItemCategory, string> = {
+  refine: '66102007',                         // 운명의 파괴석 결정
+  gem: '67400003',                            // 질서의 젬 : 안정
+  refine_additional: '66111131',              // 용암의 숨결
+  engraving: '65203905',                      // 아드레날린 각인서
+  accessory: 'auction_necklace_ancient_refine3',
+  bracelet: 'auction_bracelet_spec_crit',
+  jewel: 'auction_gem_fear_10',
+};
+export const CATEGORY_ICON = Object.fromEntries(
+  (Object.keys(CATEGORY_ICON_ITEM) as ItemCategory[]).map((cat) => {
+    const item = getItemsByCategory(cat).find((i) => i.id === CATEGORY_ICON_ITEM[cat]);
+    return [cat, item ? chipIcon(item) : undefined];
+  }),
+) as Record<ItemCategory, string | undefined>;
+
+// ── 즐겨찾기 ──
+// 차트 카테고리 = 실제 아이템 카테고리 + 즐겨찾기(사용자가 고른 아이템 묶음, lib/favorite-items.ts).
+export type ChartCategory = ItemCategory | 'favorite';
+type CategoryStyle = typeof CATEGORY_STYLES[ItemCategory];
+// 즐겨찾기 버튼·시트 색 — 별의 금색
+export const FAVORITE_STYLE: CategoryStyle = {
+  label: '즐겨찾기', color: '#e5b400', darkColor: '#9a7300', lightBg: '#fff8db', darkThemeColor: '#facc15', darkBg: '#3a3113',
+};
+export const styleOf = (cat: ChartCategory): CategoryStyle => (cat === 'favorite' ? FAVORITE_STYLE : CATEGORY_STYLES[cat]);
+
+export function StarIcon({ filled = true, size = 16 }: { filled?: boolean; size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" style={{ flexShrink: 0, display: 'block' }}>
+      <path
+        d="M12 2.8l2.75 5.58 6.15.9-4.45 4.34 1.05 6.13L12 16.86l-5.5 2.89 1.05-6.13L3.1 9.28l6.15-.9L12 2.8z"
+        fill={filled ? '#facc15' : 'none'}
+        stroke={filled ? '#e5b400' : 'currentColor'}
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 
 function ColoredItemName({ name }: { name: string }) {
   const regex = /(\d+\.?\d*%)\s*(\(상\))|(\d+\.?\d*%)\s*(\(중\))|(\(상\))|(\(중\))|(\d+\+)/g;
@@ -86,118 +126,126 @@ function ColoredItemName({ name }: { name: string }) {
   return <>{parts}</>;
 }
 
-// 책 아이템 호버 시 목표 단계별 확률 증가량 툴팁
-function BookBonusTooltip({ itemId, theme }: { itemId: string; theme: string }) {
-  const lines = getBookBonusLines(itemId);
-  if (!lines) return null;
+export type ItemQuote = { current: number; change: number };
 
+// 버튼에 붙일 현재가·전일 대비 등락률 — 마지막 두 날짜 종가 비교(서버 스냅샷 lib/home-price-snapshot 과 같은 계산).
+// 시세는 차트가 이미 받아 둔 price-history-client 캐시에서 꺼내므로 요청이 더 나가지 않는다.
+// initial: 홈 서버(ISR)가 미리 계산해 넘긴 값. 있으면 첫 HTML 부터 시세가 찍혀 나간다(검색 봇도 읽는다).
+export function useItemQuotes(items: TrackedItem[], initial?: Record<string, ItemQuote>): Record<string, ItemQuote> {
+  const [quotes, setQuotes] = useState<Record<string, ItemQuote>>(initial ?? {});
+  const key = items.map((i) => i.id).join(',');
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { getMultipleItemPriceHistory } = await import('@/lib/price-history-client');
+        const all = await getMultipleItemPriceHistory(items.map((i) => i.id), 2);
+        const next: Record<string, ItemQuote> = {};
+        for (const item of items) {
+          const h = all[item.id] || [];
+          if (h.length === 0) continue;
+          const current = h[h.length - 1].price;
+          const previous = h.length >= 2 ? h[h.length - 2].price : current;
+          next[item.id] = { current, change: previous > 0 ? ((current - previous) / previous) * 100 : 0 };
+        }
+        if (!cancelled) setQuotes((prev) => ({ ...prev, ...next }));
+      } catch {
+        // 시세를 못 받으면 이름만 보여 준다 — 버튼 자체는 그대로 동작해야 한다
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+  return quotes;
+}
+
+// 아이템 버튼 내용 — 아이콘 | 이름 / 현재가·등락 배지. label 을 주면 이름 자리를 그걸로 그린다(악세 옵션 색칠 등).
+export function ItemChipBody({ item, quote, label }: { item: TrackedItem; quote?: ItemQuote; label?: React.ReactNode }) {
+  const dir = !quote ? null : quote.change > 0.1 ? 'up' : quote.change < -0.1 ? 'down' : 'flat';
+  const icon = chipIcon(item);
   return (
-    <div
-      style={{
-        position: 'absolute',
-        top: 'calc(100% + 8px)',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        zIndex: 1050,
-        backgroundColor: theme === 'dark' ? '#1a1f2e' : '#ffffff',
-        color: 'var(--text-primary)',
-        border: `1px solid ${theme === 'dark' ? '#34d399' : '#059669'}`,
-        borderRadius: '8px',
-        padding: '8px 12px',
-        fontSize: '0.75rem',
-        fontWeight: 500,
-        lineHeight: 1.6,
-        whiteSpace: 'nowrap',
-        textAlign: 'left',
-        pointerEvents: 'none',
-        boxShadow: theme === 'dark' ? '0 4px 14px rgba(0,0,0,0.5)' : '0 4px 14px rgba(0,0,0,0.15)',
-      }}
-    >
-      <div style={{ fontWeight: 700, marginBottom: '2px', color: theme === 'dark' ? '#34d399' : '#059669' }}>
-        재련 확률 증가
-      </div>
-      {lines.map((line) => (
-        <div key={line}>{line}</div>
-      ))}
-    </div>
+    <span className={chipStyles.body}>
+      {icon && (
+        <span className={chipStyles.iconTile}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={icon} alt="" width={30} height={30} loading="lazy" decoding="async" />
+        </span>
+      )}
+      <span className={chipStyles.text}>
+        <span className={chipStyles.name}>{label ?? <ColoredItemName name={item.name} />}</span>
+        <span className={chipStyles.quote}>
+          {quote && dir ? (
+            <>
+              <span className={`font-numeric ${chipStyles.price}`}>{formatShortPrice(quote.current)}</span>
+              <span className={`font-numeric ${chipStyles.chg} ${chipStyles[dir]}`}>
+                {dir === 'flat' ? '─' : <TrendArrow up={dir === 'up'} size={13} />}
+                {Math.abs(quote.change).toFixed(1)}%
+              </span>
+            </>
+          ) : (
+            <span className={chipStyles.skeleton} aria-hidden="true" />
+          )}
+        </span>
+      </span>
+    </span>
   );
 }
 
 type ItemSelectorProps = {
-  selectedCategory: ItemCategory;
+  selectedCategory: ChartCategory;
   selectedItem: TrackedItem | null;
-  onSelectCategory: (category: ItemCategory) => void;
+  onSelectCategory: (category: ChartCategory) => void;
   onSelectItem: (item: TrackedItem) => void;
   selectedSubCategory: RefineAdditionalSubCategory | null;
   onSelectSubCategory: (subCategory: RefineAdditionalSubCategory | null) => void;
+  /** 즐겨찾기 아이템(순서대로) */
+  favoriteItems: TrackedItem[];
+  /** 즐겨찾기 편집 창 열기 */
+  onOpenFavoritePicker: () => void;
 };
 
+/**
+ * 모바일 차트 아이템 고르기 — 카테고리 탭 줄 + 아래에서 올라오는 시트.
+ * (데스크톱 사이드바·아이템 줄은 PriceChartContainer 가 직접 그린다. 이 컴포넌트는 d-md-none 안에서만 쓰인다)
+ */
 export default function ItemSelector({
   selectedCategory,
   selectedItem,
   onSelectCategory,
   onSelectItem,
-  selectedSubCategory,
   onSelectSubCategory,
+  favoriteItems,
+  onOpenFavoritePicker,
 }: ItemSelectorProps) {
   const { theme } = useTheme();
-  const { isGridView, onToggleGridView, selectedPeriod, setSelectedPeriod, openChartSettings, eventRangeActive } = useContext(PriceContext);
-
-  // 기간 라벨 매핑
-  const periodLabels: Record<PeriodOption, string> = {
-    '7d': '7일',
-    '1m': '1개월',
-    '2m': '2개월',
-    '3m': '3개월',
-    '6m': '6개월',
-    '1y': '1년',
-    'all': '전체',
+  const { isGridView, onToggleGridView, selectedPeriod, setSelectedPeriod, eventRangeActive } = useContext(PriceContext);
+  const catVars = (cat: ChartCategory) => {
+    const cs = styleOf(cat);
+    return {
+      '--cat': theme === 'dark' ? cs.darkThemeColor : cs.color,
+      '--cat-fg': theme === 'dark' ? cs.darkThemeColor : cs.darkColor,
+      '--cat-bg': theme === 'dark' ? cs.darkBg : cs.lightBg,
+    } as React.CSSProperties;
   };
-  const [showItems, setShowItems] = useState(true);
-  const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
+
+  const periodLabels: Record<PeriodOption, string> = {
+    '7d': '7일', '1m': '1개월', '2m': '2개월', '3m': '3개월', '6m': '6개월', '1y': '1년', 'all': '전체',
+  };
   const [showBottomSheet, setShowBottomSheet] = useState(false);
-  const [bottomSheetCategory, setBottomSheetCategory] = useState<ItemCategory>(selectedCategory);
+  const [bottomSheetCategory, setBottomSheetCategory] = useState<ChartCategory>(selectedCategory);
   const [bottomSheetSubCategory, setBottomSheetSubCategory] = useState<RefineAdditionalSubCategory | null>(null);
 
-  const categoryItems = useMemo(() => {
-    // 재련 추가 재료 카테고리이고 서브카테고리가 선택된 경우
-    if (selectedCategory === 'refine_additional' && selectedSubCategory) {
-      return getItemsBySubCategory(selectedSubCategory);
-    }
-    return getItemsByCategory(selectedCategory);
-  }, [selectedCategory, selectedSubCategory]);
-
   const bottomSheetItems = useMemo(() => {
+    if (bottomSheetCategory === 'favorite') return favoriteItems;
     // 재련 추가 재료 카테고리이고 서브카테고리가 선택된 경우
     if (bottomSheetCategory === 'refine_additional' && bottomSheetSubCategory) {
       return getItemsBySubCategory(bottomSheetSubCategory);
     }
     return getItemsByCategory(bottomSheetCategory);
-  }, [bottomSheetCategory, bottomSheetSubCategory]);
+  }, [bottomSheetCategory, bottomSheetSubCategory, favoriteItems]);
 
-  // 데스크톱용 카테고리 클릭 핸들러
-  const handleCategoryClick = (cat: ItemCategory) => {
-    if (selectedCategory === cat) {
-      // 같은 카테고리 클릭 시 토글
-      setShowItems(!showItems);
-    } else {
-      // 다른 카테고리 클릭 시 항상 표시
-      setShowItems(true);
-      onSelectCategory(cat);
-      // 재련 추가 재료가 아닌 경우 서브카테고리 초기화
-      if (cat !== 'refine_additional') {
-        onSelectSubCategory(null);
-      }
-    }
-  };
-
-  // 서브카테고리 클릭 핸들러
-  const handleSubCategoryClick = (subCat: RefineAdditionalSubCategory) => {
-    onSelectSubCategory(subCat);
-  };
-
-  // 모바일용 카테고리 클릭 핸들러 (바텀시트 열기)
-  const handleMobileCategoryClick = (cat: ItemCategory) => {
+  // 카테고리 탭 → 시트 열기
+  const handleMobileCategoryClick = (cat: ChartCategory) => {
     onSelectCategory(cat); // 선택된 카테고리 업데이트 (테두리 색 변경)
     setBottomSheetCategory(cat);
     // 재련 추가 재료가 아닌 경우 서브카테고리 초기화
@@ -208,468 +256,190 @@ export default function ItemSelector({
     setShowBottomSheet(true);
   };
 
-  // 모바일용 서브카테고리 클릭 핸들러
   const handleMobileSubCategoryClick = (subCat: RefineAdditionalSubCategory) => {
     setBottomSheetSubCategory(subCat);
     onSelectSubCategory(subCat);
   };
 
-  // 바텀시트에서 아이템 선택
+  // 시트에서 아이템 선택 — 시트는 열어 둔 채로(위 차트를 보며 바꿔 본다)
   const handleBottomSheetItemSelect = (item: TrackedItem) => {
-    onSelectCategory(bottomSheetCategory);
+    if (selectedCategory !== bottomSheetCategory) onSelectCategory(bottomSheetCategory);
     onSelectItem(item);
-    // 바텀시트를 닫지 않고 유지
   };
 
   if (!selectedItem) {
     return null;
   }
 
+  const TAB_ORDER: ChartCategory[] = ['favorite', ...CATEGORY_ORDER];
+  const sheetIcon = (cat: ChartCategory) =>
+    cat === 'favorite' ? <StarIcon size={24} /> : CATEGORY_ICON[cat] ? (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={CATEGORY_ICON[cat]} alt="" decoding="async" />
+    ) : null;
+
   return (
     <div>
-      {/* 카테고리 탭 - 데스크톱 */}
-      <div className="mb-3 d-none d-md-block">
-        <div className="d-flex gap-3 align-items-center" style={{ maxWidth: '1400px', margin: '0 auto' }}>
-          <div className="d-flex gap-3 justify-content-center" style={{ flex: 1 }}>
-            {CATEGORY_ORDER.map((cat) => {
-              const categoryStyle = CATEGORY_STYLES[cat];
-
-              return (
-              <button
-                key={cat}
-                onClick={() => handleCategoryClick(cat)}
-                style={{
-                  fontWeight: selectedCategory === cat ? '700' : '600',
-                  fontSize: '1rem',
-                  padding: '12px 24px',
-                  backgroundColor: selectedCategory === cat ? (theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg) : 'var(--card-bg)',
-                  border: `2px solid ${selectedCategory === cat ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color) : 'var(--border-color)'}`,
-                  borderRadius: '12px',
-                  color: selectedCategory === cat ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor) : 'var(--text-secondary)',
-                  transition: 'all 0.25s ease',
-                  cursor: 'pointer',
-                  letterSpacing: '0.3px',
-                  boxShadow: selectedCategory === cat
-                    ? `0 4px 12px ${theme === 'dark' ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.12)'}`
-                    : `0 2px 8px ${theme === 'dark' ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.08)'}`
-                }}
-                onMouseEnter={(e) => {
-                  if (selectedCategory !== cat) {
-                    const categoryStyle = CATEGORY_STYLES[cat];
-                    e.currentTarget.style.backgroundColor = theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg;
-                    e.currentTarget.style.borderColor = theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color;
-                    e.currentTarget.style.color = theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (selectedCategory !== cat) {
-                    e.currentTarget.style.backgroundColor = 'var(--card-bg)';
-                    e.currentTarget.style.borderColor = 'var(--border-color)';
-                    e.currentTarget.style.color = 'var(--text-secondary)';
-                  }
-                }}
-              >
-                {categoryStyle.label}
-              </button>
-              );
-            })}
-          </div>
-          {/* 그리드 토글 버튼 - 데스크톱 */}
-          <button
-            onClick={onToggleGridView}
-            title={isGridView ? '단일 차트 보기' : '4분할 차트 보기'}
-            style={{
-              padding: '10px 14px',
-              borderRadius: '12px',
-              border: `2px solid ${isGridView ? CATEGORY_STYLES[selectedCategory].darkThemeColor : 'var(--border-color)'}`,
-              backgroundColor: isGridView ? (theme === 'dark' ? CATEGORY_STYLES[selectedCategory].darkBg : CATEGORY_STYLES[selectedCategory].lightBg) : 'var(--card-bg)',
-              color: isGridView ? CATEGORY_STYLES[selectedCategory].darkThemeColor : 'var(--text-secondary)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              transition: 'all 0.25s ease',
-              fontWeight: '600',
-              fontSize: '0.9rem',
-              boxShadow: isGridView
-                ? `0 4px 12px ${theme === 'dark' ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.12)'}`
-                : `0 2px 8px ${theme === 'dark' ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.08)'}`
-            }}
-          >
-            <GridIcon size={18} color="currentColor" />
-            <span>{isGridView ? '단일' : '4분할'}</span>
-          </button>
-        </div>
-      </div>
-
-      {/* 카테고리 탭 - 모바일 */}
-      <div className="mb-2 d-md-none">
-        <div className="d-flex gap-2" style={{ overflowX: 'auto', paddingBottom: '8px' }}>
-          {CATEGORY_ORDER.map((cat) => {
-            const categoryStyle = CATEGORY_STYLES[cat];
-
-            return (
+      {/* 카테고리 탭 - 모바일 — 대표 이미지(즐겨찾기는 별) + 이름 알약. 누르면 아래에서 아이템 시트가 올라온다 */}
+      <div className={mStyles.tabs}>
+        {TAB_ORDER.map((cat) => {
+          const active = selectedCategory === cat;
+          const tab = (
             <button
               key={cat}
+              type="button"
+              className={`${mStyles.tab} ${active ? mStyles.tabActive : ''}`}
+              style={catVars(cat)}
               onClick={() => handleMobileCategoryClick(cat)}
-              style={{
-                fontWeight: selectedCategory === cat ? '700' : '600',
-                fontSize: '0.8rem',
-                padding: '8px 12px',
-                backgroundColor: selectedCategory === cat ? (theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg) : 'var(--card-bg)',
-                border: `2px solid ${selectedCategory === cat ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor) : 'var(--border-color)'}`,
-                borderRadius: '10px',
-                color: selectedCategory === cat ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor) : 'var(--text-secondary)',
-                transition: 'all 0.25s ease',
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-                flexShrink: 0,
-                boxShadow: selectedCategory === cat
-                  ? `0 3px 10px ${theme === 'dark' ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.1)'}`
-                  : `0 2px 6px ${theme === 'dark' ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.06)'}`
-              }}
+              aria-pressed={active}
             >
-              {categoryStyle.label}
+              {cat === 'favorite' ? (
+                <span className={mStyles.tabStar}><StarIcon size={18} /></span>
+              ) : CATEGORY_ICON[cat] && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img className={mStyles.tabIcon} src={CATEGORY_ICON[cat]} alt="" decoding="async" />
+              )}
+              {styleOf(cat).label}
+              {cat === 'favorite' && <span className={mStyles.tabCount}>{favoriteItems.length}</span>}
             </button>
-            );
-          })}
-        </div>
+          );
+          if (cat !== 'favorite') return tab;
+          // 즐겨찾기 탭 — 오른쪽에 붙은 편집(연필) 버튼
+          return (
+            <span key={cat} className={mStyles.tabGroup}>
+              {tab}
+              <button type="button" className={mStyles.tabEdit} onClick={onOpenFavoritePicker} aria-label="즐겨찾기 편집">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" /></svg>
+              </button>
+            </span>
+          );
+        })}
       </div>
 
-      {/* 서브카테고리 선택 - 데스크톱 (재련 추가 재료만) */}
-      {selectedCategory === 'refine_additional' && showItems && (
-        <div className="mb-3 d-none d-md-block">
-          <div className="d-flex gap-3 justify-content-center" style={{ maxWidth: '1400px', margin: '0 auto' }}>
-            {(Object.keys(REFINE_ADDITIONAL_SUBCATEGORIES) as RefineAdditionalSubCategory[]).map((subCat) => {
-              const subCategoryInfo = REFINE_ADDITIONAL_SUBCATEGORIES[subCat];
-              const categoryStyle = CATEGORY_STYLES['refine_additional'];
-              const isSelected = selectedSubCategory === subCat;
-
-              return (
-                <button
-                  key={subCat}
-                  onClick={() => handleSubCategoryClick(subCat)}
-                  style={{
-                    fontWeight: isSelected ? '700' : '600',
-                    fontSize: '0.95rem',
-                    padding: '10px 20px',
-                    backgroundColor: isSelected ? (theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg) : 'var(--card-bg)',
-                    border: `2px solid ${isSelected ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color) : 'var(--border-color)'}`,
-                      borderRadius: '12px',
-                    color: isSelected ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor) : 'var(--text-secondary)',
-                    transition: 'all 0.25s ease',
-                    cursor: 'pointer',
-                    letterSpacing: '0.3px',
-                    boxShadow: isSelected
-                      ? `0 4px 12px ${theme === 'dark' ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.12)'}`
-                      : `0 2px 8px ${theme === 'dark' ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.08)'}`
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isSelected) {
-                      e.currentTarget.style.backgroundColor = theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg;
-                      e.currentTarget.style.borderColor = theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color;
-                      e.currentTarget.style.color = theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor;
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isSelected) {
-                      e.currentTarget.style.backgroundColor = 'var(--card-bg)';
-                      e.currentTarget.style.borderColor = 'var(--border-color)';
-                      e.currentTarget.style.color = 'var(--text-secondary)';
-                    }
-                  }}
-                >
-                  {subCategoryInfo.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* 아이템 선택 버튼 - 데스크톱 */}
-      {showItems && (selectedCategory !== 'refine_additional' || selectedSubCategory) && <div className="mb-3 d-none d-md-block">
-        <div style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          justifyContent: 'center',
-          gap: '12px',
-          maxWidth: '1400px',
-          margin: '0 auto'
-        }}>
-          {categoryItems.map((item) => {
-            const categoryStyle = CATEGORY_STYLES[selectedCategory];
-
-            return (
-              <button
-                key={item.id}
-                className="item-select-btn"
-                onClick={() => onSelectItem(item)}
-                style={{
-                  backgroundColor: selectedItem.id === item.id ? (theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg) : 'var(--card-bg)',
-                  borderRadius: '12px',
-                  padding: '10px 16px',
-                  fontWeight: selectedItem.id === item.id ? '700' : '600',
-                  fontSize: '0.875rem',
-                  transition: 'background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.15s ease, box-shadow 0.15s ease',
-                  border: `2px solid ${selectedItem.id === item.id ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color) : 'var(--border-color)'}`,
-                    color: selectedItem.id === item.id ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor) : 'var(--text-secondary)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  whiteSpace: 'nowrap',
-                  cursor: 'pointer',
-                  minWidth: '200px',
-                  position: 'relative',
-                }}
-                onMouseEnter={(e) => {
-                  setHoveredItemId(item.id);
-                  if (selectedItem.id !== item.id) {
-                    e.currentTarget.style.backgroundColor = theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg;
-                    e.currentTarget.style.borderColor = theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color;
-                    e.currentTarget.style.color = theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  setHoveredItemId(null);
-                  if (selectedItem.id !== item.id) {
-                    e.currentTarget.style.backgroundColor = 'var(--card-bg)';
-                    e.currentTarget.style.borderColor = 'var(--border-color)';
-                    e.currentTarget.style.color = 'var(--text-secondary)';
-                  }
-                }}
-              >
-                <ColoredItemName name={item.name} />
-                {hoveredItemId === item.id && <BookBonusTooltip itemId={item.id} theme={theme} />}
-              </button>
-            );
-          })}
-        </div>
-      </div>}
-
-      {/* 바텀시트 - 모바일 아이템 선택 */}
+      {/* 바텀시트 - 모바일 아이템 선택.
+          1줄: 손잡이 · 카테고리 · 닫기 / 2줄: 기간 · 단일/4분할 / 본문: 2줄 가로 넘김 아이템(아이콘 + 이름).
+          점 표시·비교선·처음 볼 아이템은 차트 아래 막대(표시 설정)로 옮겼다 — 여기 톱니는 없앴다.
+          배경을 막지 않는다(backdrop 없음) — 시트를 연 채로 아이템을 바꿔 가며 위 차트를 본다. */}
       <Offcanvas
         show={showBottomSheet}
         onHide={() => setShowBottomSheet(false)}
         placement="bottom"
         backdrop={false}
         scroll={true}
+        className={mStyles.sheet}
         style={{
+          ...catVars(bottomSheetCategory),
           height: 'auto',
-          maxHeight: '40vh',
+          // 낮게 — 시트를 연 채로 위 차트를 보며 아이템을 바꾼다(아이템은 2줄 가로 넘김)
+          maxHeight: '42vh',
           // 하단 앵커 광고가 떠 있으면 그만큼 위로 올려 버튼이 안 가리게 함 (AdLayout이 변수 설정)
           bottom: 'var(--mobile-anchor-h, 0px)',
-          backgroundColor: 'var(--card-bg)',
-          color: 'var(--text-primary)',
-          borderTopLeftRadius: '20px',
-          borderTopRightRadius: '20px'
         }}
       >
-        <Offcanvas.Header
-          style={{
-            backgroundColor: theme === 'dark'
-              ? CATEGORY_STYLES[bottomSheetCategory].darkBg
-              : CATEGORY_STYLES[bottomSheetCategory].lightBg,
-            borderBottom: `2px solid ${theme === 'dark'
-              ? CATEGORY_STYLES[bottomSheetCategory].darkThemeColor
-              : CATEGORY_STYLES[bottomSheetCategory].color}`,
-            padding: '8px 12px',
-            borderTopLeftRadius: '20px',
-            borderTopRightRadius: '20px',
-            minHeight: 'auto',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between'
-          }}
-        >
-          <Offcanvas.Title
-            style={{
-              fontWeight: '700',
-              fontSize: '0.9rem',
-              color: theme === 'dark'
-                ? CATEGORY_STYLES[bottomSheetCategory].darkThemeColor
-                : CATEGORY_STYLES[bottomSheetCategory].darkColor
-            }}
-          >
-            {CATEGORY_STYLES[bottomSheetCategory].label}
-          </Offcanvas.Title>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            {/* 기간 선택 버튼 - 모바일 */}
-            <div style={{ display: 'flex', gap: '2px' }}>
-              {(['1m', '2m', '3m', 'all'] as PeriodOption[]).map((period) => {
-                const isSelected = !eventRangeActive && selectedPeriod === period;
-                const categoryStyle = CATEGORY_STYLES[bottomSheetCategory];
-                return (
-                  <button
-                    key={period}
-                    onClick={() => setSelectedPeriod(period)}
-                    style={{
-                      padding: '4px 6px',
-                      borderRadius: '6px',
-                      border: `1px solid ${isSelected ? categoryStyle.darkThemeColor : 'var(--border-color)'}`,
-                      backgroundColor: isSelected ? (theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg) : 'var(--card-bg)',
-                      color: isSelected ? categoryStyle.darkThemeColor : 'var(--text-secondary)',
-                      cursor: 'pointer',
-                      fontSize: '0.65rem',
-                      fontWeight: isSelected ? '700' : '500',
-                      transition: 'all 0.15s ease',
-                    }}
-                  >
-                    {periodLabels[period]}
-                  </button>
-                );
-              })}
-            </div>
-            {/* 그리드 토글 버튼 - 모바일 */}
-            <button
-              onClick={onToggleGridView}
-              style={{
-                padding: '4px 8px',
-                borderRadius: '8px',
-                border: `1px solid ${isGridView ? CATEGORY_STYLES[bottomSheetCategory].darkThemeColor : 'var(--border-color)'}`,
-                backgroundColor: isGridView ? (theme === 'dark' ? CATEGORY_STYLES[bottomSheetCategory].darkBg : CATEGORY_STYLES[bottomSheetCategory].lightBg) : 'var(--card-bg)',
-                color: isGridView ? CATEGORY_STYLES[bottomSheetCategory].darkThemeColor : 'var(--text-secondary)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                fontSize: '0.75rem',
-                fontWeight: '600',
-                boxShadow: `0 2px 6px ${theme === 'dark' ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.08)'}`
-              }}
-            >
-              <GridIcon size={14} color="currentColor" />
-              <span>{isGridView ? '단일' : '4분할'}</span>
+        <div className={mStyles.handle} aria-hidden="true" />
+        <div className={mStyles.sheetHead}>
+          <span className={mStyles.sheetTitle}>
+            {sheetIcon(bottomSheetCategory)}
+            {styleOf(bottomSheetCategory).label}
+          </span>
+          {bottomSheetCategory === 'favorite' && (
+            <button type="button" className={mStyles.sheetEdit} onClick={onOpenFavoritePicker}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" /></svg>
+              편집
             </button>
-            {/* 차트 설정 버튼 - 모바일 */}
-            <button
-              onClick={openChartSettings}
-              style={{
-                padding: '4px',
-                borderRadius: '6px',
-                border: '1px solid var(--border-color)',
-                backgroundColor: 'var(--card-bg)',
-                color: 'var(--text-muted)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-              title="차트 설정"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="3"></circle>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-              </svg>
-            </button>
-            {/* 닫기 버튼 */}
-            <button
-              onClick={() => setShowBottomSheet(false)}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                fontSize: '1.2rem',
-                color: theme === 'dark'
-                  ? CATEGORY_STYLES[bottomSheetCategory].darkThemeColor
-                  : CATEGORY_STYLES[bottomSheetCategory].darkColor,
-                cursor: 'pointer',
-                padding: '4px 8px',
-                lineHeight: 1
-              }}
-            >
-              ✕
-            </button>
-          </div>
-        </Offcanvas.Header>
-        <Offcanvas.Body style={{ padding: '12px' }}>
-          {/* 서브카테고리 선택 - 모바일 (재련 추가 재료만) */}
-          {bottomSheetCategory === 'refine_additional' && (
-            <div className="mb-3">
-              <div className="d-flex gap-2 justify-content-center">
-                {(Object.keys(REFINE_ADDITIONAL_SUBCATEGORIES) as RefineAdditionalSubCategory[]).map((subCat) => {
-                  const subCategoryInfo = REFINE_ADDITIONAL_SUBCATEGORIES[subCat];
-                  const categoryStyle = CATEGORY_STYLES['refine_additional'];
-                  const isSelected = bottomSheetSubCategory === subCat;
-
-                  return (
-                    <button
-                      key={subCat}
-                      onClick={() => handleMobileSubCategoryClick(subCat)}
-                      style={{
-                        fontWeight: isSelected ? '700' : '600',
-                        fontSize: '0.85rem',
-                        padding: '8px 16px',
-                        backgroundColor: isSelected ? (theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg) : 'var(--card-bg)',
-                        border: `2px solid ${isSelected ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color) : 'var(--border-color)'}`,
-                                borderRadius: '10px',
-                        color: isSelected ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor) : 'var(--text-secondary)',
-                        transition: 'all 0.25s ease',
-                        cursor: 'pointer',
-                        flex: 1,
-                        boxShadow: isSelected
-                          ? `0 3px 10px ${theme === 'dark' ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.1)'}`
-                          : `0 2px 6px ${theme === 'dark' ? 'rgba(0,0,0,0.25)' : 'rgba(0,0,0,0.06)'}`
-                      }}
-                    >
-                      {subCategoryInfo.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
           )}
-
-          {/* 아이템 목록 (재련 추가 재료일 경우 서브카테고리 선택 후 표시) */}
-          {(bottomSheetCategory !== 'refine_additional' || bottomSheetSubCategory) && (
-          <div style={{
-            display: 'grid',
-            gridTemplateRows: 'repeat(2, 1fr)',
-            gridAutoFlow: 'column',
-            gridAutoColumns: 'max-content',
-            gap: '8px',
-            overflowX: 'auto',
-            overflowY: 'hidden',
-            paddingBottom: '8px'
-          }}>
-            {bottomSheetItems.map((item) => {
-              const categoryStyle = CATEGORY_STYLES[bottomSheetCategory];
-              const isSelected = selectedItem.id === item.id && selectedCategory === bottomSheetCategory;
-
+          <button type="button" className={mStyles.closeBtn} onClick={() => setShowBottomSheet(false)} aria-label="닫기">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+              <line x1="6" y1="6" x2="18" y2="18" /><line x1="18" y1="6" x2="6" y2="18" />
+            </svg>
+          </button>
+        </div>
+        <div className={mStyles.controls}>
+          <div className={`${mStyles.seg} ${mStyles.segGrow}`} role="group" aria-label="기간">
+            {(['1m', '2m', '3m', 'all'] as PeriodOption[]).map((period) => {
+              const on = !eventRangeActive && selectedPeriod === period;
               return (
                 <button
-                  key={item.id}
-                  onClick={() => handleBottomSheetItemSelect(item)}
-                  style={{
-                    backgroundColor: isSelected
-                      ? (theme === 'dark' ? categoryStyle.darkBg : categoryStyle.lightBg)
-                      : 'var(--card-bg)',
-                    borderRadius: '12px',
-                    padding: '12px 16px',
-                    fontWeight: isSelected ? '700' : '600',
-                    fontSize: '0.85rem',
-                    transition: 'all 0.25s ease',
-                    border: `2px solid ${isSelected
-                      ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.color)
-                      : 'var(--border-color)'}`,
-                        color: isSelected
-                      ? (theme === 'dark' ? categoryStyle.darkThemeColor : categoryStyle.darkColor)
-                      : 'var(--text-secondary)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    whiteSpace: 'nowrap',
-                    minHeight: '50px',
-                    boxShadow: isSelected
-                      ? `0 3px 10px ${theme === 'dark' ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.1)'}`
-                      : `0 2px 6px ${theme === 'dark' ? 'rgba(0,0,0,0.25)' : 'rgba(0,0,0,0.06)'}`
-                  }}
+                  key={period}
+                  type="button"
+                  className={`${mStyles.segBtn} ${on ? mStyles.segBtnActive : ''}`}
+                  onClick={() => setSelectedPeriod(period)}
+                  aria-pressed={on}
                 >
-                  <ColoredItemName name={item.name} />
+                  {periodLabels[period]}
                 </button>
               );
             })}
           </div>
+          <div className={mStyles.seg} role="group" aria-label="보기">
+            <button
+              type="button"
+              className={`${mStyles.segBtn} ${!isGridView ? mStyles.segBtnActive : ''}`}
+              onClick={() => isGridView && onToggleGridView()}
+              aria-pressed={!isGridView}
+            >
+              단일
+            </button>
+            <button
+              type="button"
+              className={`${mStyles.segBtn} ${isGridView ? mStyles.segBtnActive : ''}`}
+              onClick={() => !isGridView && onToggleGridView()}
+              aria-pressed={isGridView}
+            >
+              4분할
+            </button>
+          </div>
+        </div>
+        <Offcanvas.Body className={mStyles.body}>
+          {/* 서브카테고리 선택 - 모바일 (재련 추가 재료만) */}
+          {bottomSheetCategory === 'refine_additional' && (
+            <div className={mStyles.subTabs} role="group" aria-label="보조 재료 종류">
+              {(Object.keys(REFINE_ADDITIONAL_SUBCATEGORIES) as RefineAdditionalSubCategory[]).map((subCat) => {
+                const on = bottomSheetSubCategory === subCat;
+                return (
+                  <button
+                    key={subCat}
+                    type="button"
+                    className={`${mStyles.segBtn} ${on ? mStyles.segBtnActive : ''}`}
+                    onClick={() => handleMobileSubCategoryClick(subCat)}
+                    aria-pressed={on}
+                  >
+                    {REFINE_ADDITIONAL_SUBCATEGORIES[subCat].label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* 아이템 목록 (재련 추가 재료일 경우 서브카테고리 선택 후 표시). 즐겨찾기는 끝에 "+ 추가" */}
+          {(bottomSheetCategory !== 'refine_additional' || bottomSheetSubCategory) && (
+            <div className={mStyles.grid}>
+              {bottomSheetItems.map((item) => {
+                const isSelected = selectedItem.id === item.id && selectedCategory === bottomSheetCategory;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className={`${mStyles.item} ${isSelected ? mStyles.itemActive : ''}`}
+                    onClick={() => handleBottomSheetItemSelect(item)}
+                    aria-pressed={isSelected}
+                  >
+                    {/* 모바일은 좁아 가격·등락까지 넣으면 잘린다 — 아이콘 + 이름만. 시세는 위 차트 머리에 나온다 */}
+                    {chipIcon(item) && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img className={mStyles.itemIcon} src={chipIcon(item)} alt="" loading="lazy" decoding="async" />
+                    )}
+                    <ColoredItemName name={item.name} />
+                  </button>
+                );
+              })}
+              {bottomSheetCategory === 'favorite' && (
+                <button type="button" className={`${mStyles.item} ${mStyles.addItem}`} onClick={onOpenFavoritePicker}>
+                  <span className={mStyles.addPlus} aria-hidden="true">+</span>
+                  {favoriteItems.length === 0 ? '즐겨찾기에 아이템 추가' : '아이템 추가'}
+                </button>
+              )}
+            </div>
           )}
         </Offcanvas.Body>
       </Offcanvas>

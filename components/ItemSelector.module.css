@@ -1,0 +1,309 @@
+/* 모바일 차트 아이템 고르기 — 카테고리 탭 줄 + 바텀시트.
+ * 데스크톱 사이드바(PriceChartContainer.module.css)와 같은 말투: 카테고리 색은 인라인 변수로 받는다.
+ *   --cat / --cat-fg / --cat-bg */
+
+/* ── 카테고리 탭 줄 ── */
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px 2px 10px;
+  margin-bottom: 4px;
+  scrollbar-width: none;
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tab {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px 6px 6px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  font-size: 0.86rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.tabActive {
+  border-color: var(--cat);
+  background: var(--cat-bg);
+  color: var(--cat-fg);
+  font-weight: 700;
+}
+
+.tabIcon {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--bg-secondary);
+  flex-shrink: 0;
+}
+
+/* ── 바텀시트 ── */
+
+.sheet {
+  border-top-left-radius: 20px !important;
+  border-top-right-radius: 20px !important;
+  border: 1px solid var(--border-color) !important;
+  border-bottom: none !important;
+  background: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+  box-shadow: 0 -10px 30px -12px rgba(16, 58, 92, 0.35);
+}
+
+.handle {
+  width: 40px;
+  height: 4px;
+  margin: 8px auto 0;
+  border-radius: 999px;
+  background: var(--border-color);
+}
+
+.sheetHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 14px 8px;
+}
+
+.sheetTitle {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--cat-fg);
+}
+
+.sheetTitle img {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--bg-secondary);
+}
+
+.closeBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+  padding: 0 14px 8px;
+}
+
+.seg {
+  display: inline-grid;
+  grid-auto-flow: column;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--bg-secondary);
+}
+
+.segGrow {
+  flex: 1;
+  grid-auto-columns: 1fr;
+}
+
+.segBtn {
+  padding: 6px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.segBtnActive {
+  background: var(--card-bg);
+  color: var(--cat-fg);
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(16, 58, 92, 0.15);
+}
+
+:global([data-theme="dark"]) .segBtnActive {
+  background: var(--card-body-bg-blue);
+}
+
+.body {
+  padding: 0 0 10px 12px !important;
+  overflow: hidden !important;
+  border-top: 1px solid var(--border-color);
+}
+
+.subTabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  padding: 3px;
+  margin: 10px 12px 2px 0;
+  border-radius: 10px;
+  background: var(--bg-secondary);
+}
+
+/* 아이템 — 2줄 가로 넘김. 시트가 차트를 덮지 않게 낮게 두고(세로 목록은 화면 절반을 가렸다),
+   다음 칸이 살짝 걸쳐 보이고 오른쪽 끝이 흐려져 "더 있다"가 읽힌다. 손으로 넘기면 칸 단위로 멈춘다. */
+.grid {
+  display: grid;
+  grid-template-rows: repeat(2, auto);
+  grid-auto-flow: column;
+  /* 아이콘 + 이름만 들어가므로 칸 폭은 이름 길이대로 */
+  grid-auto-columns: max-content;
+  gap: 8px;
+  padding: 10px 24px 4px 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+}
+
+.grid::-webkit-scrollbar {
+  display: none;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  scroll-snap-align: start;
+  padding: 6px 14px 6px 6px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  font-size: 0.84rem;
+  font-weight: 600;
+  white-space: nowrap;
+  text-align: left;
+  cursor: pointer;
+}
+
+.itemActive {
+  border-color: var(--cat);
+  background: var(--cat-bg);
+  color: var(--cat-fg);
+  font-weight: 700;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--cat) 20%, transparent);
+}
+
+.itemIcon {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  object-fit: cover;
+  background: var(--bg-secondary);
+}
+
+/* 즐겨찾기 탭의 별 — 다른 탭의 동그란 대표 이미지와 같은 자리 크기 */
+.tabStar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: color-mix(in srgb, #facc15 18%, var(--card-bg));
+  flex-shrink: 0;
+}
+
+.sheetTitle svg {
+  flex-shrink: 0;
+}
+
+/* 즐겨찾기 끝의 "+ 아이템 추가" — 점선 칸 */
+.addItem {
+  border-style: dashed;
+  color: var(--text-muted);
+  background: transparent;
+}
+
+.addPlus {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--bg-secondary);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.tabCount {
+  font-size: 0.74rem;
+  font-weight: 600;
+  opacity: 0.75;
+}
+
+/* 즐겨찾기 탭 + 편집 버튼을 한 덩어리로 — 탭 오른쪽 모서리를 펴서 편집 버튼과 이어 붙인다 */
+.tabGroup {
+  flex-shrink: 0;
+  display: inline-flex;
+}
+
+.tabGroup > .tab {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.tabEdit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  padding: 0;
+  border: 1px solid var(--border-color);
+  border-left: none;
+  border-radius: 0 999px 999px 0;
+  background: var(--card-bg);
+  color: var(--text-muted);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+}
+
+.sheetEdit {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 11px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}

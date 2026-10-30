@@ -160,7 +160,7 @@ const LAVA_BREATH_ID = '66111131';
 const GLACIER_BREATH_ID = '66111132';
 
 // 재료 정식 명칭 → 개당 골드. 거래소에 없는 재화는 위 환산 단가·테이블 고정가를 쓴다.
-// 원정대 수급 골드 시뮬과 숙제체크 1회 가치 팝업이 같은 기준을 쓰도록 여기 한 곳에서 만든다.
+// 숙제체크 1회 가치 팝업 등이 같은 기준을 쓰도록 여기 한 곳에서 만든다.
 export function useMaterialPrices(): Record<string, number> {
   const { unitPrices, graceUnitPrice, thornUnitPrice, gemUnitPrice, latestPrices } = usePriceData();
   return useMemo(

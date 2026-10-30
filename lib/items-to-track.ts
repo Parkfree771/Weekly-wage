@@ -68,35 +68,35 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     name: '에스더의 기운',
     type: 'market',
     icon: '/dptmej.webp',
-    iconBorderColor: '#4F63D2' // 블루 (재련 재료)
+    iconBorderColor: '#1f7fc0' // 블루 (재련 재료)
   },
   {
     id: '6861013',
     name: '상급 아비도스 융화 재료',
     type: 'market',
     icon: '/abidos-fusion2.webp?v=3',
-    iconBorderColor: '#4F63D2' // 블루 (재련 재료)
+    iconBorderColor: '#1f7fc0' // 블루 (재련 재료)
   },
   {
     id: '66102007',
     name: '운명의 파괴석 결정',
     type: 'market',
     icon: '/top-destiny-destruction-stone5.webp',
-    iconBorderColor: '#4F63D2' // 블루 (재련 재료)
+    iconBorderColor: '#1f7fc0' // 블루 (재련 재료)
   },
   {
     id: '66102107',
     name: '운명의 수호석 결정',
     type: 'market',
     icon: '/top-destiny-guardian-stone5.webp',
-    iconBorderColor: '#4F63D2' // 블루 (재련 재료)
+    iconBorderColor: '#1f7fc0' // 블루 (재련 재료)
   },
   {
     id: '66110226',
     name: '위대한 운명의 돌파석',
     type: 'market',
     icon: '/destiny-breakthrough-stone2.webp?v=3',
-    iconBorderColor: '#4F63D2' // 블루 (재련 재료)
+    iconBorderColor: '#1f7fc0' // 블루 (재련 재료)
   },
 
   // === 0-1. 재련 재료 (일반) ===
@@ -105,35 +105,35 @@ export const TRACKED_ITEMS: TrackedItem[] = [
     name: '아비도스 융화 재료',
     type: 'market',
     icon: '/abidos-fusion.webp?v=4',
-    iconBorderColor: '#4F63D2' // 블루
+    iconBorderColor: '#1f7fc0' // 블루
   },
   {
     id: '66130143',
     name: '운명의 파편 주머니(대)',
     type: 'market',
     icon: '/destiny-shard-bag-large.webp',
-    iconBorderColor: '#4F63D2' // 블루
+    iconBorderColor: '#1f7fc0' // 블루
   },
   {
     id: '66102006',
     name: '운명의 파괴석',
     type: 'market',
     icon: '/destiny-destruction-stone.webp',
-    iconBorderColor: '#4F63D2' // 블루
+    iconBorderColor: '#1f7fc0' // 블루
   },
   {
     id: '66102106',
     name: '운명의 수호석',
     type: 'market',
     icon: '/destiny-guardian-stone.webp',
-    iconBorderColor: '#4F63D2' // 블루
+    iconBorderColor: '#1f7fc0' // 블루
   },
   {
     id: '66110225',
     name: '운명의 돌파석',
     type: 'market',
     icon: '/destiny-breakthrough-stone.webp',
-    iconBorderColor: '#4F63D2' // 블루
+    iconBorderColor: '#1f7fc0' // 블루
   },
 
   // === 2. 재련 추가 재료 ===

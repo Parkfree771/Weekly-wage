@@ -6,7 +6,6 @@ import { Container, Row, Col, Card } from 'react-bootstrap';
 import styles from '../cathedral/cathedral.module.css';
 import AdBanner from '@/components/ads/AdBanner';
 import DesktopBannerAd from '@/components/ads/DesktopBannerAd';
-import NewLottie from '@/components/NewLottie';
 import { fetchPriceData } from '@/lib/price-history-client';
 import { getItemUnitPrice, getFixedGemSelectUnitPrice, TEMPLATES_MAP } from '@/lib/package-shared';
 import { HERO_GEMS, FATE_STONE_PRICE, calcEngravingExpectedValue, calcTicketAverage, TICKET_TIER_LABELS } from '@/lib/hell-reward-calc';
@@ -546,7 +545,6 @@ export default function ExtremePage() {
                 gap: '0.35rem',
               }}>
                 익스트림
-                <NewLottie size={30} />
               </h1>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
                 3막 모르둠 · 종막 카제로스 난이도별 클리어 보상과 제작소 — {ACTS[0].period.split(' 점검')[0]} ~ {ACTS[1].period.split(' ~ ')[1].split(' 점검')[0]}

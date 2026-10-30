@@ -43,7 +43,6 @@ const PAGE_LABELS: Record<string, string> = {
   '/life-master': '생활 제작',
   '/hell-reward': '지옥 보상',
   '/weekly-gold': '주간 골드',
-  '/expedition-gold': '원정대 수급 골드',
   '/engraving': '각인',
 };
 

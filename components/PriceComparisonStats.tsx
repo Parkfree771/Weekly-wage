@@ -159,7 +159,7 @@ export default function PriceComparisonStats() {
 
   // 바 그라디언트: 카테고리색 → 밝은 중간색 → 보색 (탁함 방지)
   const complementaryMap: Record<string, string> = {
-    '#4F63D2': '#f97316', '#3B50B5': '#f97316', '#7B8EF0': '#f97316',
+    '#1f7fc0': '#f97316', '#13609c': '#f97316', '#5cb3e0': '#f97316',
     '#E11D48': '#14b8a6', '#f87171': '#14b8a6',
     '#059669': '#e11d48', '#34d399': '#e11d48',
     '#0E7490': '#f97316', '#67e8f9': '#f97316',

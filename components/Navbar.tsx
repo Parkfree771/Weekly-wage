@@ -11,7 +11,6 @@ import ZoomControl from './ZoomControl';
 import InquiryButton from './InquiryButton';
 import AppSidebarPromo from './AppSidebarPromo';
 import PopularPagesBox from './PopularPagesBox';
-import NewLottie from './NewLottie';
 import { NAV_HIDDEN_PATHS } from '@/lib/site-config';
 
 type NavItem = {
@@ -19,7 +18,7 @@ type NavItem = {
   label: string;
   badge?: string;
   badgeClass?: string; // 전용 배지 스타일 (미지정 시 badge 텍스트 기준 기본 스타일)
-  isNew?: boolean;     // 새로 등장 — 라벨 옆에 새 불꽃 로티 표시. 콘텐츠가 자리잡으면 이 줄만 지운다
+  icon?: string;       // 메뉴 아이콘 (public/nav/*.webp, 64px)
 };
 
 type NavGroup = {
@@ -28,46 +27,60 @@ type NavGroup = {
   colorClass: string; // 드롭다운 트리거 색상
   href?: string;      // 있으면 드롭다운 대신 직접 링크로 렌더
   badge?: string;     // 직접 링크용 배지
+  icon?: string;      // 그룹 아이콘 — 상위 메뉴는 패키지 효율만 쓴다(나머지는 하위 페이지에만 아이콘)
 };
+
+// 2026-10-30 개편 — "무엇을 알고 싶은가" 기준 5칸. 자주 쓰는 둘(패키지 효율·직업 각인)은 드롭다운 없이 바로가기.
+// (예전: 골드 계산 / 숙제 계산 / 시뮬 / 조회 — 패키지 효율이 드롭다운 안에 숨어 있었고 조회는 항목이 하나뿐이었다)
+// 바로가기 그룹은 href 를 주고, items 에도 같은 주소를 하나 둔다 — 활성 표시·숨김 처리(NAV_HIDDEN_PATHS)가 items 를 본다.
+// 메뉴 아이콘 — 64px 사본(public/nav)을 작게. 장식이라 alt 는 비운다(옆 글자가 이름)
+function NavIcon({ src, size }: { src?: string; size: number }) {
+  if (!src) return null;
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={src} alt="" width={size} height={size} className="nav-icon" style={{ width: size, height: size }} decoding="async" />;
+}
 
 const NAV_GROUPS: NavGroup[] = [
   {
-    label: '골드 계산',
+    label: '패키지 효율',
+    colorClass: 'nav-package',
+    href: '/package',
+    icon: '/nav/package.webp',
+    items: [{ href: '/package', label: '패키지 효율' }],
+  },
+  {
+    label: '콘텐츠 보상',
     colorClass: 'nav-weekly',
     items: [
-      { href: '/life-master', label: '생활 제작' },
-      { href: '/package', label: '패키지 효율', isNew: true },
-      { href: '/more-reward', label: '더보기 효율 & 레이드 보상 정리' },
-      { href: '/hell-reward', label: '지옥 보상' },
+      { href: '/weekly-gold', label: '주간 레이드', icon: '/nav/gold.webp' },
+      { href: '/more-reward', label: '더보기 효율 & 레이드 보상 정리', icon: '/nav/gold.webp' },
+      { href: '/life-master', label: '생활 제작', icon: '/nav/life.webp' },
+      { href: '/hell-reward', label: '지옥 보상', icon: '/nav/hell.webp' },
     ],
   },
   {
-    label: '숙제 계산',
+    label: '레이드 상점',
     colorClass: 'nav-hell',
     items: [
-      { href: '/weekly-gold', label: '주간 레이드' },
-      { href: '/cathedral', label: '지평의 성당' },
-      { href: '/cerka', label: '세르카' },
-      { href: '/extreme', label: '익스트림', isNew: true },
-      { href: '/belgardin', label: '벨가르딘' },
+      { href: '/extreme', label: '익스트림', icon: '/nav/extreme.webp' },
+      { href: '/belgardin', label: '벨가르딘', icon: '/nav/belgardin.webp' },
+      { href: '/cathedral', label: '지평의 성당', icon: '/nav/cathedral.webp' },
+      { href: '/cerka', label: '세르카', icon: '/nav/cerka.webp' },
     ],
   },
   {
-    label: '시뮬',
+    label: '재련',
     colorClass: 'nav-refining',
     items: [
-      { href: '/refining', label: '재련 시뮬', isNew: true },
-      { href: '/wangap', label: '완갑 시뮬' },
-      { href: '/bracelet', label: '팔찌 시뮬' },
-      { href: '/expedition-gold', label: '원정대 수급 골드 시뮬' },
+      { href: '/refining', label: '재련 시뮬', icon: '/nav/refining.webp' },
+      { href: '/wangap', label: '완갑 시뮬', icon: '/nav/wangap.webp' },
     ],
   },
   {
-    label: '조회',
+    label: '직업 각인',
     colorClass: 'nav-character',
-    items: [
-      { href: '/engraving', label: '직업별 각인' },
-    ],
+    href: '/engraving',
+    items: [{ href: '/engraving', label: '직업별 각인' }],
   },
 ];
 
@@ -108,9 +121,6 @@ export default function Navbar() {
     return group.items.find(item => item.badge);
   };
 
-  // 새 항목이 하나라도 있으면 그룹 이름(드롭다운 트리거)에도 불꽃을 단다 —
-  // 드롭다운을 열어야만 보이면 새로 생긴 걸 알 수가 없다.
-  const hasNewItem = (group: NavGroup) => group.items.some((item) => item.isNew);
 
   // 항목 전용 스타일(badgeClass) 우선, 없으면 BETA 전용 / 기본(NEW 등) 스타일
   const badgeClass = (badge: string, custom?: string) =>
@@ -119,10 +129,8 @@ export default function Navbar() {
   const getNavClass = (href: string) => {
     const pageClass = href === '/refining' ? 'nav-refining' :
                       href === '/wangap' ? 'nav-refining' :
-                      href === '/expedition-gold' ? 'nav-refining' :
                       href === '/life-master' ? 'nav-life' :
                       href === '/hell-reward' ? 'nav-hell' :
-                      href === '/bracelet' ? 'nav-bracelet' :
                       href === '/package' ? 'nav-package' :
                       href === '/cathedral' ? 'nav-weekly' :
                       href === '/cerka' ? 'nav-weekly' :
@@ -189,6 +197,7 @@ export default function Navbar() {
                   href={group.href}
                   className={`navbar-nav-link ${group.colorClass} ${isActive(group.href) ? 'active' : ''}`}
                 >
+                  <NavIcon src={group.icon} size={20} />
                   {group.label}
                   {group.badge && <span className={badgeClass(group.badge)}>{group.badge}</span>}
                 </Link>
@@ -205,9 +214,9 @@ export default function Navbar() {
                   onClick={() => setOpenDropdown(openDropdown === group.label ? null : group.label)}
                   style={{ cursor: 'pointer' }}
                 >
+                  <NavIcon src={group.icon} size={20} />
                   {group.label}
                   {(() => { const b = getGroupBadge(group); return b?.badge ? <span className={badgeClass(b.badge, b.badgeClass)}>{b.badge}</span> : null; })()}
-                  {hasNewItem(group) && <NewLottie size={24} className="ms-1" />}
                   <svg width="10" height="10" viewBox="0 0 10 10" style={{ marginLeft: '4px', opacity: 0.6 }}>
                     <path d="M2 4L5 7L8 4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
@@ -224,9 +233,9 @@ export default function Navbar() {
                       className={`nav-dropdown-item ${getNavClass(item.href)}`}
                       onClick={() => setOpenDropdown(null)}
                     >
+                      <NavIcon src={item.icon} size={22} />
                       {item.label}
                       {item.badge && <span className={badgeClass(item.badge, item.badgeClass)}>{item.badge}</span>}
-                      {item.isNew && <NewLottie size={26} className="ms-1" />}
                     </Link>
                   ))}
                 </div>
@@ -375,6 +384,7 @@ export default function Navbar() {
                     className={`navbar-offcanvas-link ${group.colorClass} ${isActive(group.href) ? 'active' : ''}`}
                     onClick={handleClose}
                   >
+                    <NavIcon src={group.icon} size={24} />
                     {group.label}
                     {group.badge && <span className={badgeClass(group.badge)}>{group.badge}</span>}
                   </Link>
@@ -391,9 +401,9 @@ export default function Navbar() {
                     aria-expanded={openMobileGroup === group.label}
                   >
                     <span className="navbar-offcanvas-trigger-label">
+                      <NavIcon src={group.icon} size={24} />
                       {group.label}
                       {(() => { const b = getGroupBadge(group); return b?.badge ? <span className={badgeClass(b.badge, b.badgeClass)}>{b.badge}</span> : null; })()}
-                      {hasNewItem(group) && <NewLottie size={26} className="ms-1" />}
                     </span>
                     <svg
                       className={`navbar-offcanvas-chevron ${openMobileGroup === group.label ? 'open' : ''}`}
@@ -421,9 +431,9 @@ export default function Navbar() {
                           className={`navbar-offcanvas-link navbar-offcanvas-subitem ${getNavClass(item.href)}`}
                           onClick={handleClose}
                         >
+                          <NavIcon src={item.icon} size={24} />
                           {item.label}
                           {item.badge && <span className={badgeClass(item.badge, item.badgeClass)}>{item.badge}</span>}
-                          {item.isNew && <NewLottie size={28} className="ms-1" />}
                         </Link>
                       ))}
                     </div>

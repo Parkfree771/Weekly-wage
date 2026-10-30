@@ -2,7 +2,7 @@ import { useTheme } from './ThemeProvider';
 import { useMemo, useCallback, useContext, useState, useEffect, ReactNode } from 'react';
 import Image from 'next/image';
 import { Card, Spinner } from 'react-bootstrap';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceArea } from 'recharts';
+import { ComposedChart, Line, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceArea } from 'recharts';
 import { TrackedItem } from '@/lib/items-to-track';
 import { PRICE_EVENTS, SPECIAL_EVENT_DOT_COLOR_BY_CATEGORY } from '@/lib/price-events';
 import { PriceContext } from './PriceComparisonStats';
@@ -279,6 +279,13 @@ function buildYAxisConfig(stats: YAxisStats, comparisonRange: YAxisRange) {
   while (ticks[0] > dataMin) ticks.unshift(ticks[0] - unitVal);
   while (ticks[ticks.length - 1] < dataMax) ticks.push(ticks[ticks.length - 1] + unitVal);
 
+  // 가격은 0 밑으로 내려가지 않는다 — 싼 아이템은 아래 여유(패딩)가 0 을 넘어가 "-10" 같은 눈금이 찍혔다.
+  // 음수 눈금은 버리고, 그 바람에 데이터가 맨 아래 눈금보다 낮아지면 0 을 바닥 눈금으로 둔다.
+  if (ticks[0] < 0) {
+    ticks = ticks.filter((t) => t >= 0);
+    if (ticks.length === 0 || ticks[0] > dataMin) ticks.unshift(0);
+  }
+
   // 도메인 설정 (최소/최대 틱 기준으로 약간의 여유 추가)
   const minTick = ticks[0];
   const maxTick = ticks[ticks.length - 1];
@@ -291,7 +298,8 @@ function buildYAxisConfig(stats: YAxisStats, comparisonRange: YAxisRange) {
   const buffer = tickGap * 0.05;
 
   // 버퍼가 0일 경우(틱이 1개뿐일 때)를 대비해 안전하게 처리
-  const domainMin = minTick - (buffer || 0.1);
+  // 바닥이 0 이면 여유도 0 밑으로 내지 않는다
+  const domainMin = Math.max(0, minTick - (buffer || 0.1));
   const domainMax = maxTick + (buffer || 0.1);
 
   return {
@@ -303,7 +311,7 @@ function buildYAxisConfig(stats: YAxisStats, comparisonRange: YAxisRange) {
 
 export default function CompactPriceChart({ selectedItem, history, loading, categoryStyle, hidePeriodButtons = false, fillHeight = false }: CompactPriceChartProps) {
   const { theme } = useTheme();
-  const { selectedPeriod, setSelectedPeriod, eventRangeActive, filteredHistory, comparisonData, activeReferenceLines, showEventDots, toggleEventDots, showWednesdayDots, toggleWednesdayDots, showRegularDots, toggleRegularDots, showComparisonLine, toggleComparisonLine, wonMode, toggleWonMode } = useContext(PriceContext);
+  const { selectedPeriod, setSelectedPeriod, eventRangeActive, filteredHistory, comparisonData, activeReferenceLines, showEventDots, toggleEventDots, showWednesdayDots, toggleWednesdayDots, showRegularDots, toggleRegularDots, showComparisonLine, toggleComparisonLine, wonMode, toggleWonMode, openChartSettings } = useContext(PriceContext);
 
   // 이벤트 대비 카드로 구간을 잡은 동안에는 어떤 기간 버튼도 켜 두지 않는다 —
   // 차트가 보여 주는 구간과 켜진 버튼이 다르면 무엇이 적용됐는지 알 수 없다.
@@ -385,6 +393,178 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
   // 점 색 — 헤더 토글과 모바일 설정 팝업이 같은 색을 써야 해서 컴포넌트 스코프에 둔다
   const wedDotColor = (categoryStyle?.label && EVENT_DOT_COLOR_BY_CATEGORY[categoryStyle.label]) || '#f97316';
   const eventDotColor = (categoryStyle?.label && SPECIAL_EVENT_DOT_COLOR_BY_CATEGORY[categoryStyle.label]) || '#ec4899';
+
+  // ── 표시 설정 팝업 내용 ──
+  // 예전엔 데스크톱 헤더에 점 토글 3개 · ×5 · 원화 · 톱니(가격선)가 따로 줄지어 있었고, 왼쪽 바에도 톱니(기본 아이템)가
+  // 하나 더 있었다. 전부 이 팝업 하나로 모았다 — 헤더에는 "표시 설정" 버튼 하나만 남는다. 모바일 팝업도 같은 줄을 쓴다.
+  // 누르는 즉시 저장된다(따로 저장 버튼 없음). includeWon: 데스크톱은 왼쪽 바에 원화 토글이 있어서 뺀다.
+  // includeDots: 데스크톱은 점 토글을 아래 막대의 칩(dotChips)으로 꺼냈다 — 팝업에서는 뺀다(모바일 팝업만 포함).
+  const renderToggleRows = (includeWon: boolean, includeDots = true) => {
+    const rowStyle = (on: boolean, color: string) => ({
+      width: '100%',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+      padding: '8px 10px',
+      marginBottom: '4px',
+      borderRadius: '8px',
+      border: `1px solid ${on ? color : 'var(--border-color)'}`,
+      backgroundColor: 'var(--bg-secondary)',
+      cursor: 'pointer',
+      textAlign: 'left' as const,
+    });
+    const stateLabel = (on: boolean, color: string, onText = '표시', offText = '숨김') => (
+      <span style={{ fontSize: '0.7rem', fontWeight: 700, color: on ? color : 'var(--text-muted)' }}>{on ? onText : offText}</span>
+    );
+    return (
+      <>
+        {includeDots && [
+          { key: 'regular', label: '일반 날짜 점', on: showRegularDots, toggle: toggleRegularDots, color: chartColor },
+          { key: 'wed', label: '수요일 점', on: showWednesdayDots, toggle: toggleWednesdayDots, color: wedDotColor },
+          { key: 'event', label: '특별 이벤트 점', on: showEventDots, toggle: toggleEventDots, color: eventDotColor },
+        ].map((row) => (
+          <button key={row.key} type="button" onClick={row.toggle} aria-pressed={row.on} style={rowStyle(row.on, row.color)}>
+            <span style={{
+              display: 'inline-block', width: '12px', height: '12px', borderRadius: '50%', flexShrink: 0,
+              backgroundColor: row.on ? row.color : 'transparent',
+              border: `2px solid ${row.color}`,
+            }} />
+            <span style={{ flex: 1, fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)' }}>{row.label}</span>
+            {stateLabel(row.on, row.color)}
+          </button>
+        ))}
+        {comparisonData && (
+          <button type="button" onClick={toggleComparisonLine} aria-pressed={showComparisonLine} style={rowStyle(showComparisonLine, comparisonColor)}>
+            <Image
+              src={comparisonData.normalIcon || ''}
+              alt=""
+              width={18}
+              height={18}
+              style={{
+                borderRadius: '4px',
+                flexShrink: 0,
+                filter: showComparisonLine ? 'none' : 'grayscale(100%)',
+                opacity: showComparisonLine ? 1 : 0.4,
+              }}
+            />
+            <span style={{ flex: 1, fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+              일반 재료 <span style={{ color: comparisonColor, fontWeight: 800 }}>×5</span> 비교선
+            </span>
+            {stateLabel(showComparisonLine, comparisonColor)}
+          </button>
+        )}
+        {includeWon && (
+          <button type="button" onClick={toggleWonMode} aria-pressed={wonMode} style={rowStyle(wonMode, chartColor)}>
+            <span style={{ flex: 1, fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)' }}>원화로 보기</span>
+            {stateLabel(wonMode, chartColor, '적용', '끔')}
+          </button>
+        )}
+      </>
+    );
+  };
+
+  // 범례 — 차트 카드 맨 아래 막대 왼쪽 한 줄(데스크톱). 머리는 이름·가격만 남긴다.
+  // 켠 선(판매가·구매가·최저가 …)만 붙고, 끝에 드래그 확대 안내를 흐리게 단다.
+  const legendLine = (color: string, dash: string, width = 2) => (
+    <svg width="16" height="2" aria-hidden="true" style={{ flexShrink: 0 }}>
+      <line x1="0" y1="1" x2="16" y2="1" stroke={color} strokeWidth={width} strokeDasharray={dash} />
+    </svg>
+  );
+  const legendItems: [string, string, string][] = [
+    ['avg-line', chartColor, '평균가'],
+    ...(chartCustomLines?.sellPrice != null ? [['sell', '#10b981', '판매가'] as [string, string, string]] : []),
+    ...(chartCustomLines?.buyPrice != null ? [['buy', '#f59e0b', '구매가'] as [string, string, string]] : []),
+    ...([['min', '#3b82f6', '최저가'], ['max', '#ef4444', '최고가'], ['current', '#8b5cf6', '현재가'], ['avg', '#6b7280', '기간평균']] as [string, string, string][])
+      .filter(([k]) => activeReferenceLines?.has(k as 'min')),
+  ];
+  const chartLegend = (
+    <div
+      style={{
+        display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '4px 14px', minWidth: 0,
+        fontSize: '0.78rem', color: 'var(--text-muted)',
+      }}
+    >
+      {legendItems.map(([k, color, label]) => (
+        <span key={k} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+          {legendLine(color, k === 'avg-line' ? '4 3' : '6 3', k === 'sell' || k === 'buy' ? 2.5 : 2)}
+          {label}
+        </span>
+      ))}
+      <span
+        title="차트를 좌우로 드래그하면 그 구간이 확대돼요"
+        aria-label="차트를 드래그하면 그 구간이 확대돼요"
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: '4px',
+          padding: '2px 8px 2px 6px', borderRadius: '999px',
+          border: '1px dashed var(--border-color)', color: 'var(--text-muted)', cursor: 'help',
+        }}
+      >
+        {/* 실제로 드래그할 때 차트에 깔리는 선택 상자와 같은 모양 — 작은 선 위에 반투명 직사각형 */}
+        <svg width="40" height="18" viewBox="0 0 40 18" fill="none" aria-hidden="true">
+          <polyline points="1,13 7,10 12,12 17,6 22,9 27,4 32,8 39,5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          <rect x="13" y="1" width="13" height="16" rx="1.5" fill={chartColor} fillOpacity={0.22} stroke={chartColor} strokeOpacity={0.6} strokeWidth="1.2" />
+        </svg>
+      </span>
+    </div>
+  );
+
+  // 점 표시 칩 — 데스크톱 아래 막대, 표시 설정 바로 왼쪽. 눌러서 바로 보며 켜고 끈다.
+  // 켜짐: 색을 채운 점 + 옅은 색 바탕 / 꺼짐: 속 빈 점 + 흐린 글자
+  const dotChips = (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }} role="group" aria-label="차트 점 표시">
+      {[
+        { key: 'regular', label: '일반', title: '일반 날짜 점', on: showRegularDots, toggle: toggleRegularDots, color: chartColor },
+        { key: 'wed', label: '수요일', title: '수요일 점', on: showWednesdayDots, toggle: toggleWednesdayDots, color: wedDotColor },
+        { key: 'event', label: '이벤트', title: '특별 이벤트 점', on: showEventDots, toggle: toggleEventDots, color: eventDotColor },
+      ].map((c) => (
+        <button
+          key={c.key}
+          type="button"
+          onClick={c.toggle}
+          aria-pressed={c.on}
+          title={`${c.title} ${c.on ? '숨기기' : '표시'}`}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: '6px',
+            padding: isMobile ? '5px 9px 5px 7px' : '6px 11px 6px 9px', borderRadius: '999px',
+            border: `1px solid ${c.on ? `color-mix(in srgb, ${c.color} 45%, transparent)` : 'var(--border-color)'}`,
+            background: c.on ? `color-mix(in srgb, ${c.color} 10%, var(--card-bg))` : 'transparent',
+            color: c.on ? 'var(--text-primary)' : 'var(--text-muted)',
+            fontSize: isMobile ? '0.74rem' : '0.8rem', fontWeight: c.on ? 700 : 600, cursor: 'pointer', whiteSpace: 'nowrap',
+            transition: 'background-color 0.15s, border-color 0.15s, color 0.15s',
+          }}
+        >
+          <span style={{
+            width: '10px', height: '10px', borderRadius: '50%', flexShrink: 0,
+            background: c.on ? c.color : 'transparent', border: `2px solid ${c.color}`,
+          }} />
+          {c.label}
+        </button>
+      ))}
+    </div>
+  );
+
+  // 처음 볼 아이템 설정(모달은 PriceChartContainer 에 있다) — 예전엔 왼쪽 바 톱니였다
+  const defaultItemButton = (
+    <button
+      type="button"
+      onClick={() => { setShowPriceInput(false); openChartSettings(); }}
+      style={{
+        width: '100%',
+        marginTop: '6px',
+        padding: '8px 10px',
+        borderRadius: '8px',
+        border: '1px dashed var(--border-color)',
+        background: 'transparent',
+        color: 'var(--text-secondary)',
+        fontSize: '0.78rem',
+        fontWeight: 600,
+        cursor: 'pointer',
+        textAlign: 'left',
+      }}
+    >
+      처음 볼 아이템 설정 ›
+    </button>
+  );
 
 
 
@@ -847,25 +1027,28 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
     // 일반 날짜 점 (1m/2m 일자별 점 — 독립 토글)
     if (!isSpecialEvent && !isWednesday) {
       if (!showAllDots || !showRegularDots) return null;
-      return <circle cx={cx} cy={cy} r={6} fill={chartColor} strokeWidth={3} stroke="var(--card-bg)" />;
+      // 선 위에 얹힌 속 빈 작은 원 — 꽉 찬 큰 점이 줄지어 있으면 선이 묻힌다
+      return <circle cx={cx} cy={cy} r={3.5} fill="var(--card-bg)" strokeWidth={2} stroke={chartColor} />;
     }
 
     // 수요일 점 (라벨 없이 점만 - 호버 시 툴팁에서 "수요일" 표시)
     if (isWednesday) {
       if (!showWednesdayDots) return null;
-      return <circle cx={cx} cy={cy} r={6} fill={eventColor} strokeWidth={3} stroke="var(--card-bg)" />;
+      return <circle cx={cx} cy={cy} r={4.5} fill={eventColor} strokeWidth={2} stroke="var(--card-bg)" />;
     }
 
-    // 특별 이벤트 점
+    // 특별 이벤트 점 — 점 + 위쪽 둥근 이름표(글자 그림자 대신 바탕을 깐다)
     if (!showEventDots) return null;
+    const label = String(payload.eventLabel);
+    const w = label.length * 11 + 14;
     return (
       <g>
-        <circle cx={cx} cy={cy} r={7} fill={eventColor} strokeWidth={3} stroke="var(--card-bg)" />
-        <text x={cx} y={cy - 15} textAnchor="middle" fill={eventColor}
-          fontSize={12} fontWeight="900"
-          style={{ textShadow: '0 0 4px var(--card-bg), 0 0 4px var(--card-bg), 0 0 4px var(--card-bg), 0 0 4px var(--card-bg)' }}>
-          {payload.eventLabel}
+        <line x1={cx} y1={cy - 7} x2={cx} y2={cy - 14} stroke={eventColor} strokeWidth={1.5} />
+        <rect x={cx - w / 2} y={cy - 33} width={w} height={19} rx={9.5} fill="var(--card-bg)" stroke={eventColor} strokeWidth={1.5} />
+        <text x={cx} y={cy - 23.5} textAnchor="middle" dominantBaseline="central" fill={eventColor} fontSize={11} fontWeight={800}>
+          {label}
         </text>
+        <circle cx={cx} cy={cy} r={5.5} fill={eventColor} strokeWidth={2.5} stroke="var(--card-bg)" />
       </g>
     );
   };
@@ -880,7 +1063,7 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
 
     if (!isSpecialEvent && !isWednesday) {
       if (!showAllDots || !showRegularDots) return null;
-      return <circle cx={cx} cy={cy} r={3} fill={chartColor} strokeWidth={2} stroke="var(--card-bg)" />;
+      return <circle cx={cx} cy={cy} r={2.5} fill="var(--card-bg)" strokeWidth={1.5} stroke={chartColor} />;
     }
 
     if (isWednesday) {
@@ -1103,240 +1286,6 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                   </>
                 )}
               </div>
-              {/* 점 토글 (수요일 / 특별 이벤트 독립) */}
-              {(() => {
-                const wedColor = (categoryStyle?.label && EVENT_DOT_COLOR_BY_CATEGORY[categoryStyle.label]) || '#f97316';
-                const eventColor = (categoryStyle?.label && SPECIAL_EVENT_DOT_COLOR_BY_CATEGORY[categoryStyle.label]) || '#ec4899';
-                const dotBtnStyle = {
-                  background: 'none',
-                  border: 'none',
-                  padding: '4px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                } as const;
-                return (
-                  <>
-                    <button
-                      onClick={toggleRegularDots}
-                      title={showRegularDots ? '일반 날짜 점 숨기기' : '일반 날짜 점 표시'}
-                      aria-pressed={showRegularDots}
-                      style={dotBtnStyle}
-                    >
-                      <span style={{
-                        display: 'inline-block', width: '14px', height: '14px', borderRadius: '50%',
-                        backgroundColor: showRegularDots ? chartColor : 'transparent',
-                        border: `2px solid ${chartColor}`,
-                        boxShadow: showRegularDots ? `0 0 0 2px var(--card-bg)` : 'none',
-                      }} />
-                    </button>
-                    <button
-                      onClick={toggleWednesdayDots}
-                      title={showWednesdayDots ? '수요일 점 숨기기' : '수요일 점 표시'}
-                      aria-pressed={showWednesdayDots}
-                      style={dotBtnStyle}
-                    >
-                      <span style={{
-                        display: 'inline-block', width: '14px', height: '14px', borderRadius: '50%',
-                        backgroundColor: showWednesdayDots ? wedColor : 'transparent',
-                        border: `2px solid ${wedColor}`,
-                        boxShadow: showWednesdayDots ? `0 0 0 2px var(--card-bg)` : 'none',
-                      }} />
-                    </button>
-                    <button
-                      onClick={toggleEventDots}
-                      title={showEventDots ? '특별 이벤트 점 숨기기' : '특별 이벤트 점 표시'}
-                      aria-pressed={showEventDots}
-                      style={dotBtnStyle}
-                    >
-                      <span style={{
-                        display: 'inline-block', width: '14px', height: '14px', borderRadius: '50%',
-                        backgroundColor: showEventDots ? eventColor : 'transparent',
-                        border: `2px solid ${eventColor}`,
-                        boxShadow: showEventDots ? `0 0 0 2px var(--card-bg)` : 'none',
-                      }} />
-                    </button>
-                    {comparisonData && (
-                      <button
-                        onClick={toggleComparisonLine}
-                        title={showComparisonLine ? '×5 비교선 숨기기' : '×5 비교선 표시'}
-                        aria-pressed={showComparisonLine}
-                        style={dotBtnStyle}
-                      >
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                          <Image
-                            src={comparisonData.normalIcon || ''}
-                            alt=""
-                            width={24}
-                            height={24}
-                            style={{
-                              borderRadius: '5px',
-                              border: showComparisonLine ? `2px solid ${comparisonColor}` : '2px solid transparent',
-                              filter: showComparisonLine ? 'none' : 'grayscale(100%)',
-                              opacity: showComparisonLine ? 1 : 0.35,
-                              transition: 'filter 0.2s, opacity 0.2s, border-color 0.2s',
-                            }}
-                          />
-                          <span style={{
-                            fontSize: '0.85rem', fontWeight: 800, color: comparisonColor,
-                            opacity: showComparisonLine ? 1 : 0.35,
-                            transition: 'opacity 0.2s',
-                          }}>×5</span>
-                        </span>
-                      </button>
-                    )}
-                    {/* 원화 환산 — 그 날 가격을 그 날의 원화 가치로 (lib/gold-value.ts).
-                        데스크톱(hidePeriodButtons)은 왼쪽 바 보기모드에 버튼이 있어서 여기선 뺀다. */}
-                    {!hidePeriodButtons && <button
-                      onClick={toggleWonMode}
-                      title={wonMode ? '골드로 보기' : '그 날 가격을 원화로 환산'}
-                      aria-pressed={wonMode}
-                      style={{
-                        padding: '3px 9px',
-                        borderRadius: '999px',
-                        border: `1.5px solid ${wonMode ? chartColor : 'var(--border-color)'}`,
-                        backgroundColor: wonMode ? chartColor : 'transparent',
-                        color: wonMode ? '#fff' : 'var(--text-muted)',
-                        fontSize: '0.72rem',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      원화로 보기
-                    </button>}
-                  </>
-                );
-              })()}
-              {/* 가격선 설정 톱니바퀴 */}
-              <div style={{ position: 'relative' }}>
-              <button
-                onClick={() => setShowPriceInput(!showPriceInput)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  padding: '4px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: currentCustomLines ? '#10b981' : 'var(--text-muted)',
-                  transition: 'color 0.2s',
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.color = currentCustomLines ? '#10b981' : 'var(--text-primary)'}
-                onMouseLeave={(e) => e.currentTarget.style.color = currentCustomLines ? '#10b981' : 'var(--text-muted)'}
-                title="차트 설정"
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="3"></circle>
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                </svg>
-              </button>
-
-              {/* 가격 입력 팝업 */}
-              {showPriceInput && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: '100%',
-                    left: 0,
-                    marginTop: '8px',
-                    backgroundColor: 'var(--card-bg)',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: '12px',
-                    padding: '16px',
-                    boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
-                    zIndex: 100,
-                    minWidth: '220px',
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '12px' }}>
-                    가격선 설정
-                  </div>
-
-                  {/* 판매가 */}
-                  <div style={{ marginBottom: '10px' }}>
-                    <label style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
-                      판매가 (녹색)
-                    </label>
-                    <input
-                      type="number"
-                      value={tempSellPrice}
-                      onChange={(e) => setTempSellPrice(e.target.value)}
-                      placeholder="판매가"
-                      style={{
-                        width: '100%',
-                        padding: '8px 10px',
-                        borderRadius: '6px',
-                        border: '1px solid var(--border-color)',
-                        backgroundColor: 'var(--bg-secondary)',
-                        color: 'var(--text-primary)',
-                        fontSize: '0.85rem',
-                      }}
-                    />
-                  </div>
-
-                  {/* 구매가 */}
-                  <div style={{ marginBottom: '12px' }}>
-                    <label style={{ fontSize: '0.75rem', color: '#f59e0b', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
-                      구매가 (주황)
-                    </label>
-                    <input
-                      type="number"
-                      value={tempBuyPrice}
-                      onChange={(e) => setTempBuyPrice(e.target.value)}
-                      placeholder="구매가"
-                      style={{
-                        width: '100%',
-                        padding: '8px 10px',
-                        borderRadius: '6px',
-                        border: '1px solid var(--border-color)',
-                        backgroundColor: 'var(--bg-secondary)',
-                        color: 'var(--text-primary)',
-                        fontSize: '0.85rem',
-                      }}
-                    />
-                  </div>
-
-                  {/* 버튼 */}
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button
-                      onClick={clearPriceLines}
-                      style={{
-                        flex: 1,
-                        padding: '8px',
-                        borderRadius: '6px',
-                        border: '1px solid var(--border-color)',
-                        backgroundColor: 'var(--card-bg)',
-                        color: 'var(--text-secondary)',
-                        fontSize: '0.8rem',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      삭제
-                    </button>
-                    <button
-                      onClick={savePriceLines}
-                      style={{
-                        flex: 1,
-                        padding: '8px',
-                        borderRadius: '6px',
-                        border: 'none',
-                        backgroundColor: '#3b82f6',
-                        color: 'white',
-                        fontSize: '0.8rem',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      저장
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
             </div>
           </div>
 
@@ -1377,56 +1326,6 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
               ))}
             </div>
           )}
-
-          {/* 범례 */}
-          <div className="d-flex align-items-center justify-content-center flex-wrap" style={{ gap: '12px', flexShrink: 0 }}>
-            <span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '2px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                <svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke={chartColor} strokeWidth="2" strokeDasharray="4 3" /></svg>
-                평균가
-              </span>
-              {/* 드래그줌 안내 (평균가 아래 줄) */}
-              <span style={{ fontSize: '0.68rem', fontWeight: 700, color: chartColor }}>
-                [ ] 드래그 확대
-              </span>
-            </span>
-            {chartCustomLines?.sellPrice != null && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                <svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke="#10b981" strokeWidth="2.5" strokeDasharray="8 4" /></svg>
-                판매가
-              </span>
-            )}
-            {chartCustomLines?.buyPrice != null && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                <svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke="#f59e0b" strokeWidth="2.5" strokeDasharray="8 4" /></svg>
-                구매가
-              </span>
-            )}
-            {activeReferenceLines?.has('min') && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                <svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke="#3b82f6" strokeWidth="2" strokeDasharray="6 3" /></svg>
-                최저가
-              </span>
-            )}
-            {activeReferenceLines?.has('max') && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                <svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke="#ef4444" strokeWidth="2" strokeDasharray="6 3" /></svg>
-                최고가
-              </span>
-            )}
-            {activeReferenceLines?.has('current') && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                <svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke="#8b5cf6" strokeWidth="2" strokeDasharray="6 3" /></svg>
-                현재가
-              </span>
-            )}
-            {activeReferenceLines?.has('avg') && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                <svg width="24" height="2"><line x1="0" y1="1" x2="24" y2="1" stroke="#6b7280" strokeWidth="2" strokeDasharray="6 3" /></svg>
-                기간평균
-              </span>
-            )}
-          </div>
 
           {stats && (
             <div className="text-end" style={{ flex: '1' }}>
@@ -1515,157 +1414,6 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                   </>
                 )}
               </div>
-              {/* 점 표시·비교선 토글은 모바일에서 설정(톱니바퀴) 안으로 옮겼다 —
-                  헤더 한 줄에 현재가·전일·기간까지 같이 서면 자리가 안 난다 */}
-              {/* 모바일 차트 설정 톱니바퀴 */}
-              <div style={{ position: 'relative' }}>
-              <button
-                onClick={() => setShowPriceInput(!showPriceInput)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  padding: '4px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: showPriceInput ? chartColor : 'var(--text-muted)',
-                }}
-                title="차트 설정"
-                aria-expanded={showPriceInput}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="3"></circle>
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                </svg>
-              </button>
-
-              {/* 모바일 차트 설정 팝업 — 점 표시·비교선. 가격선 입력은 데스크톱 전용 */}
-              {showPriceInput && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: '100%',
-                    right: 0,
-                    marginTop: '6px',
-                    backgroundColor: 'var(--card-bg)',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: '10px',
-                    padding: '12px',
-                    boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
-                    zIndex: 100,
-                    minWidth: '180px',
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>
-                    차트 설정
-                  </div>
-
-                  {/* 점 표시 · 비교선 — 누르는 즉시 저장된다(따로 저장 버튼 없음).
-                      가격선(판매가·구매가) 입력은 데스크톱 전용이라 여기 없다. */}
-                  {[
-                    { key: 'regular', label: '일반 날짜 점', on: showRegularDots, toggle: toggleRegularDots, color: chartColor },
-                    { key: 'wed', label: '수요일 점', on: showWednesdayDots, toggle: toggleWednesdayDots, color: wedDotColor },
-                    { key: 'event', label: '특별 이벤트 점', on: showEventDots, toggle: toggleEventDots, color: eventDotColor },
-                  ].map((row) => (
-                    <button
-                      key={row.key}
-                      onClick={row.toggle}
-                      aria-pressed={row.on}
-                      style={{
-                        width: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '7px 8px',
-                        marginBottom: '4px',
-                        borderRadius: '7px',
-                        border: `1px solid ${row.on ? row.color : 'var(--border-color)'}`,
-                        backgroundColor: 'var(--bg-secondary)',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                      }}
-                    >
-                      <span style={{
-                        display: 'inline-block', width: '12px', height: '12px', borderRadius: '50%', flexShrink: 0,
-                        backgroundColor: row.on ? row.color : 'transparent',
-                        border: `2px solid ${row.color}`,
-                      }} />
-                      <span style={{ flex: 1, fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                        {row.label}
-                      </span>
-                      <span style={{ fontSize: '0.68rem', fontWeight: 700, color: row.on ? row.color : 'var(--text-muted)' }}>
-                        {row.on ? '표시' : '숨김'}
-                      </span>
-                    </button>
-                  ))}
-
-                  {comparisonData && (
-                    <button
-                      onClick={toggleComparisonLine}
-                      aria-pressed={showComparisonLine}
-                      style={{
-                        width: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '7px 8px',
-                        borderRadius: '7px',
-                        border: `1px solid ${showComparisonLine ? comparisonColor : 'var(--border-color)'}`,
-                        backgroundColor: 'var(--bg-secondary)',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                      }}
-                    >
-                      <Image
-                        src={comparisonData.normalIcon || ''}
-                        alt=""
-                        width={18}
-                        height={18}
-                        style={{
-                          borderRadius: '4px',
-                          flexShrink: 0,
-                          filter: showComparisonLine ? 'none' : 'grayscale(100%)',
-                          opacity: showComparisonLine ? 1 : 0.4,
-                        }}
-                      />
-                      <span style={{ flex: 1, fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                        일반 재료 <span style={{ color: comparisonColor, fontWeight: 800 }}>×5</span> 비교선
-                      </span>
-                      <span style={{ fontSize: '0.68rem', fontWeight: 700, color: showComparisonLine ? comparisonColor : 'var(--text-muted)' }}>
-                        {showComparisonLine ? '표시' : '숨김'}
-                      </span>
-                    </button>
-                  )}
-
-                  <button
-                    onClick={toggleWonMode}
-                    aria-pressed={wonMode}
-                    style={{
-                      width: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '7px 8px',
-                      marginTop: '4px',
-                      borderRadius: '7px',
-                      border: `1px solid ${wonMode ? chartColor : 'var(--border-color)'}`,
-                      backgroundColor: 'var(--bg-secondary)',
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                    }}
-                  >
-                    <span style={{ flex: 1, fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                      원화로 보기
-                    </span>
-                    <span style={{ fontSize: '0.68rem', fontWeight: 700, color: wonMode ? chartColor : 'var(--text-muted)' }}>
-                      {wonMode ? '적용' : '끔'}
-                    </span>
-                  </button>
-                </div>
-              )}
-            </div>
             </div>
           </div>
           {stats && (
@@ -1742,13 +1490,13 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                 </button>
               )}
               <ResponsiveContainer width="100%" height="100%" minHeight={500}>
-                <LineChart data={effectiveData} onMouseDown={handleZoomMouseDown} onMouseMove={handleZoomMouseMove} onMouseUp={handleZoomMouseUp} style={{ cursor: isSelecting ? 'crosshair' : 'default', userSelect: 'none' }} margin={{ top: goldValueSegments ? 38 : 25, right: 10, left: 0, bottom: 0 }}>
-                  <defs><linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={chartColor} stopOpacity={0.4}/><stop offset="95%" stopColor={chartColor} stopOpacity={0.05}/></linearGradient></defs>
-                  <CartesianGrid strokeDasharray="5 5" stroke="var(--border-color)" strokeWidth={1} vertical={true} horizontal={true} />
-                  <XAxis dataKey="날짜" ticks={effectiveXTicks} tick={(props) => { const { x, y, payload } = props; const dataIndex = effectiveData.findIndex(d => d.날짜 === payload.value); if (dataIndex < 0) return null; const data = effectiveData[dataIndex]; const eventLabel = data.eventLabel || ''; const eventColor = data.eventColor || '#ef4444'; return (<g transform={`translate(${x},${y})`}><text x={0} y={0} dy={10} textAnchor="end" fill="var(--text-primary)" fontSize={16} fontWeight="700" fontFamily="var(--font-mono), monospace" transform="rotate(-35)">{toAxisLabel(payload.value)}</text>{eventLabel && (<text x={0} y={12} dy={10} textAnchor="end" fill={eventColor} fontSize={12} fontWeight="700" transform="rotate(-35)">{eventLabel}</text>)}</g>); }} height={80} stroke="var(--text-secondary)" strokeWidth={2} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} />
-                  <YAxis tick={(props) => { const { x, y, payload } = props; const isAverage = effectiveYAxisConfig.avgValue && Math.abs(payload.value - effectiveYAxisConfig.avgValue) < 0.01; return (<text x={x} y={y} textAnchor="end" fill={isAverage ? chartColor : 'var(--text-primary)'} fontSize={stats && stats.max >= 1000000 ? 14 : 16} fontWeight={isAverage ? '900' : '700'} fontFamily="var(--font-mono), monospace" dx={-8}>{formatPrice(payload.value)}</text>); }} tickFormatter={formatPrice} width={stats && stats.max >= 1000000 ? 105 : stats && stats.max >= 100000 ? 90 : stats && stats.max >= 10000 ? 78 : stats && stats.max >= 1000 ? 70 : stats && stats.max >= 100 ? 58 : 54} domain={effectiveYAxisConfig.domain} ticks={effectiveYAxisConfig.ticks} interval={0} stroke="var(--text-secondary)" strokeWidth={2} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 2 }} />
-                  <Tooltip content={<CustomTooltip />} cursor={{ stroke: chartColor, strokeWidth: 2, strokeDasharray: '5 5' }} />
-                  <ReferenceLine y={effectiveAvg} stroke={chartColor} strokeDasharray="5 5" strokeWidth={2} />
+                <ComposedChart data={effectiveData} onMouseDown={handleZoomMouseDown} onMouseMove={handleZoomMouseMove} onMouseUp={handleZoomMouseUp} style={{ cursor: isSelecting ? 'crosshair' : 'default', userSelect: 'none' }} margin={{ top: goldValueSegments ? 44 : 36, right: 12, left: 0, bottom: 0 }}>
+                  <defs><linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={chartColor} stopOpacity={0.22}/><stop offset="100%" stopColor={chartColor} stopOpacity={0}/></linearGradient></defs>
+                  <CartesianGrid strokeDasharray="3 5" stroke="var(--border-color)" strokeWidth={1} vertical={false} horizontal={true} />
+                  <XAxis dataKey="날짜" ticks={effectiveXTicks} tick={(props) => { const { x, y, payload } = props; if (effectiveData.findIndex(d => d.날짜 === payload.value) < 0) return null; return (<text x={x} y={y} dy={14} textAnchor="middle" fill="var(--text-muted)" fontSize={12} fontWeight={600} fontFamily="var(--font-num), var(--font-kr), sans-serif">{toAxisLabel(payload.value)}</text>); }} height={34} tickLine={false} axisLine={{ stroke: 'var(--border-color)', strokeWidth: 1 }} />
+                  <YAxis tick={(props) => { const { x, y, payload } = props; const isAverage = effectiveYAxisConfig.avgValue && Math.abs(payload.value - effectiveYAxisConfig.avgValue) < 0.01; return (<text x={x} y={y} textAnchor="end" dominantBaseline="central" fill={isAverage ? chartColor : 'var(--text-muted)'} fontSize={stats && stats.max >= 1000000 ? 12 : 13} fontWeight={isAverage ? 800 : 600} fontFamily="var(--font-num), var(--font-kr), sans-serif" dx={-8}>{formatPrice(payload.value)}</text>); }} tickFormatter={formatPrice} width={stats && stats.max >= 1000000 ? 92 : stats && stats.max >= 100000 ? 80 : stats && stats.max >= 10000 ? 70 : stats && stats.max >= 1000 ? 62 : stats && stats.max >= 100 ? 52 : 48} domain={effectiveYAxisConfig.domain} ticks={effectiveYAxisConfig.ticks} interval={0} tickLine={false} axisLine={false} />
+                  <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'var(--text-muted)', strokeWidth: 1, strokeDasharray: '4 4' }} />
+                  <ReferenceLine y={effectiveAvg} stroke={chartColor} strokeOpacity={0.6} strokeDasharray="6 4" strokeWidth={1.5} />
                   {/* 사용자 선택 참조선 */}
                   {activeReferenceLines?.has('min') && stats && (
                     <ReferenceLine y={stats.min} stroke="#3b82f6" strokeDasharray="8 4" strokeWidth={2} />
@@ -1790,12 +1538,14 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                       label={(props: { viewBox?: { x?: number; y?: number; width?: number } }) => renderGoldValueBadge(props.viewBox, seg.label, 13)}
                     />
                   ))}
-                  <Line type="monotone" dataKey="가격" stroke={chartColor} strokeWidth={4} dot={<CustomDot />} activeDot={{ r: 9, fill: chartColor, stroke: 'var(--card-bg)', strokeWidth: 4 }} fill="url(#colorPrice)" isAnimationActive={false} />
+                  {/* 선 아래 면 — 위에서 아래로 옅어지는 카테고리 색. 툴팁에는 안 나온다 */}
+                  <Area type="monotone" dataKey="가격" stroke="none" fill="url(#colorPrice)" tooltipType="none" activeDot={false} isAnimationActive={false} />
+                  <Line type="monotone" dataKey="가격" stroke={chartColor} strokeWidth={2.75} strokeLinecap="round" strokeLinejoin="round" dot={<CustomDot />} activeDot={{ r: 6, fill: chartColor, stroke: 'var(--card-bg)', strokeWidth: 3 }} isAnimationActive={false} />
                   {/* 드래그 선택 영역 (확대 미리보기) */}
                   {isSelecting && refAreaLeft && refAreaRight && refAreaLeft !== refAreaRight && (
                     <ReferenceArea x1={refAreaLeft} x2={refAreaRight} stroke={chartColor} strokeOpacity={0.4} fill={chartColor} fillOpacity={0.12} />
                   )}
-                </LineChart>
+                </ComposedChart>
               </ResponsiveContainer>
             </div>}
 
@@ -1823,12 +1573,12 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                 </button>
               )}
               <ResponsiveContainer width="100%" height="100%" minHeight={350}>
-                <LineChart data={effectiveData} onMouseDown={handleZoomMouseDown} onMouseMove={handleZoomMouseMove} onMouseUp={handleZoomMouseUp} style={{ cursor: isSelecting ? 'crosshair' : 'default', userSelect: 'none' }} margin={{ top: goldValueSegments ? 26 : 10, right: 5, left: 0, bottom: 0 }}>
-                  <defs><linearGradient id="colorPriceMobile" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={chartColor} stopOpacity={0.3}/><stop offset="95%" stopColor={chartColor} stopOpacity={0.05}/></linearGradient></defs>
+                <ComposedChart data={effectiveData} onMouseDown={handleZoomMouseDown} onMouseMove={handleZoomMouseMove} onMouseUp={handleZoomMouseUp} style={{ cursor: isSelecting ? 'crosshair' : 'default', userSelect: 'none' }} margin={{ top: goldValueSegments ? 26 : 10, right: 5, left: 0, bottom: 0 }}>
+                  <defs><linearGradient id="colorPriceMobile" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={chartColor} stopOpacity={0.22}/><stop offset="100%" stopColor={chartColor} stopOpacity={0}/></linearGradient></defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" strokeWidth={0.5} vertical={false} horizontal={true} />
-                  <XAxis dataKey="날짜" ticks={effectiveXTicks} tick={(props) => { const { x, y, payload } = props; const dataIndex = effectiveData.findIndex(d => d.날짜 === payload.value); if (dataIndex < 0) return null; const data = effectiveData[dataIndex]; const eventLabel = data.eventLabel || ''; const eventColor = data.eventColor || '#ef4444'; return (<g transform={`translate(${x},${y})`}><text x={0} y={0} dy={8} textAnchor="end" fill="var(--text-primary)" fontSize={9} fontWeight="700" fontFamily="var(--font-mono), monospace" transform="rotate(-45)">{toAxisLabel(payload.value)}</text>{eventLabel && (<text x={0} y={8} dy={8} textAnchor="end" fill={eventColor} fontSize={7} fontWeight="700" transform="rotate(-45)">{eventLabel}</text>)}</g>); }} height={55} stroke="var(--text-secondary)" strokeWidth={1.5} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} />
-                  <YAxis tick={(props) => { const { x, y, payload } = props; const isAverage = effectiveYAxisConfig.avgValue && Math.abs(payload.value - effectiveYAxisConfig.avgValue) < 0.01; const fontSize = stats ? (stats.max >= 1000000 ? 6 : stats.max >= 100000 ? 7 : stats.max >= 10000 ? 8 : stats.max >= 1000 ? 9 : stats.max >= 100 ? 7.5 : 7) : 8; return (<text x={x} y={y} textAnchor="end" fill={isAverage ? chartColor : 'var(--text-primary)'} fontSize={fontSize} fontWeight={isAverage ? '900' : '700'} fontFamily="var(--font-mono), monospace" dx={-2}>{formatPrice(payload.value)}</text>); }} tickFormatter={formatPrice} width={stats && stats.max >= 1000000 ? 46 : stats && stats.max >= 100000 ? 42 : stats && stats.max >= 10000 ? 38 : stats && stats.max >= 1000 ? 38 : stats && stats.max >= 100 ? 32 : 30} domain={effectiveYAxisConfig.domain} ticks={effectiveYAxisConfig.ticks} stroke="var(--text-secondary)" strokeWidth={1.5} tickLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} axisLine={{ stroke: 'var(--text-secondary)', strokeWidth: 1.5 }} />
-                  <Tooltip content={<CustomTooltipMobile />} cursor={{ stroke: chartColor, strokeWidth: 1, strokeDasharray: '3 3' }} />
+                  <XAxis dataKey="날짜" ticks={effectiveXTicks} tick={(props) => { const { x, y, payload } = props; const dataIndex = effectiveData.findIndex(d => d.날짜 === payload.value); if (dataIndex < 0) return null; const data = effectiveData[dataIndex]; const eventLabel = data.eventLabel || ''; const eventColor = data.eventColor || '#ef4444'; return (<g transform={`translate(${x},${y})`}><text x={0} y={0} dy={8} textAnchor="end" fill="var(--text-muted)" fontSize={9} fontWeight="600" fontFamily="var(--font-mono), monospace" transform="rotate(-45)">{toAxisLabel(payload.value)}</text>{eventLabel && (<text x={0} y={8} dy={8} textAnchor="end" fill={eventColor} fontSize={7} fontWeight="700" transform="rotate(-45)">{eventLabel}</text>)}</g>); }} height={55} tickLine={false} axisLine={{ stroke: 'var(--border-color)', strokeWidth: 1 }} />
+                  <YAxis tick={(props) => { const { x, y, payload } = props; const isAverage = effectiveYAxisConfig.avgValue && Math.abs(payload.value - effectiveYAxisConfig.avgValue) < 0.01; const fontSize = stats ? (stats.max >= 1000000 ? 6 : stats.max >= 100000 ? 7 : stats.max >= 10000 ? 8 : stats.max >= 1000 ? 9 : stats.max >= 100 ? 7.5 : 7) : 8; return (<text x={x} y={y} textAnchor="end" fill={isAverage ? chartColor : 'var(--text-muted)'} fontSize={fontSize} fontWeight={isAverage ? '900' : '700'} fontFamily="var(--font-mono), monospace" dx={-2}>{formatPrice(payload.value)}</text>); }} tickFormatter={formatPrice} width={stats && stats.max >= 1000000 ? 46 : stats && stats.max >= 100000 ? 42 : stats && stats.max >= 10000 ? 38 : stats && stats.max >= 1000 ? 38 : stats && stats.max >= 100 ? 32 : 30} domain={effectiveYAxisConfig.domain} ticks={effectiveYAxisConfig.ticks} tickLine={false} axisLine={false} />
+                  <Tooltip content={<CustomTooltipMobile />} cursor={{ stroke: 'var(--text-muted)', strokeWidth: 1, strokeDasharray: '3 3' }} />
                   <ReferenceLine y={effectiveAvg} stroke={chartColor} strokeDasharray="5 5" strokeWidth={1.5} />
                   {/* 사용자 선택 참조선 - 모바일 */}
                   {activeReferenceLines?.has('min') && stats && (
@@ -1871,17 +1621,177 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                       label={(props: { viewBox?: { x?: number; y?: number; width?: number } }) => renderGoldValueBadge(props.viewBox, seg.label, 9)}
                     />
                   ))}
-                  <Line type="monotone" dataKey="가격" stroke={chartColor} strokeWidth={2.5} dot={<CustomDotMobile />} activeDot={{ r: 6, fill: chartColor, stroke: 'var(--card-bg)', strokeWidth: 2 }} fill="url(#colorPriceMobile)" isAnimationActive={false} />
+                  <Area type="monotone" dataKey="가격" stroke="none" fill="url(#colorPriceMobile)" tooltipType="none" activeDot={false} isAnimationActive={false} />
+                  <Line type="monotone" dataKey="가격" stroke={chartColor} strokeWidth={2.25} strokeLinecap="round" strokeLinejoin="round" dot={<CustomDotMobile />} activeDot={{ r: 5, fill: chartColor, stroke: 'var(--card-bg)', strokeWidth: 2 }} isAnimationActive={false} />
                   {/* 드래그 선택 영역 (확대 미리보기) - 모바일 */}
                   {isSelecting && refAreaLeft && refAreaRight && refAreaLeft !== refAreaRight && (
                     <ReferenceArea x1={refAreaLeft} x2={refAreaRight} stroke={chartColor} strokeOpacity={0.4} fill={chartColor} fillOpacity={0.12} />
                   )}
-                </LineChart>
+                </ComposedChart>
               </ResponsiveContainer>
             </div>}
           </>
         )}
       </Card.Body>
+      {/* 아래 막대 — 범례 · 드래그 안내 · 점 칩 · 표시 설정. 머리 줄은 이름·가격만 남긴다.
+          모바일도 같은 막대를 쓴다(예전엔 머리에 톱니 팝업이 따로 있었다). 범례는 좁아서 데스크톱만. */}
+      <div
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px',
+          padding: isMobile ? '8px 10px' : '10px 16px', borderTop: '1px solid var(--border-color)', background: 'var(--card-bg)',
+        }}
+      >
+        {!isMobile && chartLegend}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'space-between' : 'flex-end', gap: isMobile ? '6px' : '10px', flex: isMobile ? 1 : '0 0 auto' }}>
+          {dotChips}
+              {/* 표시 설정 — 비교선·가격선·처음 볼 아이템을 한 팝업에(점은 왼쪽 칩으로 꺼냈다). 팝업은 위로 연다 */}
+              <div style={{ position: 'relative' }}>
+              <button
+                type="button"
+                onClick={() => setShowPriceInput(!showPriceInput)}
+                aria-expanded={showPriceInput}
+                title="차트 표시 설정"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  position: 'relative',
+                  padding: '7px 12px 7px 11px',
+                  borderRadius: '10px',
+                  border: `1px solid color-mix(in srgb, ${chartColor} ${showPriceInput ? 70 : 40}%, transparent)`,
+                  background: `color-mix(in srgb, ${chartColor} ${showPriceInput ? 18 : 10}%, var(--card-bg))`,
+                  color: chartColor,
+                  fontSize: '0.85rem',
+                  fontWeight: 700,
+                  boxShadow: 'var(--shadow-sm)',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  transition: 'border-color 0.15s, color 0.15s, background-color 0.15s',
+                }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <line x1="4" y1="6" x2="20" y2="6" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="18" x2="20" y2="18" />
+                  <circle cx="9" cy="6" r="2" fill="var(--card-bg)" /><circle cx="15" cy="12" r="2" fill="var(--card-bg)" /><circle cx="7" cy="18" r="2" fill="var(--card-bg)" />
+                </svg>
+                {!isMobile && '표시 설정'}
+                {currentCustomLines && <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981' }} aria-label="가격선 사용 중" />}
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"
+                  style={{ transform: showPriceInput ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>
+                  <polyline points="6 15 12 9 18 15" />
+                </svg>
+              </button>
+
+              {/* 가격 입력 팝업 */}
+              {showPriceInput && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: '100%',
+                    right: 0,
+                    marginBottom: '8px',
+                    backgroundColor: 'var(--card-bg)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
+                    zIndex: 100,
+                    minWidth: '260px',
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '10px' }}>
+                    차트 표시
+                  </div>
+                  {renderToggleRows(isMobile || !hidePeriodButtons, false)}
+
+                  <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', margin: '14px 0 8px', paddingTop: '12px', borderTop: '1px solid var(--border-color)' }}>
+                    가격선
+                  </div>
+
+                  {/* 판매가 */}
+                  <div style={{ marginBottom: '10px' }}>
+                    <label style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
+                      판매가 (녹색)
+                    </label>
+                    <input
+                      type="number"
+                      value={tempSellPrice}
+                      onChange={(e) => setTempSellPrice(e.target.value)}
+                      placeholder="판매가"
+                      style={{
+                        width: '100%',
+                        padding: '8px 10px',
+                        borderRadius: '6px',
+                        border: '1px solid var(--border-color)',
+                        backgroundColor: 'var(--bg-secondary)',
+                        color: 'var(--text-primary)',
+                        fontSize: '0.85rem',
+                      }}
+                    />
+                  </div>
+
+                  {/* 구매가 */}
+                  <div style={{ marginBottom: '12px' }}>
+                    <label style={{ fontSize: '0.75rem', color: '#f59e0b', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
+                      구매가 (주황)
+                    </label>
+                    <input
+                      type="number"
+                      value={tempBuyPrice}
+                      onChange={(e) => setTempBuyPrice(e.target.value)}
+                      placeholder="구매가"
+                      style={{
+                        width: '100%',
+                        padding: '8px 10px',
+                        borderRadius: '6px',
+                        border: '1px solid var(--border-color)',
+                        backgroundColor: 'var(--bg-secondary)',
+                        color: 'var(--text-primary)',
+                        fontSize: '0.85rem',
+                      }}
+                    />
+                  </div>
+
+                  {/* 버튼 */}
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      onClick={clearPriceLines}
+                      style={{
+                        flex: 1,
+                        padding: '8px',
+                        borderRadius: '6px',
+                        border: '1px solid var(--border-color)',
+                        backgroundColor: 'var(--card-bg)',
+                        color: 'var(--text-secondary)',
+                        fontSize: '0.8rem',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      삭제
+                    </button>
+                    <button
+                      onClick={savePriceLines}
+                      style={{
+                        flex: 1,
+                        padding: '8px',
+                        borderRadius: '6px',
+                        border: 'none',
+                        backgroundColor: '#3b82f6',
+                        color: 'white',
+                        fontSize: '0.8rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      저장
+                    </button>
+                  </div>
+                  {defaultItemButton}
+                </div>
+              )}
+            </div>
+        </div>
+      </div>
     </Card>
   );
 }

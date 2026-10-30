@@ -1074,11 +1074,11 @@ button.bulkButton:disabled,
   stroke: var(--color-primary);
   stroke-width: 4.5;
   opacity: 1;
-  filter: drop-shadow(0 0 5px rgba(59, 80, 181, 0.7));
+  filter: drop-shadow(0 0 5px rgba(var(--brand-rgb), 0.7));
 }
 
 [data-theme="dark"] .materialCardBoundCheckMarkActive {
-  filter: drop-shadow(0 0 5px rgba(107, 126, 214, 0.8));
+  filter: drop-shadow(0 0 5px rgba(var(--brand-rgb), 0.8));
 }
 
 .materialCardBoundLabel {

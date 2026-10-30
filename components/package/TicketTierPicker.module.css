@@ -11,7 +11,7 @@
   align-items: center;
   gap: 0.45rem;
   padding: 0.28rem 0.55rem 0.28rem 0.7rem;
-  border: 1.5px solid rgba(59, 80, 181, 0.34);
+  border: 1.5px solid rgba(var(--brand-rgb), 0.34);
   border-radius: 999px;
   background: var(--input-bg);
   color: var(--text-primary);
@@ -120,13 +120,13 @@
 }
 
 .rowOn {
-  background: rgba(59, 80, 181, 0.12);
+  background: rgba(var(--brand-rgb), 0.12);
   font-weight: 800;
 }
 
 .rowOn:hover,
 .rowOn:focus-visible {
-  background: rgba(59, 80, 181, 0.18);
+  background: rgba(var(--brand-rgb), 0.18);
 }
 
 .rowTier {

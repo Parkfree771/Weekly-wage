@@ -18,12 +18,13 @@ interface PageConfig {
 
 // 각 페이지의 실제 콘텐츠 폭에 맞춤 (사이드 레일이 콘텐츠를 침범하지 않도록)
 function getPageConfig(pathname: string): PageConfig {
-  // adTop 212 = 코드 기반 계산값 — Container mt-md-3(16) + PriceDashboard "오늘의 시세"
-  // 카드 줄(헤더~32 + 가로스크롤 카드 140+패딩8≈148) + mb-3(16) ≈ 212, 그 아래
-  // "카테고리" 상자 상단과 나란히 맞춤. body zoom 적용 전 논리 px라 zoom 배율과 무관하게 유효.
+  // adTop 300 = "카테고리" 상자 상단과 나란히 — Container mt-md-3(16) + 맨 위 시장 요약 띠(MarketHero)·간격.
+  // 2026-10-30 실측(내비 하단 → 카테고리 상자 상단 255px ÷ body zoom 0.85 — 띠 min-height 268 + 위아래 간격). 예전 212 는 그 자리에
+  // "오늘의 시세" 카드 줄이 있던 시절 값이다. 띠 높이를 바꾸면 이 값도 다시 잰다.
+  // body zoom 적용 전 논리 px라 zoom 배율과 무관하게 유효.
   // 2026-10-27: 사이드 앱 프로모 제거로 도킹형(appPromoTop)을 빼고 adTop 으로 바로 세운다 —
   // 도킹형일 땐 광고가 프로모 높이(약 166px)+간격 아래로 밀려 카테고리보다 조금 낮았다.
-  if (pathname === '/') return { contentWidth: 1400, adTop: 212 };
+  if (pathname === '/') return { contentWidth: 1400, adTop: 300 };
   // adTop 200 = "검색창" 상자 상단과 나란히(직접 요청으로 기존 110에서 크게 내림).
   // appPromoTop 0 = 도킹 모드로 전환 — 왼쪽 인기 페이지 박스·오른쪽 앱 프로모를 레일 위에 얹고
   // 광고는 그 아래로. (예전엔 튜닝값이 없어 광고가 뜨면 프로모를 아예 숨겼다)
@@ -51,9 +52,6 @@ function getPageConfig(pathname: string): PageConfig {
   if (pathname === '/extreme') return { contentWidth: 1200, adTop: 230 };
   // 세르카와 동일 구성(요청).
   if (pathname === '/belgardin') return { contentWidth: 1200, adTop: 230 };
-  if (pathname === '/bracelet') return { contentWidth: 900, adTop: 90 };
-  // adTop 300 = 주간 레이드와 같은 구성(제목+검색창 다음 본문 상단) — 동일 값으로 통일.
-  if (pathname === '/expedition-gold') return { contentWidth: 1180, adTop: 300 };
   // adTop 280 = 기존(90)보다 큰 폭으로 내려서 실제 계산기 상자 상단과 맞춤.
   if (pathname === '/hell-reward') return { contentWidth: 900, adTop: 280 };
   if (pathname.startsWith('/package/')) return { contentWidth: 1100, adTop: 80 };
@@ -76,6 +74,13 @@ function getPageConfig(pathname: string): PageConfig {
 
 // 양쪽 사이드바: 220px * 2 + 갭 8px * 2 = 456px
 const AD_EXTRA = 456;
+
+// 넓은 화면 레일 — 300×600 칸(역보정 후 body 좌표 약 353px)에 여백을 둔 380px.
+// 380*2 + 8*2 = 776. 본문 폭 = contentWidth + EXTRA − (레일+26)*2 = contentWidth − 36 으로 좁은 레일과 같다 —
+// 페이지별 contentWidth(직업 각인 1450 등)를 레일 폭마다 따로 맞출 필요가 없다.
+// 기준 폭: 1400 + 776 = 2176(body 좌표) → 창 폭 약 1,850px 이상(1920 모니터)에서 넓은 레일, 그 아래는 160×600.
+const RAIL_WIDE_W = 380;
+const AD_EXTRA_WIDE = RAIL_WIDE_W * 2 + 16;
 
 // 데스크톱은 globals.css에서 body zoom 0.85 (≥1024px) → 실제 레이아웃 폭 = innerWidth / 0.85.
 // 레일 노출 판정에 이 배율을 반영해야 함 (안 그러면 여유 있는데도 안 뜸).
@@ -100,8 +105,8 @@ const AD_ZOOM_COMPENSATE = 1 / DESKTOP_ZOOM;
 const RAIL_PAGES = new Set([
   '/', '/refining', '/wangap', '/package',
   '/weekly-gold', '/life-master', '/mypage', '/more-reward',
-  '/cathedral', '/cerka', '/belgardin', '/bracelet', '/hell-reward',
-  '/expedition-gold', '/extreme', '/engraving',
+  '/cathedral', '/cerka', '/belgardin', '/hell-reward',
+  '/extreme', '/engraving',
 ]);
 // 패키지 상세(/package/[postId])는 동적 라우트라 위 Set에 못 넣으므로 startsWith로 별도 포함
 // (등록·수정은 railsDisabled가 이미 따로 걸러냄). 아제나의 축복(/package/azena-blessing)도 여기 걸린다.
@@ -132,7 +137,10 @@ export default function AdLayout({ children }: { children: React.ReactNode }) {
   // (겹치지 않게 미리 확인해둔 페이지라는 뜻). 지정이 없으면 겹침 위험이 있으니 예전처럼 배타적으로 동작.
   const promoTunedForRail = pageConfig.appPromoTop !== undefined;
   const [isMobile, setIsMobile] = useState(false);
-  const [railsWide, setRailsWide] = useState(false);
+  // 레일 단계 — none: 레일 없음 / narrow: 160×600 / wide: 300×600
+  const [railTier, setRailTier] = useState<'none' | 'narrow' | 'wide'>('none');
+  const railsWide = railTier !== 'none';
+  const wideRail = railTier === 'wide';
   // body zoom(0.85)이 실제로 걸리는 폭(≥1024px)인지 — 광고 슬롯 zoom 역보정 적용 여부에 사용.
   // isMobile(<768px) 기준과 달라서 별도로 추적(768~1023px 구간엔 zoom이 아예 안 걸림).
   const [desktopZoomActive, setDesktopZoomActive] = useState(false);
@@ -144,6 +152,7 @@ export default function AdLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // 콘텐츠 폭 + 레일이 들어갈 만큼 넓은 뷰포트에서만 레일 노출 (콘텐츠 침범 방지)
     const needed = contentWidth + AD_EXTRA; // 양쪽 레일까지 들어갈 폭 (body 좌표)
+    const neededWide = contentWidth + AD_EXTRA_WIDE; // 300×600 레일까지 들어갈 폭
     const check = () => {
       // 사이트 보기 배율(html zoom) 반영 — 배율 Z만큼 레이아웃 뷰포트가 innerWidth/Z로 줄어들고,
       // 그 안에서 기존 body zoom(0.85) 좌표계가 그대로 동작하므로 w만 보정하면 이하 계산이 전부 유지됨
@@ -153,7 +162,7 @@ export default function AdLayout({ children }: { children: React.ReactNode }) {
       // 데스크톱 body zoom(0.85) 반영 → 실제 레이아웃 폭 = w / zoom
       const zoom = w >= 1024 ? DESKTOP_ZOOM : 1;
       const effective = w / zoom;
-      setRailsWide(effective >= needed);
+      setRailTier(effective >= neededWide ? 'wide' : effective >= needed ? 'narrow' : 'none');
     };
 
     check();
@@ -181,28 +190,31 @@ export default function AdLayout({ children }: { children: React.ReactNode }) {
   // 광고 세로 위치를 조정하고 싶으면 페이지별 appPromoTop(getPageConfig)을 움직이면 된다.
   const PROMO_AD_GAP = 24;
 
-  // 사이드 레일 한 칸 내용 — 표준 세로 규격 160×600(와이드 스카이스크래퍼) 칸, key로 라우트마다 갱신.
-  // 실제 화면 px가 160×600 그대로 나오도록 zoom 역보정 래퍼로 감쌈(위 AD_ZOOM_COMPENSATE 참고).
+  // 사이드 레일 한 칸 내용 — 넓은 화면은 300×600(하프페이지), 그 아래는 160×600(와이드 스카이스크래퍼).
+  // key로 라우트·크기마다 갱신. 실제 화면 px가 규격 그대로 나오도록 zoom 역보정 래퍼로 감쌈(위 AD_ZOOM_COMPENSATE 참고).
   // 애드센스는 같은 단위를 좌우에 함께 넣어도 둘 다 채운다.
   const renderRail = (side: 'left' | 'right') => {
+    const size = wideRail ? AD_SIZES.railWide : AD_SIZES.rail;
     const ad = (
       <AdSenseUnit
-        key={pathname}
+        key={`${pathname}-${size.width}`}
         slot={ADSENSE_SLOTS.rail}
-        size={AD_SIZES.rail}
-        label={`사이드 ${side === 'left' ? '좌' : '우'}`}
+        size={size}
+        label={`사이드 ${side === 'left' ? '좌' : '우'}${wideRail ? ' (300×600)' : ''}`}
       />
     );
     if (!desktopZoomActive) return ad;
     return (
-      <div style={{ width: '160px', height: '600px', margin: '0 auto', zoom: AD_ZOOM_COMPENSATE }}>
+      <div style={{ width: `${size.width}px`, height: `${size.height}px`, margin: '0 auto', zoom: AD_ZOOM_COMPENSATE }}>
         {ad}
       </div>
     );
   };
 
   const layoutStyle: React.CSSProperties =
-    railsVisible ? { maxWidth: `${contentWidth + AD_EXTRA}px` } : {};
+    railsVisible ? { maxWidth: `${contentWidth + (wideRail ? AD_EXTRA_WIDE : AD_EXTRA)}px` } : {};
+  // 넓은 레일은 칸 폭도 넓힌다(기본 220px 은 globals.css .side-rail)
+  const railWidthStyle: React.CSSProperties = wideRail ? { width: `${RAIL_WIDE_W}px` } : {};
 
   // 도킹형 프로모 칸 — 좌우 모두 보이지 않는 자리 채움이다(사이드 앱 프로모는 2026-10-27 제거).
   // 좌우가 같은 높이라 광고가 양쪽에서 같은 높이에 선다. 왼쪽에는 페이지가 포털로
@@ -246,7 +258,7 @@ export default function AdLayout({ children }: { children: React.ReactNode }) {
         {railsVisible && (
           <aside
             className="side-rail side-rail-left"
-            style={{ paddingTop: dockedPromo ? undefined : `${adTop}px` }}
+            style={{ ...railWidthStyle, paddingTop: dockedPromo ? undefined : `${adTop}px` }}
           >
             {dockedPromo ? renderDockedRail('left') : <div>{renderRail('left')}</div>}
           </aside>
@@ -257,7 +269,7 @@ export default function AdLayout({ children }: { children: React.ReactNode }) {
         {railsVisible && (
           <aside
             className="side-rail side-rail-right"
-            style={{ paddingTop: dockedPromo ? undefined : `${adTop}px` }}
+            style={{ ...railWidthStyle, paddingTop: dockedPromo ? undefined : `${adTop}px` }}
           >
             {dockedPromo ? (
               renderDockedRail('right')
