@@ -10,7 +10,6 @@ import LoginButton from './auth/LoginButton';
 import ZoomControl from './ZoomControl';
 import InquiryButton from './InquiryButton';
 import AppSidebarPromo from './AppSidebarPromo';
-import PopularPagesBox from './PopularPagesBox';
 import { NAV_HIDDEN_PATHS } from '@/lib/site-config';
 
 type NavItem = {
@@ -34,10 +33,11 @@ type NavGroup = {
 // (예전: 골드 계산 / 숙제 계산 / 시뮬 / 조회 — 패키지 효율이 드롭다운 안에 숨어 있었고 조회는 항목이 하나뿐이었다)
 // 바로가기 그룹은 href 를 주고, items 에도 같은 주소를 하나 둔다 — 활성 표시·숨김 처리(NAV_HIDDEN_PATHS)가 items 를 본다.
 // 메뉴 아이콘 — 64px 사본(public/nav)을 작게. 장식이라 alt 는 비운다(옆 글자가 이름)
-function NavIcon({ src, size }: { src?: string; size: number }) {
+// 그룹 아이콘(지금은 패키지 효율 크리스탈만)은 하위 메뉴 아이콘보다 크게 — 크기를 키워도 줄 높이는 그대로(.nav-icon-group 음수 여백)
+function NavIcon({ src, size, group }: { src?: string; size: number; group?: boolean }) {
   if (!src) return null;
   // eslint-disable-next-line @next/next/no-img-element
-  return <img src={src} alt="" width={size} height={size} className="nav-icon" style={{ width: size, height: size }} decoding="async" />;
+  return <img src={src} alt="" width={size} height={size} className={`nav-icon ${group ? 'nav-icon-group' : ''}`} style={{ width: size, height: size }} decoding="async" />;
 }
 
 const NAV_GROUPS: NavGroup[] = [
@@ -197,7 +197,7 @@ export default function Navbar() {
                   href={group.href}
                   className={`navbar-nav-link ${group.colorClass} ${isActive(group.href) ? 'active' : ''}`}
                 >
-                  <NavIcon src={group.icon} size={20} />
+                  <NavIcon src={group.icon} size={30} group />
                   {group.label}
                   {group.badge && <span className={badgeClass(group.badge)}>{group.badge}</span>}
                 </Link>
@@ -214,7 +214,7 @@ export default function Navbar() {
                   onClick={() => setOpenDropdown(openDropdown === group.label ? null : group.label)}
                   style={{ cursor: 'pointer' }}
                 >
-                  <NavIcon src={group.icon} size={20} />
+                  <NavIcon src={group.icon} size={30} group />
                   {group.label}
                   {(() => { const b = getGroupBadge(group); return b?.badge ? <span className={badgeClass(b.badge, b.badgeClass)}>{b.badge}</span> : null; })()}
                   <svg width="10" height="10" viewBox="0 0 10 10" style={{ marginLeft: '4px', opacity: 0.6 }}>
@@ -378,15 +378,22 @@ export default function Navbar() {
             <Nav className="flex-column gap-2">
               {VISIBLE_NAV_GROUPS.map((group) => (
                 group.href ? (
+                  // 바로가기(패키지 효율·직업 각인)도 펼침 그룹과 같은 상자로 — 예전엔 상자 없는 글자 줄이라
+                  // 상자 사이에서 혼자 떠 보였다. 오른쪽 화살표(›)가 "펼치지 않고 바로 이동"을 알린다.
                   <Link
                     key={group.label}
                     href={group.href}
-                    className={`navbar-offcanvas-link ${group.colorClass} ${isActive(group.href) ? 'active' : ''}`}
+                    className={`navbar-offcanvas-trigger navbar-offcanvas-direct ${isActive(group.href) ? 'active' : ''}`}
                     onClick={handleClose}
                   >
-                    <NavIcon src={group.icon} size={24} />
-                    {group.label}
-                    {group.badge && <span className={badgeClass(group.badge)}>{group.badge}</span>}
+                    <span className="navbar-offcanvas-trigger-label">
+                      <NavIcon src={group.icon} size={34} group />
+                      {group.label}
+                      {group.badge && <span className={badgeClass(group.badge)}>{group.badge}</span>}
+                    </span>
+                    <svg className="navbar-offcanvas-chevron" width="14" height="14" viewBox="0 0 10 10" aria-hidden>
+                      <path d="M4 2L7 5L4 8" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
                   </Link>
                 ) : (
                 <div key={group.label} className="navbar-offcanvas-group">
@@ -401,7 +408,7 @@ export default function Navbar() {
                     aria-expanded={openMobileGroup === group.label}
                   >
                     <span className="navbar-offcanvas-trigger-label">
-                      <NavIcon src={group.icon} size={24} />
+                      <NavIcon src={group.icon} size={34} group />
                       {group.label}
                       {(() => { const b = getGroupBadge(group); return b?.badge ? <span className={badgeClass(b.badge, b.badgeClass)}>{b.badge}</span> : null; })()}
                     </span>
@@ -442,10 +449,7 @@ export default function Navbar() {
                 )
               ))}
             </Nav>
-            {/* ── 인기 페이지 — 순위 배지 + 불꽃 카드 (링크를 누르면 드로어를 닫는다) ── */}
-            <div className="navbar-offcanvas-section">
-              <PopularPagesBox onNavigate={handleClose} />
-            </div>
+            {/* 인기 페이지 상자는 뺐다(2026-10-30) — 가장 많이 가던 패키지 효율이 메뉴 맨 위 바로가기로 나와 겹쳤다 */}
 
             {/* ── 숙제 체크·문의하기 + Google/Apple 로그인 — 2×2 같은 크기 버튼 ── */}
             <div className="navbar-offcanvas-section">
@@ -469,7 +473,8 @@ export default function Navbar() {
               </div>
             </div>
 
-            {/* ── 로아로골 앱 — 데스크톱 사이드바 프로모와 동일 디자인 (구글/iOS 배지) ── */}
+            {/* ── 로아로골 앱 — 데스크톱 사이드바 프로모와 동일 디자인 (구글/iOS 배지). 서랍 맨 아래 고정 ── */}
+            <div className="navbar-offcanvas-spacer" />
             <div className="navbar-offcanvas-section">
               <AppSidebarPromo />
             </div>

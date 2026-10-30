@@ -3,6 +3,7 @@ import { useMemo, useCallback, useContext, useState, useEffect, ReactNode } from
 import Image from 'next/image';
 import { Card, Spinner } from 'react-bootstrap';
 import { ComposedChart, Line, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceArea } from 'recharts';
+import { yAxisWidth } from '@/lib/axis-label-width';
 import { TrackedItem } from '@/lib/items-to-track';
 import { PRICE_EVENTS, SPECIAL_EVENT_DOT_COLOR_BY_CATEGORY } from '@/lib/price-events';
 import { PriceContext } from './PriceComparisonStats';
@@ -94,16 +95,17 @@ type PeriodOption = '7d' | '1m' | '2m' | '3m' | '6m' | '1y' | 'all';
  * 등락 한 덩어리 (라벨 + 화살표 + %). 전일 대비와 기간 변화율이 같은 줄에 나란히 서므로
  * 어느 쪽 숫자인지 라벨이 반드시 붙어야 한다. 데스크톱·모바일이 크기만 다르고 모양은 같다.
  */
-function RatePair({ label, rate, valueSize, arrowSize }: {
+function RatePair({ label, rate, valueSize, arrowSize, labelSize = '0.62rem' }: {
   label: string;
   rate: number;
   valueSize: string;
   arrowSize: number;
+  labelSize?: string;
 }) {
   const up = rate >= 0;
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
-      <span style={{ fontSize: '0.62rem', fontWeight: 700, color: 'var(--text-muted)' }}>{label}</span>
+      <span style={{ fontSize: labelSize, fontWeight: 700, color: 'var(--text-muted)' }}>{label}</span>
       <span
         className="font-numeric"
         style={{
@@ -1071,9 +1073,20 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
       return <circle cx={cx} cy={cy} r={3} fill={eventColor} strokeWidth={2} stroke="var(--card-bg)" />;
     }
 
-    // 특별 이벤트
+    // 특별 이벤트 — 점 + 위쪽 둥근 이름표(예전엔 X축 날짜 밑에 7px 사선 글자로 붙였다)
     if (!showEventDots) return null;
-    return <circle cx={cx} cy={cy} r={4} fill={eventColor} strokeWidth={2} stroke="var(--card-bg)" />;
+    const label = String(payload.eventLabel);
+    const w = label.length * 11 + 12;
+    return (
+      <g>
+        <line x1={cx} y1={cy - 6} x2={cx} y2={cy - 12} stroke={eventColor} strokeWidth={1.5} />
+        <rect x={cx - w / 2} y={cy - 30} width={w} height={18} rx={9} fill="var(--card-bg)" stroke={eventColor} strokeWidth={1.5} />
+        <text x={cx} y={cy - 21} textAnchor="middle" dominantBaseline="central" fill={eventColor} fontSize={11} fontWeight={800}>
+          {label}
+        </text>
+        <circle cx={cx} cy={cy} r={4.5} fill={eventColor} strokeWidth={2} stroke="var(--card-bg)" />
+      </g>
+    );
   };
 
   // 기간 라벨 맵핑
@@ -1172,6 +1185,34 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
   const effectiveData = isZoomed ? visibleData : chartData;
   const effectiveYAxisConfig = isZoomed ? visibleYAxisConfig : yAxisConfig;
   const effectiveXTicks = isZoomed ? visibleXTicks : xAxisTicks;
+
+  // 모바일 축 — 예전엔 X 9px 사선 · Y 6~9px 이었는데 모바일 화면 배율(0.8)까지 겹쳐 거의 안 읽혔다.
+  // 데스크톱처럼 가로 글자 12px 로 쓰고, 그만큼 칸이 모자라니 아래 두 가지로 자리를 만든다.
+  // X: 가로 글자가 겹치지 않게 눈금을 최대 6개로 솎는다(가장 최근 날짜는 남긴다).
+  const mobileXTicks = (() => {
+    const t = effectiveXTicks;
+    const max = 6;
+    if (t.length <= max) return t;
+    const step = Math.ceil(t.length / max);
+    return t.filter((_, i) => (t.length - 1 - i) % step === 0);
+  })();
+  // Y: 10만 넘는 값은 "만" 단위로 줄인다(2,520,000 → 252만). 소수 자릿수는 이웃 눈금이 같은 글자가 되지 않는 가장 짧은 것.
+  const mobileYTicks = effectiveYAxisConfig.ticks;
+  const mobileYDigits = (() => {
+    const big = mobileYTicks.filter(v => v >= 100000);
+    for (const d of [0, 1, 2]) {
+      const labels = big.map(v => (v / 10000).toFixed(d));
+      if (new Set(labels).size === labels.length) return d;
+    }
+    return 2;
+  })();
+  const formatMobileY = (v: number) => {
+    if (wonMode || v < 100000) return formatPrice(v);
+    return `${(v / 10000).toLocaleString('ko-KR', { minimumFractionDigits: mobileYDigits, maximumFractionDigits: mobileYDigits })}만`;
+  };
+  // Y축 칸 폭 — 가장 긴 눈금 글자를 실제 서체로 재서 잘리지 않을 만큼(그만큼 그림 영역이 줄어든다).
+  // 평균값 눈금은 굵게(800) 찍히니 굵은 폭으로 잰다. dx 5 = 아래 tick 의 dx={-5}
+  const mobileYWidth = yAxisWidth(mobileYTicks.map(formatMobileY), 12, { fontWeight: 800, dx: 5 });
   const effectiveAvg = isZoomed ? visibleAveragePrice : averagePrice;
 
   // 골드 가치 구간 — 원화로 보기 중에만, 지금 보이는 범위를 lib/gold-value.ts 점 날짜로
@@ -1363,17 +1404,20 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
         className="py-2 d-md-none"
         style={{ backgroundColor: 'var(--card-header-bg)', borderBottom: 'none', paddingBottom: 0 }}
       >
-        <div className="d-flex align-items-center justify-content-between">
-          <div className="d-flex align-items-center gap-2">
+        {/* 모바일 머리 — 2026-10-30 아이콘 36→46 · 이름 0.75→1rem · 현재가 1→1.3rem · 등락 0.95→1.05rem.
+            화면 배율 0.8 이 겹쳐 데스크톱보다 유독 작게 보였다. 이름이 길면 줄바꿈(왼쪽이 줄고 오른쪽 숫자는 그대로) */}
+        <div className="d-flex align-items-center justify-content-between" style={{ gap: '10px' }}>
+          <div className="d-flex align-items-center" style={{ gap: '10px', minWidth: 0 }}>
             {selectedItem.icon && (
               <Image
                 src={selectedItem.icon}
                 alt={selectedItem.name}
-                width={36}
-                height={36}
+                width={46}
+                height={46}
                 style={{
-                  height: '36px',
-                  borderRadius: '6px',
+                  flexShrink: 0,
+                  height: '46px',
+                  borderRadius: '8px',
                   border: `2px solid ${selectedItem.iconBorderColor || chartColor}`,
                   boxShadow: `0 2px 6px ${selectedItem.iconBorderColor ? selectedItem.iconBorderColor + '33' : chartColor + '33'}`
                 }}
@@ -1387,28 +1431,28 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                     if (parts.length === 3) {
                       return (
                         <div>
-                          <h6 className="mb-0" style={{ fontWeight: '700', color: chartColor, fontSize: '0.63rem', lineHeight: '1.3', wordBreak: 'keep-all' }}>
+                          <h6 className="mb-0" style={{ fontWeight: '700', color: chartColor, fontSize: '0.82rem', lineHeight: '1.3', wordBreak: 'keep-all' }}>
                             <div><ColoredItemName name={parts[0]} /></div>
                             <div><ColoredItemName name={parts[1]} /></div>
                           </h6>
-                          <small style={{ color: 'var(--text-muted)', fontSize: '0.58rem', display: 'block', marginTop: '2px' }}>
+                          <small style={{ color: 'var(--text-muted)', fontSize: '0.72rem', display: 'block', marginTop: '2px' }}>
                             {parts[2]}, {selectedItem.type === 'market' ? '거래소' : '경매장'}
                           </small>
                         </div>
                       );
                     }
                     return (
-                      <h6 className="mb-0" style={{ fontWeight: '700', color: chartColor, fontSize: '0.63rem', lineHeight: '1.3', wordBreak: 'keep-all', whiteSpace: 'pre-line' }}>
+                      <h6 className="mb-0" style={{ fontWeight: '700', color: chartColor, fontSize: '0.82rem', lineHeight: '1.3', wordBreak: 'keep-all', whiteSpace: 'pre-line' }}>
                         <ColoredItemName name={selectedItem.displayName} />
                       </h6>
                     );
                   })()
                 ) : (
                   <>
-                    <h6 className="mb-0" style={{ fontWeight: '700', color: chartColor, fontSize: '0.75rem', lineHeight: '1.3', wordBreak: 'keep-all', whiteSpace: 'pre-line' }}>
+                    <h6 className="mb-0" style={{ fontWeight: '700', color: chartColor, fontSize: '1rem', lineHeight: '1.3', wordBreak: 'keep-all', whiteSpace: 'pre-line' }}>
                       <ColoredItemName name={selectedItem.displayName || selectedItem.name} />
                     </h6>
-                    <small style={{ color: 'var(--text-muted)', fontSize: '0.65rem' }}>
+                    <small style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>
                       {selectedItem.type === 'market' ? '거래소' : '경매장'}
                     </small>
                   </>
@@ -1417,15 +1461,15 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
             </div>
           </div>
           {stats && (
-            <div className="text-end">
+            <div className="text-end" style={{ flexShrink: 0 }}>
               {rangeEndsToday ? (
                 <>
-                  <div className="font-numeric" style={{ fontSize: '1rem', fontWeight: '700', color: chartColor, whiteSpace: 'nowrap' }}>
+                  <div className="font-numeric" style={{ fontSize: '1.3rem', fontWeight: '800', color: chartColor, whiteSpace: 'nowrap', lineHeight: 1.2 }}>
                     {formatTooltipPrice(todayStats?.current ?? stats.current)}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '9px', whiteSpace: 'nowrap' }}>
-                    <RatePair label="전일" rate={changeRate} valueSize="0.95rem" arrowSize={15} />
-                    <RatePair label="기간" rate={periodRate} valueSize="0.95rem" arrowSize={15} />
+                    <RatePair label="전일" rate={changeRate} valueSize="1.05rem" arrowSize={17} labelSize="0.76rem" />
+                    <RatePair label="기간" rate={periodRate} valueSize="1.05rem" arrowSize={17} labelSize="0.76rem" />
                   </div>
                 </>
               ) : (
@@ -1434,12 +1478,12 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                     first={formatTooltipPrice(rangeStats!.first)}
                     last={formatTooltipPrice(rangeStats!.last)}
                     up={periodRate >= 0}
-                    valueSize="0.78rem"
-                    arrowSize={13}
+                    valueSize="0.95rem"
+                    arrowSize={15}
                     color={chartColor}
                   />
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-                    <RatePair label="기간" rate={periodRate} valueSize="0.95rem" arrowSize={15} />
+                    <RatePair label="기간" rate={periodRate} valueSize="1.05rem" arrowSize={17} labelSize="0.76rem" />
                   </div>
                 </>
               )}
@@ -1573,11 +1617,11 @@ export default function CompactPriceChart({ selectedItem, history, loading, cate
                 </button>
               )}
               <ResponsiveContainer width="100%" height="100%" minHeight={350}>
-                <ComposedChart data={effectiveData} onMouseDown={handleZoomMouseDown} onMouseMove={handleZoomMouseMove} onMouseUp={handleZoomMouseUp} style={{ cursor: isSelecting ? 'crosshair' : 'default', userSelect: 'none' }} margin={{ top: goldValueSegments ? 26 : 10, right: 5, left: 0, bottom: 0 }}>
+                <ComposedChart data={effectiveData} onMouseDown={handleZoomMouseDown} onMouseMove={handleZoomMouseMove} onMouseUp={handleZoomMouseUp} style={{ cursor: isSelecting ? 'crosshair' : 'default', userSelect: 'none' }} margin={{ top: 30, right: 8, left: 0, bottom: 0 }}>
                   <defs><linearGradient id="colorPriceMobile" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={chartColor} stopOpacity={0.22}/><stop offset="100%" stopColor={chartColor} stopOpacity={0}/></linearGradient></defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" strokeWidth={0.5} vertical={false} horizontal={true} />
-                  <XAxis dataKey="날짜" ticks={effectiveXTicks} tick={(props) => { const { x, y, payload } = props; const dataIndex = effectiveData.findIndex(d => d.날짜 === payload.value); if (dataIndex < 0) return null; const data = effectiveData[dataIndex]; const eventLabel = data.eventLabel || ''; const eventColor = data.eventColor || '#ef4444'; return (<g transform={`translate(${x},${y})`}><text x={0} y={0} dy={8} textAnchor="end" fill="var(--text-muted)" fontSize={9} fontWeight="600" fontFamily="var(--font-mono), monospace" transform="rotate(-45)">{toAxisLabel(payload.value)}</text>{eventLabel && (<text x={0} y={8} dy={8} textAnchor="end" fill={eventColor} fontSize={7} fontWeight="700" transform="rotate(-45)">{eventLabel}</text>)}</g>); }} height={55} tickLine={false} axisLine={{ stroke: 'var(--border-color)', strokeWidth: 1 }} />
-                  <YAxis tick={(props) => { const { x, y, payload } = props; const isAverage = effectiveYAxisConfig.avgValue && Math.abs(payload.value - effectiveYAxisConfig.avgValue) < 0.01; const fontSize = stats ? (stats.max >= 1000000 ? 6 : stats.max >= 100000 ? 7 : stats.max >= 10000 ? 8 : stats.max >= 1000 ? 9 : stats.max >= 100 ? 7.5 : 7) : 8; return (<text x={x} y={y} textAnchor="end" fill={isAverage ? chartColor : 'var(--text-muted)'} fontSize={fontSize} fontWeight={isAverage ? '900' : '700'} fontFamily="var(--font-mono), monospace" dx={-2}>{formatPrice(payload.value)}</text>); }} tickFormatter={formatPrice} width={stats && stats.max >= 1000000 ? 46 : stats && stats.max >= 100000 ? 42 : stats && stats.max >= 10000 ? 38 : stats && stats.max >= 1000 ? 38 : stats && stats.max >= 100 ? 32 : 30} domain={effectiveYAxisConfig.domain} ticks={effectiveYAxisConfig.ticks} tickLine={false} axisLine={false} />
+                  <XAxis dataKey="날짜" ticks={mobileXTicks} tick={(props) => { const { x, y, payload } = props; const i = effectiveData.findIndex(d => d.날짜 === payload.value); if (i < 0) return null; /* 맨 끝(최근) 날짜는 오른쪽 끝에 붙어 가운데 정렬이면 반쪽이 잘린다 — 오른쪽 정렬 */ return (<text x={x} y={y} dy={14} textAnchor={i === effectiveData.length - 1 ? 'end' : 'middle'} fill="var(--text-muted)" fontSize={12} fontWeight={600} fontFamily="var(--font-num), var(--font-kr), sans-serif">{toAxisLabel(payload.value)}</text>); }} height={30} interval={0} tickLine={false} axisLine={{ stroke: 'var(--border-color)', strokeWidth: 1 }} />
+                  <YAxis tick={(props) => { const { x, y, payload } = props; const isAverage = effectiveYAxisConfig.avgValue && Math.abs(payload.value - effectiveYAxisConfig.avgValue) < 0.01; return (<text x={x} y={y} textAnchor="end" dominantBaseline="central" fill={isAverage ? chartColor : 'var(--text-muted)'} fontSize={12} fontWeight={isAverage ? 800 : 600} fontFamily="var(--font-num), var(--font-kr), sans-serif" dx={-5}>{formatMobileY(payload.value)}</text>); }} tickFormatter={formatMobileY} width={mobileYWidth} domain={effectiveYAxisConfig.domain} ticks={mobileYTicks} interval={0} tickLine={false} axisLine={false} />
                   <Tooltip content={<CustomTooltipMobile />} cursor={{ stroke: 'var(--text-muted)', strokeWidth: 1, strokeDasharray: '3 3' }} />
                   <ReferenceLine y={effectiveAvg} stroke={chartColor} strokeDasharray="5 5" strokeWidth={1.5} />
                   {/* 사용자 선택 참조선 - 모바일 */}

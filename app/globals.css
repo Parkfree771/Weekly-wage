@@ -721,6 +721,13 @@ html, body {
   margin-right: 6px;
 }
 
+/* 그룹 아이콘(패키지 효율 크리스탈) — 크게 보이되 위아래 음수 여백으로 메뉴 줄 높이는 늘리지 않는다 */
+.nav-icon-group {
+  margin-top: -6px;
+  margin-bottom: -6px;
+  margin-left: -4px;
+}
+
 /* Nav Links - Unified Blue (30%) */
 .navbar-nav-link {
   display: inline-flex;
@@ -947,12 +954,11 @@ html, body {
 
 /* 모바일 오프캔버스 그룹 라벨 */
 .navbar-offcanvas-group-label {
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 4px 12px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+  letter-spacing: 0.02em;
+  padding: 0 4px 8px;
 }
 
 /* 모바일 오프캔버스 아코디언 (카테고리 버튼 → 펼침) */
@@ -966,12 +972,14 @@ html, body {
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 14px 20px;
-  border: 1px solid var(--border-color);
+  min-height: 54px;
+  padding: 12px 16px;
+  border: 1px solid rgba(var(--brand-rgb), 0.28);
   border-radius: 12px;
   background: var(--card-bg);
-  font-size: 1rem;
-  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(16, 58, 92, 0.08);
+  font-size: 1.02rem;
+  font-weight: 700;
   color: var(--text-primary);
   text-align: left;
   cursor: pointer;
@@ -982,9 +990,20 @@ html, body {
   color: var(--color-primary);
 }
 
+/* 펼친 그룹 — 상자 테두리를 진하게, 아래 하위 메뉴와 한 덩어리로 보이게 */
+.navbar-offcanvas-trigger[aria-expanded="true"] {
+  border-color: rgba(var(--brand-rgb), 0.55);
+}
+
 .navbar-offcanvas-trigger.active {
   border-color: var(--color-primary);
+  border-width: 1.5px;
   color: var(--color-primary);
+}
+
+[data-theme="dark"] .navbar-offcanvas-trigger {
+  border-color: rgba(var(--brand-rgb), 0.38);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
 .navbar-offcanvas-trigger-label {
@@ -992,9 +1011,18 @@ html, body {
   align-items: center;
 }
 
+/* 바로가기 상자(Link) — 버튼과 같은 상자, 링크 밑줄·색만 지운다 */
+.navbar-offcanvas-direct {
+  text-decoration: none;
+}
+
+.navbar-offcanvas-direct:hover {
+  text-decoration: none;
+}
+
 .navbar-offcanvas-chevron {
   flex-shrink: 0;
-  opacity: 0.6;
+  opacity: 0.75;
   transition: transform 0.2s ease;
 }
 
@@ -1005,17 +1033,19 @@ html, body {
 .navbar-offcanvas-submenu {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  margin: 4px 0 4px 12px;
-  padding-left: 8px;
-  border-left: 2px solid var(--border-color);
+  gap: 4px;
+  margin: 6px 0 2px 14px;
+  padding-left: 10px;
+  border-left: 2px solid rgba(var(--brand-rgb), 0.4);
   animation: offcanvasSubmenu 0.18s ease;
 }
 
 .navbar-offcanvas-subitem {
-  padding: 11px 16px;
-  font-size: 0.95rem;
-  font-weight: 500;
+  padding: 10px 12px;
+  border: 1px solid rgba(var(--brand-rgb), 0.16);
+  background: var(--card-bg);
+  font-size: 0.96rem;
+  font-weight: 600;
 }
 
 @keyframes offcanvasSubmenu {
@@ -1159,17 +1189,19 @@ html, body {
 }
 
 /* Offcanvas Menu */
+/* 서랍 바탕은 옅은 회청색(bg-secondary) — 흰 메뉴 상자가 바탕 위로 또렷이 뜬다. 머리 줄만 흰색 */
 .navbar-offcanvas {
-  background-color: #ffffff;
+  background-color: var(--bg-secondary);
   max-width: 280px;
 }
 
 [data-theme="dark"] .navbar-offcanvas {
-  background-color: #1c2233;
+  background-color: #0b1620;
 }
 
 .navbar-offcanvas-header {
-  border-bottom: 1px solid var(--border-color);
+  background-color: var(--card-bg);
+  border-bottom: 1px solid rgba(var(--brand-rgb), 0.2);
 }
 
 .navbar-offcanvas .btn-close {
@@ -1189,9 +1221,15 @@ html, body {
 
 /* 모바일 메뉴 영역 구분 — 메뉴 / 계정 / 앱 프로모 / 광고 섹션을 구분선으로 명확히 분리 */
 .navbar-offcanvas-section {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border-color);
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(var(--brand-rgb), 0.2);
+}
+
+/* 로아로골 앱 프로모를 서랍 맨 아래에 붙이는 빈칸 — 남는 높이를 이 칸이 다 먹는다.
+   (프로모 자체에 margin-top:auto 를 주면 메뉴가 길 때 위 영역과의 18px 간격까지 없어진다) */
+.navbar-offcanvas-spacer {
+  flex: 1 0 0;
 }
 
 .navbar-offcanvas-link {

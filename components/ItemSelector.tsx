@@ -17,9 +17,10 @@ import mStyles from './ItemSelector.module.css';
 const PRICE_ITEM_ICON = new Map(PRICE_ITEMS.map((p) => [p.id, smallIcon(p.icon)]));
 export const chipIcon = (item: TrackedItem) => PRICE_ITEM_ICON.get(item.id) ?? item.icon;
 
-// 좁은 칸용 짧은 이름 — 시세 표시 목록의 줄임말(파결·수결·10겁화 …), 젬은 콜론 뒤(안정·견고 …), 없으면 원래 이름
+// 모바일 즐겨찾기 시세 카드 이름 — 시세 표시 목록의 줄임말(파결·상비도스·10겁화·목걸이 상상·용숨 …),
+// 젬은 콜론 뒤(안정·견고 …), 줄임말이 없는 것만 원래 이름(카드에서 두 줄까지)
 const PRICE_ITEM_SHORT = new Map(PRICE_ITEMS.map((p) => [p.id, p.shortName]));
-export const shortNameOf = (item: TrackedItem): string => {
+export const tickerNameOf = (item: TrackedItem): string => {
   const gem = item.name.match(/^(?:질서|혼돈)의 젬\s*:\s*(.+)$/);
   if (gem) return gem[1];
   return PRICE_ITEM_SHORT.get(item.id) ?? item.name;

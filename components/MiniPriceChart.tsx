@@ -5,10 +5,13 @@ import React, { useMemo, useCallback, useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Spinner } from 'react-bootstrap';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Customized } from 'recharts';
+import { yAxisWidth } from '@/lib/axis-label-width';
 import { TrackedItem, SUCCESSION_TO_NORMAL_MATERIAL_MAP, SUCCESSION_MATERIAL_START_DATE } from '@/lib/items-to-track';
 import { ColoredItemName } from '@/lib/components/ColoredItemName';
 import { trendColor } from '@/lib/trend-colors';
 import TrendArrow from './TrendArrow';
+import { tickerNameOf } from './ItemSelector';
+import { formatShortPrice } from '@/lib/format-price';
 import type { CustomizedProps } from '@/types/recharts';
 
 type PriceEntry = {
@@ -318,50 +321,56 @@ function MiniPriceChartInner({ item, categoryStyle, isSelected, onClick, slotInd
         boxShadow: isSelected ? `0 0 12px ${chartColor}40` : 'none',
       }}
     >
-      {/* 헤더 */}
+      {/* 헤더 — 데스크톱: [아이콘 이름 … 가격] / [… 등락]
+          모바일: [아이콘 줄임말] / [가격 … 등락]. 반 폭 칸에 이름과 가격을 한 줄에 두면 둘 다 0.6rem 까지
+          줄여야 해서(화면 배율 0.8 까지 겹쳐) 거의 안 읽혔다 — 줄을 나누고 글자를 키웠다(2026-10-30) */}
       <div style={{ marginBottom: isMobile ? '4px' : '10px' }}>
-        {/* 첫째 줄: 아이콘 + 아이템명 (왼쪽) / 가격 (오른쪽) */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: isMobile ? '4px' : '8px', marginBottom: isMobile ? '2px' : '4px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '4px' : '8px', flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: isMobile ? '4px' : '8px', marginBottom: isMobile ? '3px' : '4px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '5px' : '8px', flex: 1, minWidth: 0 }}>
             <Image
               src={item.icon || '/icon.png'}
               alt={item.name}
-              width={isMobile ? 20 : 28}
-              height={isMobile ? 20 : 28}
-              style={{ borderRadius: isMobile ? '4px' : '6px', border: `1px solid ${chartColor}`, flexShrink: 0 }}
+              width={isMobile ? 26 : 28}
+              height={isMobile ? 26 : 28}
+              style={{ borderRadius: '6px', border: `1px solid ${chartColor}`, flexShrink: 0 }}
             />
             <div style={{
-              fontSize: isMobile ? '0.6rem' : '0.9rem',
-              fontWeight: 600,
+              fontSize: isMobile ? '0.84rem' : '0.9rem',
+              fontWeight: isMobile ? 700 : 600,
               color: chartColor,
               lineHeight: 1.2,
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap'
             }}>
-              <ColoredItemName name={item.name} />
+              {isMobile ? tickerNameOf(item) : <ColoredItemName name={item.name} />}
             </div>
           </div>
-          {stats && (
-            <div style={{ fontSize: isMobile ? '0.65rem' : '0.95rem', fontWeight: 700, color: chartColor, flexShrink: 0 }}>
+          {stats && !isMobile && (
+            <div style={{ fontSize: '0.95rem', fontWeight: 700, color: chartColor, flexShrink: 0 }}>
               {(categoryStyle?.label === '악세' || categoryStyle?.label === '팔찌' || categoryStyle?.label === '보석')
                 ? Math.round(stats.current).toLocaleString()
                 : stats.current.toLocaleString()}G
             </div>
           )}
         </div>
-        {/* 둘째 줄: 변동률 (오른쪽 정렬) */}
         {stats && (
-          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <div style={{
-              fontSize: isMobile ? '0.55rem' : '0.7rem',
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'space-between' : 'flex-end', gap: '4px' }}>
+            {isMobile && (
+              <div className="font-numeric" style={{ fontSize: '0.9rem', fontWeight: 800, color: chartColor, whiteSpace: 'nowrap' }}>
+                {formatShortPrice(stats.current)}
+              </div>
+            )}
+            <div className="font-numeric" style={{
+              fontSize: isMobile ? '0.8rem' : '0.7rem',
               fontWeight: 800,
               color: changeRate >= 0 ? 'var(--price-up)' : 'var(--price-down)',
               display: 'flex',
               alignItems: 'center',
-              gap: '2px'
+              gap: '2px',
+              whiteSpace: 'nowrap'
             }}>
-              <TrendArrow up={changeRate >= 0} size={isMobile ? 9 : 11} />
+              <TrendArrow up={changeRate >= 0} size={isMobile ? 12 : 11} />
               {Math.abs(changeRate).toFixed(1)}%
             </div>
           </div>
@@ -391,16 +400,17 @@ function MiniPriceChartInner({ item, categoryStyle, isSelected, onClick, slotInd
               <XAxis
                 dataKey="날짜"
                 ticks={xAxisTicks}
-                tick={{ fill: 'var(--text-muted)', fontSize: isMobile ? 6 : 8, fontFamily: 'var(--font-mono), monospace' }}
-                height={isMobile ? 15 : 20}
+                tick={{ fill: 'var(--text-muted)', fontSize: isMobile ? 9 : 10, fontWeight: 600, fontFamily: 'var(--font-num), var(--font-kr), sans-serif' }}
+                height={isMobile ? 18 : 22}
                 stroke="var(--border-color)"
                 tickLine={false}
                 axisLine={false}
               />
               <YAxis
-                tick={{ fill: 'var(--text-muted)', fontSize: isMobile ? 6 : 8, fontFamily: 'var(--font-mono), monospace' }}
+                tick={{ fill: 'var(--text-muted)', fontSize: isMobile ? 9 : 10, fontWeight: 600, fontFamily: 'var(--font-num), var(--font-kr), sans-serif' }}
                 tickFormatter={formatPrice}
-                width={isMobile ? 30 : 42}
+                // 칸 폭 — 눈금(최저·평균·최고) 글자를 실제 서체로 재서 잘리지 않을 만큼
+                width={yAxisWidth((yAxisConfig.ticks as number[]).map(formatPrice), isMobile ? 9 : 10, { min: isMobile ? 28 : 36 })}
                 domain={yAxisConfig.domain}
                 stroke="var(--border-color)"
                 tickLine={false}
