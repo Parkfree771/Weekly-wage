@@ -13,6 +13,7 @@ const CompactPriceChart = dynamic(() => import('./CompactPriceChart'), { ssr: fa
 const MiniPriceChart = dynamic(() => import('./MiniPriceChart'), { ssr: false });
 // 즐겨찾기 편집 창 — "+ 아이템 추가" 를 누를 때만 받는다
 const FavoritePicker = dynamic(() => import('./FavoritePicker'), { ssr: false });
+import FavoriteTicker from './FavoriteTicker';
 import { PriceContext } from './PriceComparisonStats';
 import { useTheme } from './ThemeProvider';
 import useIsMobileViewport from './ads/useIsMobileViewport';
@@ -144,6 +145,8 @@ export function PriceChartProvider({ children, initialQuotes }: {
   // 즐겨찾기 — 아이디 목록(순서 유지). 브라우저 저장(lib/favorite-items.ts). 첫 렌더(서버)는 비어 있다
   const [favorites, setFavorites] = useState<string[]>([]);
   const [showFavPicker, setShowFavPicker] = useState(false);
+  // 즐겨찾기를 브라우저에서 읽어 왔는지 — 그 전(서버 HTML)엔 모바일 시세 줄이 빈 카드로 자리만 지킨다
+  const [favoritesLoaded, setFavoritesLoaded] = useState(false);
   const favoriteItems = useMemo(
     () => favorites.map((id) => TRACKED_ITEMS_MAP.get(id)).filter((i): i is TrackedItem => !!i),
     [favorites],
@@ -213,6 +216,7 @@ export function PriceChartProvider({ children, initialQuotes }: {
     // 아니면 즐겨찾기 첫 아이템. 처음 볼 아이템을 즐겨찾기 밖의 것으로 정해 두었으면 그 설정이 우선이다.
     const favs = loadFavorites();
     setFavorites(favs);
+    setFavoritesLoaded(true);
     const favItems = favs.map((id) => TRACKED_ITEMS_MAP.get(id)).filter((i): i is TrackedItem => !!i);
     const defaultInFavs = loaded.defaultItem ? favItems.find((i) => i.id === loaded.defaultItem) : undefined;
     if (favItems.length > 0 && (!loaded.defaultItem || defaultInFavs)) {
@@ -305,6 +309,8 @@ export function PriceChartProvider({ children, initialQuotes }: {
     return getItemsByCategory(selectedCategory);
   }, [selectedCategory, selectedSubCategory, favoriteItems]);
   const itemQuotes = useItemQuotes(currentCategoryItems, initialQuotes);
+  // 모바일 즐겨찾기 시세 줄용 — 즐겨찾기 아이템 시세
+  const favoriteQuotes = useItemQuotes(favoriteItems, initialQuotes);
 
   // 이 useEffect는 더 이상 카테고리 변경 시 아이템을 자동 선택하지 않음
   // 대신 handleSelectCategory, handleSelectSubCategory에서 직접 처리
@@ -496,6 +502,14 @@ export function PriceChartProvider({ children, initialQuotes }: {
     });
   }, []);
   const openFavoritePicker = useCallback(() => setShowFavPicker(true), []);
+  // 모바일 즐겨찾기 시세 줄에서 카드 누르기 — 즐겨찾기 카테고리로 그 아이템 차트
+  const selectFavoriteItem = useCallback((item: TrackedItem) => {
+    setIsGridView(false);
+    setSelectedSlot(null);
+    setSelectedCategory('favorite');
+    setSelectedSubCategory(null);
+    setSelectedItem(item);
+  }, []);
   // 기본값으로 되돌리기(편집 창의 "기본값으로")
   const resetFavorites = useCallback(() => {
     setFavorites([...DEFAULT_FAVORITE_IDS]);
@@ -675,6 +689,17 @@ export function PriceChartProvider({ children, initialQuotes }: {
 
   return (
     <PriceContext.Provider value={contextValue}>
+      {/* 모바일 — 맨 위 배경 띠 대신 즐겨찾기 시세 줄(예전 "오늘의 시세" 자리) */}
+      <div className="d-md-none">
+        <FavoriteTicker
+          items={favoriteItems}
+          quotes={favoriteQuotes}
+          selectedId={selectedItem?.id}
+          loaded={favoritesLoaded}
+          onSelect={selectFavoriteItem}
+          onEdit={openFavoritePicker}
+        />
+      </div>
       <div className="price-chart-container">
         {/* 데스크톱: 사이드바 레이아웃 */}
         <div className="d-none d-lg-block">

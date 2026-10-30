@@ -228,31 +228,10 @@
 .pkgGain { color: #bbf7d0; }
 .pkgLoss { color: #fecaca; }
 
-/* 모바일(태블릿 세로 포함)은 패키지 카드를 빼고 그림 + LOST ARK 만 — 좁은 화면에서 카드가 그림을 다 가렸다 */
+/* 모바일(태블릿 세로 포함)은 띠를 통째로 숨긴다 — 그 자리는 즐겨찾기 시세 줄(FavoriteTicker)이 맡는다.
+   그림도 받지 않도록 MarketHero 가 모바일 조건에 빈 그림을 고른다(picture/source). */
 @media (max-width: 767.98px) {
-  .pkgRow {
+  .hero {
     display: none;
-  }
-
-  .hero {
-    min-height: 150px;
-  }
-}
-
-@media (max-width: 575.98px) {
-  .hero {
-    min-height: 128px;
-    border-radius: 16px;
-  }
-
-  .wordmark {
-    top: 12px;
-    left: 14px;
-    height: 32px;
-  }
-
-  .credit {
-    right: 10px;
-    bottom: 6px;
   }
 }

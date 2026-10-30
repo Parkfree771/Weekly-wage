@@ -75,9 +75,15 @@ export default function AdSenseUnit({ slot, size, label, className, style }: AdS
 
   if (!slot) return null;
 
+  // 칸 폭이 부모를 따르는('100%') 자리는 이 바깥 div 도 폭을 꽉 채운다.
+  // 부모가 flex(가운데 정렬 등)면 폭 없는 div 가 내용 폭으로 줄어드는데, 그 안의 ins 는 "100%" 라
+  // 광고를 요청하는 순간 폭이 거의 0 이 된다 — 애드센스가 그 폭으로 소재를 그려
+  // "자세히 알아보기" 버튼 글자가 한 글자씩 세로로 쌓였다(2026-10-30 모바일 패키지 화면).
+  const fill = typeof size.width === 'string' && size.width.endsWith('%');
+
   // 마운트 전에도 칸 높이를 잡아 둔다 — ins 가 늦게 들어오며 아래 콘텐츠를 밀지 않게
   return (
-    <div className={className} style={{ minHeight: reserve, ...style }}>
+    <div className={className} style={{ minHeight: reserve, ...(fill ? { width: '100%' } : {}), ...style }}>
       {mounted && (
         <ins
           ref={insRef}

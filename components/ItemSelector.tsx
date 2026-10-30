@@ -17,6 +17,14 @@ import mStyles from './ItemSelector.module.css';
 const PRICE_ITEM_ICON = new Map(PRICE_ITEMS.map((p) => [p.id, smallIcon(p.icon)]));
 export const chipIcon = (item: TrackedItem) => PRICE_ITEM_ICON.get(item.id) ?? item.icon;
 
+// 좁은 칸용 짧은 이름 — 시세 표시 목록의 줄임말(파결·수결·10겁화 …), 젬은 콜론 뒤(안정·견고 …), 없으면 원래 이름
+const PRICE_ITEM_SHORT = new Map(PRICE_ITEMS.map((p) => [p.id, p.shortName]));
+export const shortNameOf = (item: TrackedItem): string => {
+  const gem = item.name.match(/^(?:질서|혼돈)의 젬\s*:\s*(.+)$/);
+  if (gem) return gem[1];
+  return PRICE_ITEM_SHORT.get(item.id) ?? item.name;
+};
+
 export const CATEGORY_STYLES: Record<ItemCategory, { label: string; color: string; darkColor: string; lightBg: string; darkThemeColor: string; darkBg: string; }> = {
   // 재련 재료 = 사이트 기본색 계열(알데바란의 바다 청색). 다른 카테고리는 아이템 정체성 색이라 그대로 둔다.
   refine: { label: '재련 재료', color: '#1f7fc0', darkColor: '#13609c', lightBg: '#eaf4fa', darkThemeColor: '#5cb3e0', darkBg: '#14293a' },
