@@ -23,7 +23,7 @@ export default function NotFound() {
           <Link href="/" className="btn btn-primary">
             홈으로 돌아가기
           </Link>
-          <Link href="/weekly-gold" className="btn btn-outline-primary">
+          <Link href="/raid-gold" className="btn btn-outline-primary">
             골드 계산기
           </Link>
         </div>

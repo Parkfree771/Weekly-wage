@@ -1,0 +1,951 @@
+/* 레이드 클골 정리 — 유통은 노란 금색, 귀속은 핑크로 페이지 전체를 맞춘다.
+   레이드 칸·보상 표는 reward-table.module.css 를 쓴다. */
+
+.pageWrapper {
+  --free-text: #d9a000;
+  --bound-text: #db2777;
+  padding: clamp(1rem, 3vw, 2rem) 0 3rem;
+}
+
+:global([data-theme="dark"]) .pageWrapper {
+  --free-text: #f5c542;
+  --bound-text: #f472b6;
+}
+
+.pageHeader {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.pageTitle {
+  font-size: clamp(1.3rem, 3vw, 1.6rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.pageSubtitle {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0.35rem 0 0;
+}
+
+.freeText {
+  color: var(--free-text);
+}
+
+.boundText {
+  color: var(--bound-text);
+}
+
+.profitText {
+  color: var(--color-success);
+}
+
+.lossText {
+  color: var(--color-danger);
+}
+
+/* ─── 골드 코인 ─── */
+.coin {
+  flex-shrink: 0;
+}
+
+.boundCoin {
+  filter: hue-rotate(280deg) saturate(1.4);
+}
+
+.offCoin {
+  filter: grayscale(1);
+}
+
+.gold {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.raidImg {
+  object-fit: cover;
+}
+
+/* ─── 구역 카드 — 더보기 효율 페이지처럼 단색 헤더로 구분 ─── */
+.sectionCard {
+  margin-bottom: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--card-bg);
+  box-shadow: var(--shadow-sm);
+}
+
+.sectionHead {
+  margin: 0;
+  padding: 0.7rem 1.1rem;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+/* 제목은 왼쪽, 원정대 전체 토글은 오른쪽 */
+.sectionHeadRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0 0.75rem;
+  background: var(--color-primary);
+}
+
+.headToggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.45rem 1.1rem;
+}
+
+/* 구역 안쪽은 한 톤 어둡게 깔아 흰 카드들이 떠 보이게 한다 */
+.cardBody {
+  padding: 1rem;
+  background: var(--bg-secondary);
+}
+
+/* ─── 원정대 ─── */
+.expeditionCard {
+  margin-top: 0.75rem;
+}
+
+.charList {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* 캐릭터 하나 = 헤더(이름 배지) + 3개 합계 식 + 레이드 카드들. 진한 테두리로 캐릭터끼리 구분한다 */
+.charBlock {
+  border: 2px solid var(--color-primary-dark);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+
+.charHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--color-primary-dark);
+}
+
+.charBadge {
+  padding: 0.18rem 0.75rem;
+  border-radius: 999px;
+  background: #fff;
+  color: #0d4777;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.charLevelBadge {
+  padding: 0.18rem 0.6rem;
+  border-radius: 999px;
+  background: var(--color-accent);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.charOutBadge {
+  margin-left: auto;
+  padding: 0.18rem 0.6rem;
+  border-radius: 999px;
+  background: #64748b;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.charNone {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* ─── 레벨 선택 + 레이드 목록 ─── */
+.levelRail {
+  display: grid;
+  grid-template-columns: repeat(13, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+.levelChip {
+  padding: 0.45rem 0.1rem;
+  border: 1.5px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.levelChip:hover {
+  border-color: var(--color-primary);
+}
+
+.levelChipActive {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+.controlRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0.75rem 0 1rem;
+}
+
+.levelInputWrap {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.levelInput {
+  width: 7rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--input-bg);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.levelInput:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-light);
+}
+
+.segment {
+  display: inline-flex;
+  border: 1.5px solid var(--color-primary);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.segmentBtn {
+  padding: 0.38rem 0.8rem;
+  border: 0;
+  background: var(--card-bg);
+  color: var(--color-primary);
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.segmentBtn + .segmentBtn {
+  border-left: 1.5px solid var(--color-primary);
+}
+
+.segmentBtnOn {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+/* ─── 레이드 칸: 기본은 원래 색 / 선택(금테+체크) / 3개 다 고르면 나머지 흑백 / 레벨 부족(거의 까맣게+자물쇠) ─── */
+.tileGrid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+/* 접힌 상태는 3줄만 — 칸 수가 화면마다 달라 CSS 로 자른다. 선택한 레이드는 접혀도 보인다 */
+.tileGridCollapsed .tile:nth-child(n + 19):not(.tilePicked) {
+  display: none;
+}
+
+/* 칸 모양은 공용 레이드 카드(tableStyles.raidCard)를 쓰고 상태만 얹는다.
+   같은 우선순위면 나중에 불러오는 reward-table 스타일이 이기므로 .tileGrid 를 붙여 높인다 */
+.tileDiff {
+  color: var(--diff-glass);
+}
+
+.tileGrid .tile:hover:not(:disabled) {
+  border-color: var(--color-primary);
+}
+
+.tileGrid .tile:disabled {
+  cursor: not-allowed;
+}
+
+.tileGrid .tilePicked,
+.tileGrid .tilePicked:hover:not(:disabled) {
+  border-color: #f5b800;
+  box-shadow: 0 0 0 2px #f5b800, var(--shadow-md);
+}
+
+.tileOff .raidImg {
+  filter: grayscale(0.9) brightness(0.5);
+}
+
+.tileGrid .tileLocked {
+  border-style: dashed;
+  border-color: #334155;
+}
+
+.tileLocked .raidImg {
+  filter: grayscale(1) brightness(0.22);
+}
+
+.diffBadge {
+  display: inline-block;
+  padding: 0.08rem 0.5rem;
+  border-radius: 5px;
+  background: var(--diff);
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 800;
+  line-height: 1.4;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
+}
+
+.tileCheck {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 50%;
+  background: #f5b800;
+  color: #1f2937;
+  font-size: 1.1rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+/* 클골은 왼쪽, 더보기 손익은 오른쪽 끝 */
+.tileGoldRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0 0.4rem;
+  margin-top: 3px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+/* 더보기 손익 — 숫자 위에 같은 색 작은 글씨 */
+.tileMoreValue {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.15;
+}
+
+.tileMoreLabel {
+  font-size: 0.66rem;
+  font-weight: 700;
+}
+
+.tileTip {
+  display: none;
+  flex-direction: column;
+  gap: 0.1rem;
+  margin-bottom: 0.3rem;
+  padding: 0.3rem 0.45rem;
+  border-radius: 6px;
+  background: rgba(10, 18, 30, 0.8);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.tileTip > span {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.tileTip b {
+  font-weight: 800;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (hover: hover) {
+  .tile:hover .tileTip {
+    display: flex;
+  }
+}
+
+.tileGold {
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.2;
+  color: #ffd43b;
+}
+
+.tileProfit,
+.tileLoss {
+  font-size: 13px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.tileProfit {
+  color: #4ade80;
+}
+
+.tileLoss {
+  color: #f87171;
+}
+
+.tileTip .tileProfit,
+.tileTip .tileLoss {
+  font-size: inherit;
+}
+
+.tileOff .tileGold,
+.tileOff .tileProfit,
+.tileOff .tileLoss,
+.tileLocked .tileGold,
+.tileLocked .tileProfit,
+.tileLocked .tileLoss {
+  color: #94a3b8;
+}
+
+.lockBadge {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  z-index: 2;
+  display: inline-flex;
+  color: #cbd5e1;
+}
+
+.tileFooter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-top: 0.7rem;
+}
+
+.tileHint {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* ─── 합계 + 선택한 레이드 ─── */
+/* 합계 식은 흰 상자에 담아 레이드 카드와 구분한다 */
+.equation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.5rem 1.25rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem 0.5rem;
+  border: 1.5px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--card-bg);
+  box-shadow: var(--shadow-sm);
+}
+
+.term {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.termLabel {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.termTotal {
+  font-size: clamp(2rem, 4vw, 2.6rem);
+  font-weight: 800;
+  line-height: 1.15;
+  color: var(--free-text);
+}
+
+.termValue {
+  font-size: clamp(1.4rem, 3vw, 1.8rem);
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.termNote {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-danger);
+  font-variant-numeric: tabular-nums;
+}
+
+.termHidden {
+  visibility: hidden;
+}
+
+.operator {
+  margin-top: 1.5rem;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--text-muted);
+}
+
+/* 레이드 카드 — 한 줄에 3장. 왼쪽 정사각 이미지, 오른쪽 이름·토글·난이도, 아래 세로 골드 계산 */
+.rowList {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.emptyNote {
+  margin: 0;
+  padding: 1.5rem 1rem;
+  border: 2px dashed var(--border-color);
+  border-radius: 12px;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.raidRow {
+  --row-image: 186px;
+  display: grid;
+  grid-template-columns: var(--row-image) minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+  border: 1px solid var(--border-color);
+  border-top: 4px solid var(--diff);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--card-bg);
+  box-shadow: var(--shadow-md);
+  color: var(--text-primary);
+}
+
+.raidRowImage {
+  position: relative;
+  width: var(--row-image);
+  height: var(--row-image);
+}
+
+.raidRowImage .raidImg {
+  object-position: center top;
+}
+
+/* 이미지 높이에 맞춰 세 줄을 위아래로 벌려 빈 곳 없이 채운다 */
+.raidRowBody {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.7rem;
+  min-width: 0;
+  padding: 0.85rem 0.8rem;
+}
+
+.pickTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 0;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+/* 제목·난이도는 왼쪽, 레벨은 오른쪽 끝 */
+.pickLevel {
+  margin-left: auto;
+}
+
+/* 밝은 카드에서는 진한 난이도 색, 다크 모드에서는 밝은 톤 */
+.raidRow .tileDiff {
+  color: var(--diff-text);
+}
+
+:global([data-theme="dark"]) .raidRow .tileDiff {
+  color: var(--diff-glass);
+}
+
+.pickToggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.raidRow .toggle {
+  flex: 1;
+  justify-content: space-between;
+  gap: 0.3rem;
+  padding: 0.2rem 0.6rem 0.2rem 0.2rem;
+  font-size: 0.85rem;
+}
+
+.raidRow .toggleOn {
+  padding: 0.2rem 0.2rem 0.2rem 0.6rem;
+}
+
+.raidRow .toggleKnob {
+  width: 1.3rem;
+  height: 1.3rem;
+}
+
+.diffPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.diffPill {
+  flex: 1;
+  padding: 0.42rem 0.3rem;
+  border: 1.5px solid var(--border-color);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.diffPill:hover:not(.diffPillActive) {
+  border-color: var(--diff);
+}
+
+.diffPillActive {
+  background: var(--diff);
+  border-color: var(--diff);
+  color: #fff;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
+}
+
+.diffPillLocked {
+  border-style: dashed;
+  color: var(--text-muted);
+}
+
+.diffPillActive.diffPillLocked {
+  color: #fff;
+}
+
+.calc {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.65rem 0.75rem 0.75rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.calcRows {
+  margin: 0;
+}
+
+.calcRows > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.15rem 0;
+}
+
+.calcRows dt {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.calcRows dd {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 카드 합계는 진한 띠로 강조한다 */
+.calcRows .calcResult {
+  margin-top: 0.4rem;
+  padding: 0.4rem 0.65rem;
+  border-radius: 8px;
+  background: var(--color-primary-dark);
+}
+
+.calcRows .calcResult dt {
+  font-weight: 700;
+  color: #fff;
+}
+
+.calcResult .calcFree {
+  color: #ffd43b;
+}
+
+.calcRows .calcResult dd {
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.calcFree {
+  color: var(--free-text);
+}
+
+.calcBound {
+  color: var(--bound-text);
+}
+
+.calcLoss {
+  color: var(--color-danger);
+}
+
+.raidRow .expandBtn {
+  margin-top: auto;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.85rem;
+}
+
+/* 토글 — 트랙 안에 글자가 들어가고, 손잡이가 왼쪽(꺼짐) / 오른쪽(켜짐)으로 간다 */
+.toggle {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  align-self: flex-start;
+  gap: 0.4rem;
+  padding: 0.16rem 0.65rem 0.16rem 0.16rem;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--bg-secondary);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.12);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.toggle:hover {
+  border-color: var(--color-primary);
+}
+
+.toggleOn,
+.toggleOn:hover {
+  flex-direction: row-reverse;
+  padding: 0.16rem 0.16rem 0.16rem 0.65rem;
+  border-color: #16a34a;
+  background: #16a34a;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+  color: #fff;
+}
+
+.toggleKnob {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  background: #94a3b8;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+.toggleOn .toggleKnob {
+  background: #fff;
+  color: #16a34a;
+}
+
+.pickLevelTag {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 2;
+  padding: 0.15rem 0.55rem;
+  border-radius: 6px;
+  background: #0f172a;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.expandBtn {
+  padding: 0.5rem 0.8rem;
+  border: 1.5px solid var(--color-primary);
+  border-radius: 8px;
+  background: var(--card-bg);
+  color: var(--color-primary);
+  font-size: 0.9rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.expandBtnOn {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+/* ─── 펼친 상세 ─── */
+.detail {
+  margin-top: 1rem;
+  padding: 0.85rem;
+  border: 3px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--card-body-bg-stone);
+}
+
+.detailHead {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.detailTitle {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.detailHead .expandBtn {
+  margin-left: auto;
+  padding: 0.3rem 0.7rem;
+}
+
+.gateGoldRow {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.2rem 1rem;
+  padding: 0.2rem 0.3rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.finalValue {
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.priceNote {
+  margin: 0.7rem 0 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  text-align: right;
+}
+
+/* ─── 태블릿 이하 ─── */
+@media (max-width: 991.98px) {
+  .levelRail {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+
+  .tileGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .tileGridCollapsed .tile:nth-child(n + 13):not(.tilePicked) {
+    display: none;
+  }
+
+  .rowList {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ─── 모바일 ─── */
+@media (max-width: 767.98px) {
+  /* 위 레이드 칸(한 줄 3칸)과 같은 크기 */
+  .raidRow {
+    --row-image: 112px;
+  }
+
+  .rowList {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .raidRowBody {
+    gap: 0.4rem;
+    padding: 0.5rem 0.55rem;
+  }
+
+  .raidRow .toggle {
+    font-size: 0.74rem;
+  }
+
+  .raidRow .toggleKnob {
+    width: 1.05rem;
+    height: 1.05rem;
+  }
+
+  .diffPill {
+    padding: 0.25rem 0.3rem;
+    font-size: 0.8rem;
+  }
+
+  .tileGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.45rem;
+  }
+
+  .tileGridCollapsed .tile:nth-child(n + 10):not(.tilePicked) {
+    display: none;
+  }
+
+  .tileGold,
+  .tileProfit,
+  .tileLoss {
+    font-size: 11.5px;
+  }
+
+  .tileMoreLabel {
+    font-size: 0.56rem;
+  }
+
+  .tileCheck,
+  .lockBadge {
+    top: 0.25rem;
+    right: 0.25rem;
+  }
+
+  .tileCheck {
+    width: 1.45rem;
+    height: 1.45rem;
+    font-size: 0.9rem;
+  }
+
+  .detail {
+    padding: 0.6rem 0.45rem;
+  }
+}

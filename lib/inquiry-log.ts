@@ -42,7 +42,9 @@ const PAGE_LABELS: Record<string, string> = {
   '/mypage': '숙제 체크',
   '/life-master': '생활 제작',
   '/hell-reward': '지옥 보상',
+  '/raid-gold': '레이드 클골 정리',
   '/weekly-gold': '주간 골드',
+  '/more-reward': '더보기 효율',
   '/engraving': '각인',
 };
 

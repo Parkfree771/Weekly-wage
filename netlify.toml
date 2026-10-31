@@ -47,7 +47,19 @@
 
 [[redirects]]
   from = "/expedition-gold"
-  to = "/weekly-gold"
+  to = "/raid-gold"
+  status = 301
+
+# ─── 주간 레이드·더보기 효율 -> 레이드 클골 정리 통합 ───
+# 두 페이지 기능을 한 페이지로 합쳤다. 검색 유입·즐겨찾기가 404 로 끊기지 않게 301 로 넘긴다.
+[[redirects]]
+  from = "/weekly-gold"
+  to = "/raid-gold"
+  status = 301
+
+[[redirects]]
+  from = "/more-reward"
+  to = "/raid-gold"
   status = 301
 
 # ─── 가이드 글 -> 도구 페이지 통합 (2026-08-21) ───
@@ -62,7 +74,7 @@
 
 [[redirects]]
   from = "/guide/weekly-gold"
-  to = "/weekly-gold"
+  to = "/raid-gold"
   status = 301
 
 [[redirects]]
@@ -72,7 +84,7 @@
 
 [[redirects]]
   from = "/guide/more-reward"
-  to = "/more-reward"
+  to = "/raid-gold"
   status = 301
 
 [[redirects]]

@@ -21,9 +21,14 @@ type CharacterSearchProps = {
   searched: boolean;
   autoSearchName?: string; // 저장된 설정 복원 시 자동 검색할 캐릭터명
   demoCharacters?: Character[]; // 검색 전에 결과 화면을 그대로 보여줄 예시 원정대
+  buttonColor?: string; // 검색 버튼 색 (기본 액센트)
 };
 
-export default function CharacterSearch({ onSelectionChange, onCharactersLoaded, onSearch, searched, autoSearchName, demoCharacters }: CharacterSearchProps) {
+// 같은 이름을 다시 검색하면 API 를 부르지 않는다 (페이지를 벗어나도 탭이 살아 있는 동안 유지)
+const SEARCH_CACHE_TTL = 5 * 60 * 1000;
+const searchCache = new Map<string, { at: number; characters: Character[] }>();
+
+export default function CharacterSearch({ onSelectionChange, onCharactersLoaded, onSearch, searched, autoSearchName, demoCharacters, buttonColor = 'var(--color-accent)' }: CharacterSearchProps) {
   const [characterName, setCharacterName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [characters, setCharacters] = useState<Character[]>(demoCharacters ?? []);
@@ -62,13 +67,30 @@ export default function CharacterSearch({ onSelectionChange, onCharactersLoaded,
     // demoCharacters 는 페이지 상수라 참조가 고정된다 (의존성에 넣어도 재실행되지 않음)
   }, [searched, demoCharacters]);
 
+  const applyCharacters = (list: Character[], name: string) => {
+    setCharacters(list);
+    setCheckedState(list.map((_, index) => index < 6));
+    setShowAll(false);
+    setRetryCount(0);
+    addToHistory(name);
+    setShowSuggestions(false);
+  };
+
   // 실제 검색 로직 (내부 함수)
   const doSearch = async (name: string) => {
-    setIsLoading(true);
     setError(null);
     onSearch();
 
-    const maxRetries = 3;
+    const cached = searchCache.get(name);
+    if (cached && Date.now() - cached.at < SEARCH_CACHE_TTL) {
+      applyCharacters(cached.characters, name);
+      return;
+    }
+
+    setIsLoading(true);
+
+    // 서버 일시 오류만 한 번 더 시도한다. 없는 캐릭터·요청 제한·점검은 다시 불러도 같은 결과라 바로 끝낸다.
+    const maxRetries = 1;
     let currentRetry = 0;
 
     while (currentRetry <= maxRetries) {
@@ -76,7 +98,7 @@ export default function CharacterSearch({ onSelectionChange, onCharactersLoaded,
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-        const response = await fetch(`/api/lostark?characterName=${encodeURIComponent(name)}`, {
+        const response = await fetch(`/api/lostark?characterName=${encodeURIComponent(name)}&siblingsOnly=1`, {
           signal: controller.signal
         });
 
@@ -84,43 +106,39 @@ export default function CharacterSearch({ onSelectionChange, onCharactersLoaded,
 
         if (!response.ok) {
           if (response.status === 404) {
-            throw new Error('캐릭터를 찾을 수 없습니다. 캐릭터명을 정확히 입력해주세요.');
+            throw Object.assign(new Error('캐릭터를 찾을 수 없습니다. 캐릭터명을 정확히 입력해주세요.'), { noRetry: true });
           }
           if (response.status === 429) {
-            throw new Error('요청이 너무 많습니다. 잠시 후 다시 시도해주세요.');
+            throw Object.assign(new Error('요청이 너무 많습니다. 잠시 후 다시 시도해주세요.'), { noRetry: true });
+          }
+          if (response.status === 503) {
+            const body = await response.json().catch(() => null);
+            throw Object.assign(new Error(body?.message || '로아 서버 점검 중입니다. 잠시 후 다시 시도해주세요.'), { noRetry: true });
           }
           if (response.status >= 500) {
             throw new Error('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
           }
-          throw new Error('예상치 못한 오류가 발생했습니다.');
+          throw Object.assign(new Error('예상치 못한 오류가 발생했습니다.'), { noRetry: true });
         }
 
         const data = await response.json();
 
-        if (data && data.siblings && Array.isArray(data.siblings)) {
-          if (data.siblings.length === 0) {
-            throw new Error('해당 캐릭터의 원정대 정보를 찾을 수 없습니다.');
-          }
-
-          const formattedCharacters: Character[] = data.siblings.map((sibling: Sibling) => ({
-            characterName: sibling.CharacterName,
-            itemLevel: parseFloat(sibling.ItemAvgLevel.replace(/,/g, '')),
-          }));
-          const sortedCharacters = formattedCharacters.sort((a, b) => b.itemLevel - a.itemLevel);
-          setCharacters(sortedCharacters);
-          const newCheckedState = sortedCharacters.map((_, index) => index < 6);
-          setCheckedState(newCheckedState);
-          setShowAll(false);
-          setRetryCount(0);
-          addToHistory(name);
-          setShowSuggestions(false);
-          break;
-        } else {
-          throw new Error('잘못된 데이터 형식입니다.');
+        // 로아 API 는 없는 캐릭터에 200 + 빈 값을 주기도 한다
+        if (!Array.isArray(data?.siblings) || data.siblings.length === 0) {
+          throw Object.assign(new Error('해당 캐릭터의 원정대 정보를 찾을 수 없습니다.'), { noRetry: true });
         }
+
+        const formattedCharacters: Character[] = data.siblings.map((sibling: Sibling) => ({
+          characterName: sibling.CharacterName,
+          itemLevel: parseFloat(sibling.ItemAvgLevel.replace(/,/g, '')),
+        }));
+        const sortedCharacters = formattedCharacters.sort((a, b) => b.itemLevel - a.itemLevel);
+        searchCache.set(name, { at: Date.now(), characters: sortedCharacters });
+        applyCharacters(sortedCharacters, name);
+        break;
       } catch (error: any) {
-        currentRetry++;
-        setRetryCount(currentRetry);
+        currentRetry = error.noRetry ? maxRetries + 1 : currentRetry + 1;
+        setRetryCount(error.noRetry ? 0 : currentRetry);
 
         if (error.name === 'AbortError') {
           setError('요청 시간이 초과되었습니다. 다시 시도해주세요.');
@@ -331,7 +349,7 @@ export default function CharacterSearch({ onSelectionChange, onCharactersLoaded,
                 disabled={isLoading}
                 className="character-search-button"
                 style={{
-                  backgroundColor: 'var(--color-accent)',
+                  backgroundColor: buttonColor,
                   padding: 'clamp(0.7rem, 2vw, 0.85rem) clamp(1.5rem, 3vw, 2rem)',
                   borderRadius: '12px',
                   fontSize: 'clamp(0.9rem, 2vw, 1rem)',
@@ -347,7 +365,7 @@ export default function CharacterSearch({ onSelectionChange, onCharactersLoaded,
                 {isLoading ? (
                   <>
                     <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                    검색 중{retryCount > 0 ? ` (${retryCount}/3)` : ''}...
+                    검색 중{retryCount > 0 ? ' (재시도)' : ''}...
                   </>
                 ) : (
                   '검색'

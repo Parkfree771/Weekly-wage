@@ -33,11 +33,8 @@ function getPageConfig(pathname: string): PageConfig {
   // appPromoTop 148 = 그 위 "장비 선택" 패널 상단과 나란히. 오른쪽 광고는 프로모 아래
   // 실측 간격(dockedAdMarginTop)으로 왼쪽 광고와 정확히 같은 높이에 맞춰짐.
   if (pathname === '/wangap') return { contentWidth: 1400, adTop: 409, appPromoTop: 148 };
-  // contentWidth 1180 = 실제 레이드 카드 그리드 폭(RaidCalculator.module.css .cardGrid max-width).
-  // 컨테이너 자체는 1800px지만 거의 텅 빈 바깥 여백이었고, 진짜 콘텐츠는 1180px에서 안 넘어감 —
-  // 그래서 레일이 카드보다 한참 바깥에 떠 있었음. 실제 카드 폭 기준으로 확 좁혀 붙임.
-  // adTop 300 = 제목·검색창을 지나 레이드 카드 영역 상단 부근(직접 요청으로 기존 110에서 크게 내림).
-  if (pathname === '/weekly-gold') return { contentWidth: 1180, adTop: 300 };
+  // contentWidth 1240 = 페이지 컨테이너 최대 폭. adTop 250 = 제목·검색창을 지나 첫 구역 상단 부근.
+  if (pathname === '/raid-gold') return { contentWidth: 1240, adTop: 250 };
   // adTop 200 = "메인 카드"(아이템 선택+가격 입력) 상자 상단과 나란히(기존 110에서 크게 내림).
   if (pathname === '/life-master') return { contentWidth: 1200, adTop: 200 };
   // adTop 300 = 원정대 탭·주간 수급 요약을 지나 첫 번째 캐릭터 카드 상단과 나란히(기존 130에서 크게 내림).
@@ -58,8 +55,6 @@ function getPageConfig(pathname: string): PageConfig {
   // adTop 290 = 갤러리 카드 첫 줄 상단(269) 기준에서 살짝 더 내림(왼쪽 광고 기준).
   // appPromoTop 8 = 레일 맨 위 가까이 — 오른쪽 광고가 왼쪽과 정확히 같은 높이가 되도록 실측 보정.
   if (pathname === '/package') return { contentWidth: 1400, adTop: 290, appPromoTop: 8 };
-  // adTop 250 = "더보기 손익 계산" 헤더와 나란히(87은 한참 부족했음 — 코드 추정이 실제보다 많이 작았음).
-  if (pathname === '/more-reward') return { contentWidth: 1100, adTop: 250 };
   // /engraving 은 자체 사이드바(유각 겹침 순위 + 정정 요청, 250px)를 본문 폭 안쪽 칸으로 들여
   // 쓴다(page.module.css 의 .results 2칸 그리드). 그래서 본문 덩어리 = .wrap 1406px 이 전부이고
   // 바깥으로 삐져나오는 게 없다 → main 이 1406 만 품으면 레일과 절대 안 겹친다.
@@ -104,7 +99,7 @@ const AD_ZOOM_COMPENSATE = 1 / DESKTOP_ZOOM;
 // 2026-09-18 GM노트로 난이도별 보상·칭호·제작소가 공개돼 본문을 채우면서 다시 넣었다.
 const RAIL_PAGES = new Set([
   '/', '/refining', '/wangap', '/package',
-  '/weekly-gold', '/life-master', '/mypage', '/more-reward',
+  '/raid-gold', '/life-master', '/mypage',
   '/cathedral', '/cerka', '/belgardin', '/hell-reward',
   '/extreme', '/engraving',
 ]);

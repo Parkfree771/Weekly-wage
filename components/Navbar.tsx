@@ -52,8 +52,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: '콘텐츠 보상',
     colorClass: 'nav-weekly',
     items: [
-      { href: '/weekly-gold', label: '주간 레이드', icon: '/nav/gold.webp' },
-      { href: '/more-reward', label: '더보기 효율 & 레이드 보상 정리', icon: '/nav/gold.webp' },
+      { href: '/raid-gold', label: '레이드 클골 정리', icon: '/nav/gold.webp' },
       { href: '/life-master', label: '생활 제작', icon: '/nav/life.webp' },
       { href: '/hell-reward', label: '지옥 보상', icon: '/nav/hell.webp' },
     ],

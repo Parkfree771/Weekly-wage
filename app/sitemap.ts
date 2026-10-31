@@ -14,8 +14,7 @@ const ROUTES: Array<{ path: string; changeFrequency: 'daily' | 'weekly' | 'month
   { path: '/mypage',             changeFrequency: 'weekly',  priority: 0.8 },
   // 아제나의 축복 — 유저 글이 아니라 코드로 박아둔 상시 판매 패키지라 URL 이 계속 유지된다.
   { path: '/package/azena-blessing', changeFrequency: 'daily', priority: 0.8 },
-  { path: '/weekly-gold',        changeFrequency: 'daily',   priority: 0.8 },
-  { path: '/more-reward',        changeFrequency: 'daily',   priority: 0.7 },
+  { path: '/raid-gold',          changeFrequency: 'daily',   priority: 0.8 },
   { path: '/life-master',        changeFrequency: 'daily',   priority: 0.7 },
   { path: '/extreme',            changeFrequency: 'weekly',  priority: 0.7 },
   { path: '/cathedral',          changeFrequency: 'weekly',  priority: 0.7 },

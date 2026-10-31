@@ -15,6 +15,8 @@ export async function GET(request: Request) {
   const withAvatars = searchParams.get('avatars') === '1';
   const withGems = searchParams.get('gems') === '1';
   const skipSiblings = searchParams.get('siblings') === '0';
+  // 원정대 검색은 siblings 만 쓴다 — 프로필·장비를 부르지 않아 외부 API 호출이 3회에서 1회로 준다.
+  const siblingsOnly = searchParams.get('siblingsOnly') === '1';
 
   if (!characterName) {
     return NextResponse.json({ message: '캐릭터명을 입력해주세요.' }, { status: 400 });
@@ -46,7 +48,30 @@ export async function GET(request: Request) {
     },
   };
 
+  // 같은 캐릭터를 짧은 시간 안에 여러 사용자가 조회하면 CDN이 흡수한다.
+  // 시뮬 캐릭터 불러오기는 방금 재련한 결과가 보여야 하므로 TTL을 길게 잡지 않는다.
+  const cdnHeaders = {
+    'Cache-Control': 'public, max-age=0, must-revalidate',
+    // durable: 엣지 노드마다 따로 캐시하지 않고 전 세계가 한 사본을 쓴다 (태그 퍼지는 그대로 동작)
+    'Netlify-CDN-Cache-Control': 'public, durable, s-maxage=120, stale-while-revalidate=300',
+    'Netlify-Vary': 'query',
+    // 갱신 시 태그 퍼지로 지울 수 있도록 캐릭터별 태그를 단다
+    'Netlify-Cache-Tag': characterCdnTag(characterName),
+  };
+
   try {
+    if (siblingsOnly) {
+      const response = await fetch(siblingsUrl, options);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        return NextResponse.json(
+          { message: errorData?.Message || '캐릭터 정보를 가져오는 데 실패했습니다.' },
+          { status: response.status },
+        );
+      }
+      return NextResponse.json({ siblings: await response.json() }, { headers: cdnHeaders });
+    }
+
     // 프로필 정보, 형제 캐릭터 정보, 장비 정보를 동시에 요청합니다.
     const [profileResponse, siblingsResponse, equipmentResponse, avatarsResponse, gemsResponse] = await Promise.all([
       fetch(profileUrl, options),
@@ -90,8 +115,6 @@ export async function GET(request: Request) {
       ...(withGems ? { gems: gemsData } : {}),
     };
 
-    // 같은 캐릭터를 짧은 시간 안에 여러 사용자가 조회하면 CDN이 흡수한다.
-    // 시뮬 캐릭터 불러오기는 방금 재련한 결과가 보여야 하므로 TTL을 길게 잡지 않는다.
     if (refresh) {
       // 갱신: 이 캐릭터로 CDN에 남아 있던 캐시(이 라우트 + 캐릭터 상세 라우트, 같은 태그)를
       // 지워서 이후 조회가 전부 최신을 받게 한다. 서버리스 freeze 대비 반드시 await.
@@ -101,16 +124,7 @@ export async function GET(request: Request) {
       });
     }
 
-    return NextResponse.json(responseData, {
-      headers: {
-        'Cache-Control': 'public, max-age=0, must-revalidate',
-        // durable: 엣지 노드마다 따로 캐시하지 않고 전 세계가 한 사본을 쓴다 (태그 퍼지는 그대로 동작)
-        'Netlify-CDN-Cache-Control': 'public, durable, s-maxage=120, stale-while-revalidate=300',
-        'Netlify-Vary': 'query',
-        // 갱신 시 태그 퍼지로 지울 수 있도록 캐릭터별 태그를 단다
-        'Netlify-Cache-Tag': characterCdnTag(characterName),
-      },
-    });
+    return NextResponse.json(responseData, { headers: cdnHeaders });
 
   } catch {
     return NextResponse.json({ message: 'API 요청 중 알 수 없는 오류가 발생했습니다.' }, { status: 500 });

@@ -63,7 +63,7 @@ type Stage = {
   name: string;
   /** 카드 배지에 쓰는 짧은 난이도명 */
   diff: string;
-  /** 사이트 공통 난이도 색 — 주간 골드(weekly-gold.module.css 난이도 배지)와 같은 값. 채운 배경 + 흰 글씨 */
+  /** 사이트 공통 난이도 색 — 레이드 클골 정리(DIFF_COLORS)와 같은 값. 채운 배경 + 흰 글씨 */
   diffColor: string;
   level: number;
   /** 매주 원정대 1회 */

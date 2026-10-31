@@ -225,7 +225,7 @@ export default function RootLayout({
             "description": "로아로골 - 로아 패키지 효율 실시간 계산과 로아 시세 확인 사이트! 캐시샵 패키지 골드 가치, 로아 거래소 실시간 가격, 과거 시세 차트, 재련 재료·각인서·보석 시세를 한눈에 확인하세요.",
             "potentialAction": {
               "@type": "SearchAction",
-              "target": `${SITE_URL}/weekly-gold?search={search_term_string}`,
+              "target": `${SITE_URL}/raid-gold?search={search_term_string}`,
               "query-input": "required name=search_term_string"
             }
           }) }}

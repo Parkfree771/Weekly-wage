@@ -25,7 +25,7 @@ export type GoldSplit = { free: number; bound: number; total: number };
 export type SortBasis = 'total' | 'free';
 
 // 캐릭터당 주간 골드를 받을 수 있는 레이드 수
-const GOLD_RAID_LIMIT = 3;
+export const GOLD_RAID_LIMIT = 3;
 // 원정대에서 주간 골드가 인정되는 캐릭터 수
 const GOLD_CHAR_LIMIT = 6;
 
