@@ -65,6 +65,8 @@ export default function HeroPackageCard({ post }: { post: PackagePost }) {
             );
           })}
           {rest > 0 && <span className={styles.pkgMore}>+{rest}</span>}
+          {/* 모바일 — 아이콘 4개까지만, 넘치면 "…" (CSS 로 5번째를 숨기고 이 표시를 켠다) */}
+          {ordered.length > 4 && <span className={styles.pkgMoreMobile}>…</span>}
         </span>
         <span className={styles.pkgNumbers}>
           <span className={`font-numeric ${styles.pkgPrice}`}>{post.royalCrystalPrice.toLocaleString('ko-KR')}원</span>

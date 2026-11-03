@@ -237,6 +237,10 @@
   color: var(--text-secondary);
 }
 
+.pkgMoreMobile {
+  display: none;
+}
+
 .pkgMore {
   align-self: center;
   font-size: 0.74rem;
@@ -370,11 +374,13 @@
     scroll-padding-left: 12px;
   }
 
+  /* 카드 폭 고정 160 — 360px 폰에서도 2장이 다 보이고, 넘치면 가로로 넘긴다(스크롤 막대 없음).
+     좁아진 만큼 3줄: 제목 / 아이콘(최대 4 + …) / 가격·이득률 (앱 MarketHero 와 같은 구성) */
   .pkg {
-    width: 300px;
-    height: 121px;
+    width: 160px;
+    height: 124px;
     gap: 6px;
-    padding: 12px 14px;
+    padding: 10px;
     border-radius: 18px;
   }
 
@@ -386,19 +392,52 @@
     font-size: 0.9rem;
   }
 
+  .pkgBody {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+
   .pkgItems {
     overflow: hidden;
+    gap: 4px;
+  }
+
+  .pkgItem:nth-child(n + 5),
+  .pkgMore {
+    display: none;
+  }
+
+  .pkgMoreMobile {
+    display: block;
+    align-self: center;
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: var(--text-secondary);
   }
 
   .pkgItem img {
-    width: 34px;
-    height: 34px;
-    border-radius: 9px;
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
     padding: 2px;
   }
 
+  /* 가격·라벨은 왼쪽 두 줄, 이득률은 오른쪽 */
+  .pkgNumbers {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "price benefit" "label benefit";
+    justify-items: start;
+    align-items: end;
+    column-gap: 6px;
+  }
+
+  .pkgPrice { grid-area: price; }
+  .pkgBenefitLabel { grid-area: label; }
+
   .pkgBenefit {
-    font-size: 1.2rem;
+    grid-area: benefit;
+    font-size: 1.1rem;
   }
 
   .avatarOverlay {
