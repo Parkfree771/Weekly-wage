@@ -1,7 +1,7 @@
 import { getAdminFirestore } from '@/lib/firebase-admin';
 import { applyStatsToPosts, prefetchPackageStats } from '@/lib/package-stats';
 import { renewPostIcons } from '@/lib/package-shared';
-import type { PackagePost } from '@/types/package';
+import type { AvatarLook, PackagePost } from '@/types/package';
 import PackageGalleryClient from './PackageGalleryClient';
 
 // ISR: 갤러리 글을 서버에서 한 번에 다 읽어 1시간 재사용한다.
@@ -26,6 +26,36 @@ function toISO(value: unknown): string | null {
   const v = value as { toDate?: () => Date } | null | undefined;
   if (v && typeof v.toDate === 'function') return v.toDate().toISOString();
   return null;
+}
+
+// 아바타 탭 카드에 얹는 인기 착장 수
+const AVATAR_TOP_LOOKS = 4;
+
+/**
+ * 아바타 글마다 좋아요 상위 착장 몇 개 + 착장 수를 붙인다. 아바타 글 수만큼 (착장 4건 + 집계 1회) 읽기 —
+ * 갤러리 재생성 1회당이라 방문자 수와 무관하다. 실패해도 갤러리는 그대로(카드가 착장 없이 나간다).
+ */
+async function attachAvatarLooks(posts: PackagePost[]): Promise<PackagePost[]> {
+  const db = getAdminFirestore();
+  return Promise.all(posts.map(async (p) => {
+    if (p.packageType !== '아바타') return p;
+    try {
+      const col = db.collection('packagePosts').doc(p.id).collection('avatarLooks');
+      const [top, count] = await Promise.all([
+        // 정렬 필드 하나만 — 둘이면 복합 색인을 따로 만들어야 한다
+        col.orderBy('likeCount', 'desc').limit(AVATAR_TOP_LOOKS).get(),
+        col.count().get(),
+      ]);
+      const avatarTopLooks = top.docs.map((d) => {
+        const data = d.data();
+        return { ...data, id: d.id, createdAt: toISO(data.createdAt) } as AvatarLook;
+      });
+      return { ...p, avatarTopLooks, avatarLookCount: count.data().count };
+    } catch (err) {
+      console.error('아바타 착장 조회 실패:', p.id, err);
+      return p;
+    }
+  }));
 }
 
 type GalleryData = {
@@ -61,7 +91,7 @@ async function loadGallery(): Promise<GalleryData | null> {
     // 조회·따봉·흠은 packageStats 문서가 진실이다. 글 문서의 카운터는 2026-08-26 에 멈춰 있어 여기서 갈아 끼운다
     // — 이러지 않으면 첫 화면이 옛날 숫자로 떴다가 클라이언트 조회가 오면 확 바뀐다.
     // 집계 문서 1회 읽기로 글 전체를 덮으므로, 목록의 모든 글이 처음부터 최신 숫자를 들고 나간다.
-    const posts = await applyStatsToPosts(rawPosts, statsPromise);
+    const posts = await attachAvatarLooks(await applyStatsToPosts(rawPosts, statsPromise));
     return { posts, statsAt: Date.now() };
   } catch (err) {
     // 실패는 던진다 — null 로 넘기면 "글 없는 갤러리" 가 1시간 ISR 에 실리고, 그동안 방문자마다

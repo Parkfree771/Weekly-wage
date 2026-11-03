@@ -6,6 +6,8 @@ import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { Container } from 'react-bootstrap';
 import PackageGalleryCard from '@/components/package/PackageGalleryCard';
+import AvatarFeatureCard from '@/components/package/AvatarFeatureCard';
+import av from '@/components/package/Avatar.module.css';
 import ClosedShopCard from '@/components/package/ClosedShopCard';
 import { useNoPeon } from '@/components/package/useNoPeon';
 import PeonBasisButton from '@/components/package/PeonBasisButton';
@@ -191,6 +193,21 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
   // 입력한 자릿수만큼만 넓힌다 — 고정 폭이면 뒷자리가 잘리거나 빈칸이 남는다
   const rateInputWidth = `calc(${Math.max(4, commonRateText.length)}ch + 0.4rem)`;
 
+  // 패키지 효율 / 아바타 탭 — 같은 posts 를 나눠 보여줄 뿐이라 조회가 늘지 않는다.
+  // 주소(?tab=avatar)와 맞춰 둔다 — 상세에서 뒤로 오면 아바타 탭으로 돌아온다.
+  // useSearchParams 는 ISR 페이지 전체를 클라이언트 렌더로 떨어뜨려 쓰지 않고, 마운트 뒤 주소를 읽는다.
+  const [tab, setTab] = useState<'pkg' | 'avatar'>('pkg');
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('tab') === 'avatar') setTab('avatar');
+  }, []);
+  const changeTab = (next: 'pkg' | 'avatar') => {
+    setTab(next);
+    const url = new URL(window.location.href);
+    if (next === 'avatar') url.searchParams.set('tab', 'avatar');
+    else url.searchParams.delete('tab');
+    window.history.replaceState(window.history.state, '', url.toString());
+  };
+
   // 화면 기준 정렬·필터 (Firestore 재조회 없음)
   const [view, setView] = useState<GalleryView>('createdAt');
   const sortBy: GallerySort = isSaleView(view) ? 'createdAt' : view;
@@ -289,8 +306,16 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
   useEffect(() => subscribeStats(() => setPosts((prev) => mergeKnownStats(prev))), []);
 
   // 이미 받아둔 posts 위에서만 도는 정렬·필터. 여기서 네트워크를 타는 건 아무것도 없다.
+  // 효율 탭은 아바타 글을 뺀다(효율이 없는 글)
+  const pkgPosts = useMemo(() => posts.filter((p) => p.packageType !== '아바타'), [posts]);
+  // 아바타 탭 — 판매 중을 앞으로, 그 안에서는 업로드순 그대로
+  const avatarPosts = useMemo(() => {
+    const list = posts.filter((p) => p.packageType === '아바타');
+    return [...list].sort((a, b) => Number(isSaleEnded(a)) - Number(isSaleEnded(b)));
+  }, [posts]);
+
   const visiblePosts = useMemo(() => {
-    let filtered = posts;
+    let filtered = pkgPosts;
 
     if (saleFilter !== 'all') {
       const wantEnded = saleFilter === 'ended';
@@ -319,7 +344,7 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
     const rateOverride = deferredCommonRate > 0 ? 100 / deferredCommonRate : 0;
     const eff = new Map(filtered.map((p) => [p.id, calculatePostEfficiency(p, effectivePrices, rateOverride, noPeon)]));
     return [...filtered].sort((a, b) => eff.get(b.id)! - eff.get(a.id)!);
-  }, [posts, saleFilter, sortBy, effectivePrices, deferredCommonRate, noPeon]);
+  }, [pkgPosts, saleFilter, sortBy, effectivePrices, deferredCommonRate, noPeon]);
 
   // 필터를 걸었을 때 "몇 개 중 몇 개" — 이제 목록 전체가 기준이다
   const isNarrowed = saleFilter !== 'all';
@@ -423,6 +448,39 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
           </p>
         </div>
 
+        <div className={av.galleryTabs} role="tablist" aria-label="패키지 종류">
+          <button type="button" role="tab" aria-selected={tab === 'pkg'}
+            className={`${av.galleryTab} ${tab === 'pkg' ? av.galleryTabOn : ''}`} onClick={() => changeTab('pkg')}>
+            패키지 효율
+          </button>
+          <button type="button" role="tab" aria-selected={tab === 'avatar'}
+            className={`${av.galleryTab} ${tab === 'avatar' ? av.galleryTabOn : ''}`} onClick={() => changeTab('avatar')}>
+            아바타
+          </button>
+        </div>
+
+        {tab === 'avatar' ? (
+          <>
+            <div className={av.avatarTabBar}>
+              <span className={av.avatarTabCount}>아바타 패키지 {avatarPosts.length}개</span>
+              <Link href="/package/register" className={styles.registerLink} prefetch={false}>
+                + 등록하기
+              </Link>
+            </div>
+            {avatarPosts.length === 0 ? (
+              <div className={styles.emptyState}>
+                <p className={styles.emptyText}>아직 등록된 아바타 패키지가 없습니다</p>
+              </div>
+            ) : (
+              avatarPosts.map((post) => <AvatarFeatureCard key={post.id} post={post} />)
+            )}
+            <DesktopBannerAd tall refreshKey="ad-bottom-desktop-avatar" />
+            <div className={`d-block d-md-none ${styles.mobileAdSlot} ${styles.belowPagerAd}`}>
+              <AdBanner thin />
+            </div>
+          </>
+        ) : (
+        <>
         <div className={styles.controls}>
           <div className={styles.filterRow}>
             <select
@@ -478,7 +536,7 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
             )}
             {isNarrowed && (
               <span className={styles.filterCount}>
-                {posts.length}개 중 {visiblePosts.length}개
+                {pkgPosts.length}개 중 {visiblePosts.length}개
               </span>
             )}
           </div>
@@ -589,7 +647,7 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
 
         {loading ? (
           <div className={styles.galleryGrid}>{renderSkeletons()}</div>
-        ) : posts.length === 0 ? (
+        ) : pkgPosts.length === 0 ? (
           <div className={styles.emptyState}>
             <p className={styles.emptyText}>아직 등록된 패키지가 없습니다</p>
             <p className={styles.emptySubtext}>
@@ -732,6 +790,8 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
               </div>
             )}
           </>
+        )}
+        </>
         )}
 
       </div>

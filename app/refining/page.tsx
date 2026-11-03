@@ -10,7 +10,6 @@ import {
   type EquipmentAPIResponse
 } from '@/lib/equipmentParser';
 import RefiningCalculator from '@/components/refining/RefiningCalculator';
-import { parseCombatPowerBase, type CombatPowerBase } from '@/lib/combatPower';
 import dynamic from 'next/dynamic';
 import AdBanner from '@/components/ads/AdBanner';
 import styles from './refining.module.css';
@@ -75,7 +74,6 @@ export default function RefiningPage() {
   const [searched, setSearched] = useState(true);
   const [characterInfo, setCharacterInfo] = useState<{ name: string; itemLevel: string; image?: string } | null>(DEFAULT_CHARACTER_INFO);
   // 전투력 계산 기준값 — 실제 캐릭터를 검색해야 생긴다 (기본 장비 상태에선 null)
-  const [combatPowerBase, setCombatPowerBase] = useState<CombatPowerBase | null>(null);
 
   // 자동완성
   const { history, addToHistory, getSuggestions } = useSearchHistory();
@@ -97,10 +95,10 @@ export default function RefiningPage() {
     setError(null);
 
     try {
-      // avatars/gems — 전투력 상승량 계산에 아바타 주스탯 %와 보석 기본공격력 %가 필요하다.
-      // siblings=0 — 이 페이지는 원정대 목록을 안 써서 외부 API 호출을 하나 아낀다. (lib/combatPower)
+      // 아이템 레벨(프로필)과 부위별 강화 단계(장비)만 받는다.
+      // siblings=0 — 이 페이지는 원정대 목록을 안 써서 외부 API 호출을 하나 아낀다.
       const response = await fetch(
-        `/api/lostark?characterName=${encodeURIComponent(characterName.trim())}&avatars=1&gems=1&siblings=0`,
+        `/api/lostark?characterName=${encodeURIComponent(characterName.trim())}&siblings=0`,
       );
 
       if (!response.ok) {
@@ -134,9 +132,6 @@ export default function RefiningPage() {
           image: data.profile.CharacterImage || undefined
         });
       }
-
-      // 전투력 상승량 계산 기준값 (읽지 못하면 전투력 섹션이 그냥 안 나온다)
-      setCombatPowerBase(parseCombatPowerBase(data.equipment, data.profile, data.avatars, data.gems));
 
       setEquipments(parsedEquipments);
       addToHistory(characterName.trim());
@@ -308,7 +303,6 @@ export default function RefiningPage() {
                   equipments={equipments}
                   searched={searched}
                   characterInfo={characterInfo}
-                  combatPowerBase={combatPowerBase}
                 />
               )}
               {mode === 'normal' && (

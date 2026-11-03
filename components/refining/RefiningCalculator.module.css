@@ -354,12 +354,6 @@
   gap: 0.4rem;
 }
 
-/* 전투력 계산에서 빠진 목표(완갑·상급 재련)가 있을 때의 안내 */
-.combatPowerNote {
-  font-size: clamp(0.68rem, 1.4vw, 0.78rem);
-  color: var(--text-muted);
-  line-height: 1.4;
-}
 
 .levelBadge {
   background: #10b981;
@@ -404,10 +398,6 @@
     font-size: 0.68rem;
     padding: 0.18rem 0.42rem;
   }
-
-  .combatPowerNote {
-    font-size: 0.66rem;
-  }
 }
 
 @media (max-width: 576px) {
@@ -445,10 +435,6 @@
     font-size: 0.62rem;
     padding: 0.15rem 0.36rem;
     border-radius: 8px;
-  }
-
-  .combatPowerNote {
-    font-size: 0.62rem;
   }
 }
 

@@ -15,6 +15,12 @@ import PackageForm, {
   type PackageFormInitial,
   type PackageFormSubmitData,
 } from '@/components/package/PackageForm';
+import AvatarPackageForm, {
+  postToAvatarFormInitial,
+  type AvatarFormInitial,
+  type AvatarFormSubmitData,
+} from '@/components/package/AvatarPackageForm';
+import type { PackagePost } from '@/types/package';
 import styles from '../../package.module.css';
 
 export default function PackageEditPage() {
@@ -27,6 +33,9 @@ export default function PackageEditPage() {
   const [notFound, setNotFound] = useState(false);
   // 폼 초기값 — 로드가 끝난 뒤에 폼을 마운트한다 (폼 상태 초기화는 마운트 1회라서)
   const [initial, setInitial] = useState<PackageFormInitial | null>(null);
+  // 아바타 글은 구성품 폼이 아니라 아바타 폼으로 고친다
+  const [avatarPost, setAvatarPost] = useState<PackagePost | null>(null);
+  const [avatarInitial, setAvatarInitial] = useState<AvatarFormInitial | null>(null);
 
   useEffect(() => {
     if (!postId || !user) return;
@@ -37,7 +46,12 @@ export default function PackageEditPage() {
           setNotFound(true);
           return;
         }
-        setInitial(postToFormInitial(post));
+        if (post.packageType === '아바타') {
+          setAvatarPost(post);
+          setAvatarInitial(postToAvatarFormInitial(post));
+        } else {
+          setInitial(postToFormInitial(post));
+        }
       } catch (err) {
         console.error('게시물 로딩 실패:', err);
         setNotFound(true);
@@ -74,6 +88,35 @@ export default function PackageEditPage() {
     router.push(`/package/${postId}`);
   };
 
+  const handleAvatarSubmit = async (data: AvatarFormSubmitData) => {
+    if (!user || !avatarPost) throw new Error('로그인이 필요합니다.');
+    const oldImage = avatarPost.avatarImage;
+    let avatarImage = oldImage;
+    if (data.newImageFile) {
+      const { uploadAvatarImage } = await import('@/lib/avatar-image');
+      // 지금 로그인한 사람 폴더에 올린다 — storage.rules 가 "자기 uid 폴더에만 쓰기" 라서
+      avatarImage = await uploadAvatarImage(data.newImageFile, `avatarPackages/${user.uid}`);
+    }
+    await updatePackagePost(postId, {
+      title: data.title,
+      royalCrystalPrice: data.price,
+      priceCurrency: 'cash',
+      avatarImage,
+      isNewRelease: data.isNewRelease,
+      eventTheme: data.eventTheme ?? null,
+      saleStartAt: data.saleStartAt,
+      saleEndAt: data.saleEndAt,
+      saleClosed: data.saleClosed,
+    });
+    // 새 이미지가 글에 저장된 뒤에 옛 이미지를 지운다
+    if (data.newImageFile && oldImage) {
+      const { deleteAvatarImage } = await import('@/lib/avatar-image');
+      await deleteAvatarImage(oldImage);
+    }
+    await revalidatePackage(postId);
+    router.push(`/package/${postId}`);
+  };
+
   if (!user) {
     return (
       <Container fluid style={{ maxWidth: '1680px' /* 등록 화면과 같은 넓은 폭 */ }}>
@@ -94,6 +137,19 @@ export default function PackageEditPage() {
       <Container fluid style={{ maxWidth: '1100px' }}>
         <div className={styles.registerWrapper} style={{ textAlign: 'center', paddingTop: '3rem' }}>
           <Spinner animation="border" style={{ color: 'var(--color-primary)' }} />
+        </div>
+      </Container>
+    );
+  }
+
+  if (!notFound && avatarInitial) {
+    return (
+      <Container fluid style={{ maxWidth: '1100px' }}>
+        <div className={styles.registerWrapper}>
+          <div className={styles.pageHeader}>
+            <h1 className={styles.pageTitle}>아바타 패키지 수정</h1>
+          </div>
+          <AvatarPackageForm mode="edit" initial={avatarInitial} onSubmit={handleAvatarSubmit} />
         </div>
       </Container>
     );

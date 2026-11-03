@@ -15,14 +15,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
   try {
-    const { postId } = await request.json();
+    const { postId, detailOnly } = await request.json();
     if (!postId || typeof postId !== 'string' || !POST_ID_RE.test(postId)) {
       return NextResponse.json({ error: 'postId required' }, { status: 400 });
     }
 
     revalidatePath(`/package/${postId}`);
-    // 새 글·제목 변경·삭제가 갤러리 목록에 바로 보이게
-    revalidatePath('/package');
+    // 새 글·제목 변경·삭제가 갤러리 목록에 바로 보이게. 상세만 바뀌는 변경(아바타 착장)은 건너뛴다
+    if (detailOnly !== true) revalidatePath('/package');
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: 'failed' }, { status: 500 });

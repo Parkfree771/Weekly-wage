@@ -1,19 +1,19 @@
 :root {
   --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 243, 248, 251;
-  --background-end-rgb: 236, 243, 247;
+  /* 2026-11 아바타 탭 시안 팔레트(사용자 확정) — 차분한 회청 바탕 + 선명한 파랑 버튼 */
+  --background-start-rgb: 243, 245, 249;
+  --background-end-rgb: 243, 245, 249;
 
   /* 60-30-10 Design System */
-  /* 30% - Primary Sea Blue */
-  --color-primary: #13609c;
-  /* 알데바란의 바다(2026 겨울) 하늘 위쪽 짙은 청색. rgba(var(--brand-rgb), a) 로 투명도만 바꿔 쓴다 */
-  --brand-rgb: 19, 96, 156;
+  /* 30% - Primary Blue (2026-11 시안 팔레트). rgba(var(--brand-rgb), a) 로 투명도만 바꿔 쓴다 */
+  --color-primary: #4b6bfb;
+  --brand-rgb: 75, 107, 251;
   --color-primary-light: rgba(var(--brand-rgb), 0.08);
-  --color-primary-dark: #0d4777;
-  /* 10% - Accent Orange */
-  --color-accent: #e8722a;
-  --color-accent-light: rgba(232, 114, 42, 0.1);
-  --color-accent-dark: #d4621e;
+  --color-primary-dark: #3953d6;
+  /* 10% - Accent — 버튼·활성 탭. 시안대로 주황 대신 같은 파랑 계열로 맞춘다 */
+  --color-accent: #4b6bfb;
+  --color-accent-light: rgba(75, 107, 251, 0.1);
+  --color-accent-dark: #3953d6;
 
   /* 골드 금액 글자색 — 액센트(주황)와 따로 둔다.
      액센트는 판·테두리·버튼을 칠하는 색이라 글자로 쓰면 주황으로 읽히는데,
@@ -25,34 +25,34 @@
   --gold-text: #8f6a00;
 
   /* Legacy brand aliases */
-  --brand-hue: 206;
-  --brand-saturation: 78%;
-  --brand-lightness: 34%;
+  --brand-hue: 229;
+  --brand-saturation: 96%;
+  --brand-lightness: 64%;
   --brand-primary: var(--color-primary);
   --brand-primary-light: var(--color-primary-light);
   --brand-primary-dark: var(--color-primary-dark);
 
-  --text-primary: #14222e;
-  --text-secondary: #34485a;
-  --text-muted: #617689;
-  --text-disabled: #a2b1bd;
-  --border-color: rgba(var(--brand-rgb), 0.12);
+  --text-primary: #1d2433;
+  --text-secondary: #5b6475;
+  --text-muted: #8a93a5;
+  --text-disabled: #b3bac7;
+  --border-color: #e3e7ef;
   --input-bg: #ffffff;
   --card-bg: #ffffff;
-  --card-body-bg-blue: #f1f6f9;
-  --card-body-bg-stone: #f5f7f8;
+  --card-body-bg-blue: #f7f8fb;
+  --card-body-bg-stone: #f7f8fb;
   --card-body-bg-orange: #fef8f4;
   /* 트랙·패널 등 카드보다 한 단계 안쪽 표면. 정의가 없어서 여러 모듈이 폴백(#f5f5f5)으로 새고 있었다 */
-  --bg-secondary: #f1f6f9;
+  --bg-secondary: #f7f8fb;
   /* Elevation System (Neo-Skeuomorphism) */
-  --shadow-sm: 0 1px 2px 0 rgba(16, 58, 92, 0.06), 0 1px 3px 0 rgba(16, 58, 92, 0.08);
-  --shadow-md: 0 6px 16px -6px rgba(16, 58, 92, 0.16), 0 2px 4px -2px rgba(16, 58, 92, 0.06);
-  --shadow-lg: 0 14px 32px -10px rgba(16, 58, 92, 0.22), 0 4px 10px -4px rgba(16, 58, 92, 0.08);
-  --shadow-xl: 0 24px 48px -12px rgba(16, 58, 92, 0.28), 0 8px 16px -8px rgba(16, 58, 92, 0.1);
+  --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.04), 0 1px 3px 0 rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 6px 16px -6px rgba(15, 23, 42, 0.12), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
+  --shadow-lg: 0 14px 32px -10px rgba(15, 23, 42, 0.18), 0 4px 10px -4px rgba(15, 23, 42, 0.07);
+  --shadow-xl: 0 24px 48px -12px rgba(15, 23, 42, 0.22), 0 8px 16px -8px rgba(15, 23, 42, 0.08);
 
   /* Generic card backgrounds (fallback) */
   --card-header-bg: #ffffff;
-  --card-body-bg: #f1f6f9;
+  --card-body-bg: #f7f8fb;
 
   /* Card Header Backgrounds */
   --card-header-bg-blue: #ffffff;
@@ -65,13 +65,13 @@
   --primary-dark: var(--color-primary-dark);
 
   /* Text Gradients */
-  --gradient-text-blue: linear-gradient(135deg, #13609c 0%, #1b8fb8 100%);
-  --gradient-text-stone: linear-gradient(135deg, #34485a 0%, #617689 100%);
-  --gradient-text-violet: linear-gradient(135deg, #13609c 0%, #3aa0c8 100%);
+  --gradient-text-blue: linear-gradient(135deg, #4b6bfb 0%, #6b84fc 100%);
+  --gradient-text-stone: linear-gradient(135deg, #5b6475 0%, #8a93a5 100%);
+  --gradient-text-violet: linear-gradient(135deg, #4b6bfb 0%, #8b5cf6 100%);
   --gradient-text-orange: linear-gradient(135deg, #e8722a 0%, #f59e0b 100%);
 
   /* Footer */
-  --footer-text-primary-gradient: linear-gradient(135deg, #13609c 0%, #1b8fb8 100%);
+  --footer-text-primary-gradient: linear-gradient(135deg, #4b6bfb 0%, #6b84fc 100%);
 
   /* Profit/Loss Colors */
   --profit-color: #10b981;
@@ -120,7 +120,7 @@
   --bs-body-color: var(--text-primary);
   --bs-body-bg: var(--card-bg);
   --bs-emphasis-color: var(--text-primary);
-  --bs-emphasis-color-rgb: 20, 34, 46;
+  --bs-emphasis-color-rgb: 29, 36, 51;
 }
 
 [data-theme="dark"] {
@@ -670,8 +670,9 @@ html {
 /* Main Navbar */
 .main-navbar {
   background: #ffffff;
-  border-bottom: 2px solid rgba(var(--brand-rgb), 0.28);
-  box-shadow: 0 2px 6px 0 rgba(var(--brand-rgb), 0.12), 0 1px 0 0 rgba(var(--brand-rgb), 0.08);
+  /* 2026-11 시안 팔레트 — 색 띠(2px)·번진 그림자 대신 가는 회색 선 한 줄 */
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: none;
   height: 52px;
   z-index: 1030;
   display: flex;

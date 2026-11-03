@@ -75,10 +75,12 @@ type Props = {
   size?: number;
   /** 알약 안에 "따봉"/"흠" 글자를 같이 쓴다 (상세처럼 여유가 있는 곳) */
   showLabels?: boolean;
+  /** 따봉만 — 아바타 글은 '흠' 을 두지 않는다(남의 착장에 부정 반응은 상처라서) */
+  likeOnly?: boolean;
   className?: string;
 };
 
-export default function ReactionBar({ postId, likeCount, sosoCount, size = 24, showLabels = false, className }: Props) {
+export default function ReactionBar({ postId, likeCount, sosoCount, size = 24, showLabels = false, likeOnly = false, className }: Props) {
   // 상세는 SSR 이라 localStorage 를 초기값에서 읽으면 서버/클라 첫 화면이 어긋난다 — 마운트 뒤에 읽는다
   const [mine, setMine] = useState<ReactionKey | null>(null);
   // 세션 캐시(package-stats-client)가 아는 최신 서버값. prop 은 ISR 스냅샷이거나 CDN 300초 캐시라
@@ -173,7 +175,7 @@ export default function ReactionBar({ postId, likeCount, sosoCount, size = 24, s
 
   return (
     <div className={`${styles.reactions} ${className ?? ''}`} data-nonav>
-      {REACTIONS.map((r) => {
+      {REACTIONS.filter((r) => !likeOnly || r.key === 'like').map((r) => {
         const on = mine === r.key;
         const count = counts[r.key];
         return (

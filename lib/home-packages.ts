@@ -1,4 +1,4 @@
-// 홈 맨 위 띠의 "판매 중 패키지" (서버 전용).
+// 홈 맨 위 띠의 "판매 중 패키지" (서버 전용) — 일반 패키지와 아바타 패키지를 같이, 최신 몇 개만.
 //
 // 최근 글 몇 개만 읽어 판매 중인 것만 남긴다 — 판매 중인 패키지는 거의 항상 최근 글이다.
 // 홈은 시세 크론이 올릴 때만 재생성되므로(app/page.tsx) 읽기는 "재생성 1회당 SCAN 건"이고 방문자 수와 무관하다.
@@ -18,7 +18,7 @@ function toISO(value: unknown): string | null {
   return null;
 }
 
-export async function loadOnSalePackages(limit = 3): Promise<PackagePost[]> {
+export async function loadOnSalePackages(limit = 4): Promise<PackagePost[]> {
   try {
     const snap = await getAdminFirestore()
       .collection('packagePosts')
@@ -38,6 +38,7 @@ export async function loadOnSalePackages(limit = 3): Promise<PackagePost[]> {
         } as PackagePost;
       })
       .map(renewPostIcons)
+      // 아바타 글은 띠에서 효율 대신 대표 이미지·가격 카드로 그린다(components/HeroAvatarCard)
       .filter((p) => !isSaleEnded(p))
       .slice(0, limit);
   } catch (err) {

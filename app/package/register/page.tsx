@@ -4,17 +4,20 @@
 // 이 페이지는 로그인 게이트와 "생성 저장"만 담당한다.
 
 import { revalidatePackage } from '@/lib/revalidate-client';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Container } from 'react-bootstrap';
 import { useAuth } from '@/contexts/AuthContext';
 import NicknameModal from '@/components/auth/NicknameModal';
 import PackageForm, { type PackageFormSubmitData } from '@/components/package/PackageForm';
+import AvatarPackageForm, { type AvatarFormSubmitData } from '@/components/package/AvatarPackageForm';
 import type { PackagePostCreateData } from '@/types/package';
 import styles from '../package.module.css';
 
 export default function PackageRegisterPage() {
   const router = useRouter();
   const { user, userProfile } = useAuth();
+  const [kind, setKind] = useState<'normal' | 'avatar'>('normal');
 
   const handleSubmit = async (data: PackageFormSubmitData) => {
     if (!user || !userProfile) throw new Error('로그인이 필요합니다.');
@@ -69,9 +72,57 @@ export default function PackageRegisterPage() {
     );
   }
 
+  // 아바타 패키지 — 구성품·환율 없이 이름·가격·캡쳐만 받는 별도 폼
+  const handleAvatarSubmit = async (data: AvatarFormSubmitData) => {
+    if (!user || !userProfile) throw new Error('로그인이 필요합니다.');
+    if (!data.newImageFile) throw new Error('캡쳐 이미지를 올려주세요.');
+    const { uploadAvatarImage } = await import('@/lib/avatar-image');
+    const avatarImage = await uploadAvatarImage(data.newImageFile, `avatarPackages/${user.uid}`);
+
+    const postData: PackagePostCreateData = {
+      authorUid: user.uid,
+      authorName: userProfile.nickname || '익명',
+      authorPhotoURL: null,
+      title: data.title,
+      description: '',
+      packageType: '아바타',
+      royalCrystalPrice: data.price,
+      priceCurrency: 'cash',
+      items: [],
+      avatarImage,
+      ...(data.isNewRelease ? { isNewRelease: true } : {}),
+      ...(data.eventTheme ? { eventTheme: data.eventTheme } : {}),
+      ...(data.saleStartAt ? { saleStartAt: data.saleStartAt } : {}),
+      ...(data.saleEndAt ? { saleEndAt: data.saleEndAt } : {}),
+    };
+
+    const { createPackagePost } = await import('@/lib/package-service');
+    const postId = await createPackagePost(postData);
+    await revalidatePackage(postId);
+    router.push(`/package/${postId}`);
+  };
+
   return (
     <Container fluid style={{ maxWidth: '1100px' }}>
-      <PackageForm mode="register" onSubmit={handleSubmit} />
+      <div className={styles.typeButtonRow} style={{ maxWidth: 360, margin: '1.25rem auto 0' }}>
+        <button type="button"
+          className={`${styles.typeButton} ${kind === 'normal' ? styles.typeButtonActive : ''}`}
+          onClick={() => setKind('normal')}>일반 패키지</button>
+        <button type="button"
+          className={`${styles.typeButton} ${kind === 'avatar' ? styles.typeButtonActive : ''}`}
+          onClick={() => setKind('avatar')}>아바타 패키지</button>
+      </div>
+      {kind === 'normal' ? (
+        <PackageForm mode="register" onSubmit={handleSubmit} />
+      ) : (
+        <div className={styles.registerWrapper}>
+          <div className={styles.pageHeader}>
+            <h1 className={styles.pageTitle}>아바타 패키지 등록</h1>
+            <p className={styles.pageSubtitle}>가격과 캡쳐 이미지만 올리면 됩니다</p>
+          </div>
+          <AvatarPackageForm mode="register" onSubmit={handleAvatarSubmit} />
+        </div>
+      )}
       {userProfile && !userProfile.nickname && <NicknameModal />}
     </Container>
   );

@@ -4,8 +4,9 @@ import { getAdminFirestore } from '@/lib/firebase-admin';
 import { applyStatsToPosts, prefetchPackageStats } from '@/lib/package-stats';
 import { renewPostIcons } from '@/lib/package-shared';
 import { SITE_URL, INDEX_USER_PACKAGE_POSTS } from '@/lib/site-config';
-import type { PackagePost, PackageComment } from '@/types/package';
+import type { PackagePost, PackageComment, AvatarLook } from '@/types/package';
 import PackageDetailPage from './PackageDetailClient';
+import AvatarPackageDetail from '@/components/package/AvatarPackageDetail';
 import AzenaBlessingDetail from '@/components/package/AzenaBlessingDetail';
 import { AZENA_POST_ID, AZENA_TITLE } from '@/lib/azena-blessing';
 
@@ -79,6 +80,25 @@ async function getComments(postId: string): Promise<PackageComment[] | null> {
   });
 }
 
+/**
+ * 아바타 글의 유저 착장 — 댓글과 같이 ISR 로 1시간 캐시. 등록·삭제 직후 클라이언트가 상세만 재생성한다.
+ * 읽기 실패는 null — 이 경우만 브라우저가 직접 읽는다(아바타 글에서만 일어나는 일이라 글 전체를 막지 않는다).
+ */
+async function getAvatarLooks(postId: string): Promise<AvatarLook[] | null> {
+  try {
+    const snap = await getAdminFirestore()
+      .collection('packagePosts').doc(postId).collection('avatarLooks')
+      .orderBy('createdAt', 'desc').limit(300).get();
+    return snap.docs.map((d) => {
+      const data = d.data();
+      return { ...data, id: d.id, createdAt: toISO(data.createdAt) } as AvatarLook;
+    });
+  } catch (err) {
+    console.error('착장 서버 조회 실패:', err);
+    return null;
+  }
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { postId } = await params;
 
@@ -127,8 +147,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }
 
-  const title = `${post.title} - 로스트아크 패키지 효율`;
-  const description = `${post.title} 패키지의 효율을 확인하세요. ${post.royalCrystalPrice?.toLocaleString() || ''}원, ${post.packageType || '일반'} 타입. 실시간 시세 반영 골드 가치 계산.`;
+  const isAvatar = post.packageType === '아바타';
+  const title = isAvatar ? `${post.title} - 로스트아크 아바타 착용샷` : `${post.title} - 로스트아크 패키지 효율`;
+  const description = isAvatar
+    ? `${post.title} ${post.royalCrystalPrice?.toLocaleString() || ''}원. 직업별 실제 착용샷과 염색 코드를 확인하세요.`
+    : `${post.title} 패키지의 효율을 확인하세요. ${post.royalCrystalPrice?.toLocaleString() || ''}원, ${post.packageType || '일반'} 타입. 실시간 시세 반영 골드 가치 계산.`;
   const url = `${SITE_URL}/package/${postId}`;
 
   return {
@@ -219,6 +242,15 @@ export default async function Page({ params }: Props) {
   const statsPromise = prefetchPackageStats();
   statsPromise.catch(() => {});
   const post = await getPost(postId);
+  // 아바타 글 — 구성품·댓글 대신 착장 갤러리. (위에서 같이 건 댓글 읽기는 빈 컬렉션 1회로 끝난다 —
+  // 일반 글의 병렬 읽기를 지키려고 분기를 글 조회 뒤에 둔다)
+  if (post?.packageType === '아바타') {
+    const [looks, applied] = await Promise.all([
+      getAvatarLooks(postId),
+      applyStatsToPosts([post], statsPromise),
+    ]);
+    return <AvatarPackageDetail initialPost={applied[0]} initialLooks={looks} />;
+  }
   const [comments, statsApplied] = post
     ? await Promise.all([commentsPromise, applyStatsToPosts([post], statsPromise)])
     : [null, null];

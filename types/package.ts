@@ -36,8 +36,37 @@ export type PackageItem = {
 
 // ─── 게시물 ───
 
-/** 패키지 타입 */
-export type PackageType = '3+1' | '2+1' | '3+보너스' | '일반' | '가챠' | '핫딜샵';
+/** 패키지 타입. '아바타' 는 효율 계산이 없는 글 — 가격·캡쳐 이미지·유저 착장 갤러리만 있다 */
+export type PackageType = '3+1' | '2+1' | '3+보너스' | '일반' | '가챠' | '핫딜샵' | '아바타';
+
+/** Storage 에 올린 이미지 한 장 (원본 + 목록용 썸네일). path 는 삭제할 때 쓴다 */
+export type StoredImage = {
+  url: string;
+  path: string;
+  thumbUrl: string;
+  thumbPath: string;
+  w: number;
+  h: number;
+};
+
+/** 아바타 글의 유저 착장 — packagePosts/{postId}/avatarLooks/{lookId} */
+export type AvatarLook = {
+  id: string;
+  authorUid: string;
+  authorName: string;
+  /** 직업 (lib/avatar-dye 의 LOSTARK_CLASSES 중 하나) */
+  className: string;
+  /** 대표 사진 — 착장 목록 썸네일. images[0] 과 같다 */
+  image: StoredImage;
+  /** 올린 사진 전부(대표가 맨 앞). 여러 장 기능 이전 착장엔 없다 → [image] 로 본다 */
+  images?: StoredImage[];
+  /** 착용 아바타 — 부위·이름·염색. API 로 불러왔거나 직접 입력 */
+  pieces: import('@/lib/avatar-dye').AvatarPiece[];
+  source: 'api' | 'manual';
+  /** 착장 좋아요 수 — likes/{uid} 문서와 같이 ±1 (firestore.rules 가 짝을 검사) */
+  likeCount?: number;
+  createdAt: Timestamp | string | null;
+};
 
 /** 가격 통화 타입 */
 export type PriceCurrency = 'cash' | 'blueCrystal';
@@ -67,6 +96,10 @@ export type PackagePost = {
   eventTheme?: PackageEventTheme | null;
   bonusItems?: PackageItem[]; // '3+보너스' 전용: 3개 구매 시 1회만 지급되는 특별 보상
   bonusSelectableCount?: number; // '3+보너스' 전용: 보너스 구성품 중 N개 선택 (0 또는 미설정 = 전체 지급)
+  avatarImage?: StoredImage; // '아바타' 전용: 갤러리 카드·상세 대표 캡쳐
+  /** '아바타' 전용, 화면용(문서엔 없다): 갤러리 서버가 같이 읽어 넘기는 좋아요 상위 착장 · 착장 수 */
+  avatarTopLooks?: AvatarLook[];
+  avatarLookCount?: number;
 
   // 환율 (등록 시 입력값)
   goldPerWon?: number;

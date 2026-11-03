@@ -24,7 +24,8 @@ function getPageConfig(pathname: string): PageConfig {
   // body zoom 적용 전 논리 px라 zoom 배율과 무관하게 유효.
   // 2026-10-27: 사이드 앱 프로모 제거로 도킹형(appPromoTop)을 빼고 adTop 으로 바로 세운다 —
   // 도킹형일 땐 광고가 프로모 높이(약 166px)+간격 아래로 밀려 카테고리보다 조금 낮았다.
-  if (pathname === '/') return { contentWidth: 1400, adTop: 300 };
+  // 2026-11-03: 띠에서 배경 그림을 걷어내고 카드 한 줄 높이(min-height 176)로 줄였다 — 줄어든 92 만큼 올린다(300 → 208).
+  if (pathname === '/') return { contentWidth: 1400, adTop: 208 };
   // adTop 200 = "검색창" 상자 상단과 나란히(직접 요청으로 기존 110에서 크게 내림).
   // appPromoTop 0 = 도킹 모드로 전환 — 왼쪽 인기 페이지 박스·오른쪽 앱 프로모를 레일 위에 얹고
   // 광고는 그 아래로. (예전엔 튜닝값이 없어 광고가 뜨면 프로모를 아예 숨겼다)

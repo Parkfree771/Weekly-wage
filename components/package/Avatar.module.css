@@ -1,0 +1,1848 @@
+/* 아바타 패키지 — 등록 폼 · 갤러리 카드 · 상세(착장 갤러리) · 착장 등록 폼 공용.
+   색은 전부 사이트 변수(라이트/다크 자동). */
+
+/* ─── 공용 입력 ─── */
+.formNote {
+  margin: 0.4rem 0 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.fieldError {
+  margin: 0.35rem 0 0;
+  font-size: 0.8rem;
+  color: var(--color-danger);
+}
+
+.textInput,
+.select {
+  min-width: 0;
+  height: 2.2rem;
+  padding: 0 0.6rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--input-bg);
+  color: var(--text-primary);
+  font-size: 0.88rem;
+}
+
+.textInput:focus,
+.select:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.inputBad {
+  border-color: var(--color-danger);
+}
+
+.primaryBtn,
+.primaryBtnSmall,
+.secondaryBtn {
+  border: 1px solid var(--color-accent);
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.primaryBtn {
+  width: 100%;
+  padding: 0.65rem 1rem;
+  margin-top: 0.75rem;
+  background: var(--color-accent);
+  color: #fff;
+  font-size: 0.95rem;
+}
+
+.primaryBtnSmall {
+  padding: 0.4rem 0.8rem;
+  background: var(--color-accent);
+  color: #fff;
+  font-size: 0.82rem;
+}
+
+.primaryBtn:hover:not(:disabled),
+.primaryBtnSmall:hover:not(:disabled) {
+  background: var(--color-accent-dark);
+  border-color: var(--color-accent-dark);
+}
+
+.secondaryBtn {
+  height: 2.2rem;
+  padding: 0 0.9rem;
+  background: transparent;
+  color: var(--color-accent);
+  font-size: 0.85rem;
+}
+
+.primaryBtn:disabled,
+.primaryBtnSmall:disabled,
+.secondaryBtn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.textBtn {
+  padding: 0.2rem 0;
+  border: none;
+  background: none;
+  color: var(--color-accent);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.iconBtn {
+  flex: 0 0 auto;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 1.05rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.iconBtn:hover {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+/* ─── 이미지 고르기 ─── */
+.dropZone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 260px;
+  padding: 0;
+  overflow: hidden;
+  border: 1.5px dashed var(--border-color);
+  border-radius: 10px;
+  background: var(--input-bg);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.dropZoneSmall {
+  min-height: 160px;
+}
+
+.dropZone:hover {
+  border-color: var(--color-accent);
+}
+
+.dropZoneError {
+  border-color: var(--color-danger);
+}
+
+.dropPreview {
+  display: block;
+  width: 100%;
+  max-height: 420px;
+  object-fit: contain;
+}
+
+.dropHint {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.dropHint small {
+  font-size: 0.76rem;
+  font-weight: 400;
+}
+
+/* ─── 아바타 패키지 등록 폼 ─── */
+.formWrap {
+  margin-top: 1rem;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 767.98px) {
+  .formGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ─── 이미지 자리 공용 ─── */
+.cardImageEmpty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.wideEndedTag {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.65);
+  color: #e2e8f0;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+/* ─── 갤러리 탭 (패키지 효율 / 아바타) ─── */
+.galleryTabs {
+  display: flex;
+  justify-content: center;
+  gap: 0.4rem;
+  margin: 0 0 1.1rem;
+}
+
+.galleryTab {
+  padding: 0.55rem 1.4rem;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.galleryTab:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.galleryTabOn,
+.galleryTabOn:hover {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: #fff;
+}
+
+.avatarTabBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.9rem;
+}
+
+.avatarTabCount {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+/* ─── 아바타 탭 카드: 왼쪽 큰 대표 이미지 · 오른쪽 가격·기간·인기 착용샷 ─── */
+.feature {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(320px, 1fr);
+  margin-bottom: 1.1rem;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  background: var(--card-bg);
+  box-shadow: var(--shadow-sm);
+}
+
+/* 대표 이미지는 자르지 않는다 — 가로로 긴 공식 이미지가 대부분이라 원래 비율 그대로 */
+.featureImageLink {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 200px;
+  background: #1b1d22;
+}
+
+.featureImage {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.featureEnded .featureImage {
+  filter: grayscale(0.85) opacity(0.5);
+}
+
+.featureSide {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-width: 0;
+  padding: 1.1rem 1.25rem;
+  border-left: 1px solid var(--border-color);
+}
+
+.featureHead {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.featureNew {
+  flex: 0 0 auto;
+  font-size: 0.8rem;
+  font-weight: 900;
+  color: var(--color-danger);
+}
+
+.featureTitle {
+  overflow: hidden;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  text-decoration: none;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.featureTitle:hover {
+  color: var(--color-accent);
+}
+
+.featurePriceRow {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.featurePrice {
+  font-family: var(--font-num);
+  font-size: 1.85rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.featurePrice small {
+  margin-left: 0.1rem;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.featureStatus {
+  padding: 0.18rem 0.6rem;
+  border-radius: 999px;
+  background: var(--color-success-light);
+  color: var(--color-success);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.featureStatusSoon {
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+}
+
+.featureStatusEnded {
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+}
+
+.featurePeriod {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+}
+
+.featurePeriodKey {
+  color: var(--text-muted);
+}
+
+.featureLooksHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: 0.3rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.featureLooksTitle {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.featureLooksCount {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.featureLooks {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* 착용샷 칸 — 세로로 긴 캡쳐가 머리부터 보이게 9:16 + 위쪽 기준 */
+.featureLook {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  aspect-ratio: 9 / 16;
+  border-radius: 10px;
+  background: #1b1d22;
+}
+
+.featureLook img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+}
+
+.featureRank {
+  position: absolute;
+  top: 0.35rem;
+  left: 0.35rem;
+  min-width: 1.4rem;
+  height: 1.4rem;
+  padding: 0 0.35rem;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #e2e8f0;
+  font-size: 0.75rem;
+  font-weight: 900;
+  line-height: 1.4rem;
+  text-align: center;
+}
+
+.featureRankTop {
+  background: #f4b400;
+  color: #3b2a00;
+}
+
+.featureLookMeta {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  padding: 1.1rem 0.4rem 0.35rem;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));
+  color: #f1f5f9;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.featureLookLikes {
+  color: #fecdd6;
+  font-weight: 800;
+}
+
+.featureLooksEmpty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  border: 1px dashed var(--border-color);
+  border-radius: 10px;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  text-decoration: none;
+}
+
+.featureLooksEmpty:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.featureFoot {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: auto;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.featureViews {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.featureMore {
+  margin-left: auto;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+@media (max-width: 860px) {
+  .feature {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .featureSide {
+    border-left: none;
+    border-top: 1px solid var(--border-color);
+  }
+}
+
+/* ─── 상세: 대표 캡쳐 ─── */
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+@media (max-width: 767.98px) {
+  .hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.heroImageBtn {
+  display: block;
+  width: 100%;
+  padding: 0;
+  overflow: hidden;
+  border: none;
+  border-radius: 10px;
+  background: var(--input-bg);
+  cursor: zoom-in;
+}
+
+.heroImage {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.heroInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.heroRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.heroLabel {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.heroPrice {
+  font-family: var(--font-num);
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.heroValue {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.heroFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.heroMeta {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.ownerActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.4rem;
+}
+
+/* ─── 상세: 착장 갤러리 ─── */
+.looksHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.looksHead > h2 {
+  margin: 0;
+}
+
+.loginHint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.classBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+}
+
+.classBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.32rem 0.7rem;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--input-bg);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.classBtn:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+/* 아직 아무도 안 올린 직업 — 누를 수는 있지만 한 톤 죽인다 */
+.classBtnEmpty {
+  color: var(--text-muted);
+}
+
+.classBtnActive,
+.classBtnActive:hover {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: #fff;
+}
+
+/* 2단(직업) 줄 — 1단보다 한 단계 가볍게: 채움 대신 테두리·글자색으로 고른 것을 표시 */
+.classBarSub {
+  margin-top: -0.5rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 10px;
+  background: var(--bg-secondary);
+}
+
+.classBtnSub {
+  background: var(--card-bg);
+}
+
+.classBtnSubActive,
+.classBtnSubActive:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  font-weight: 700;
+}
+
+.classCount {
+  font-family: var(--font-num);
+  font-size: 0.72rem;
+  opacity: 0.8;
+}
+
+.looksEmpty {
+  padding: 2.5rem 1rem;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.looksGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 0.6rem;
+}
+
+@media (max-width: 575.98px) {
+  .looksGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.lookTile {
+  position: relative;
+  display: block;
+  padding: 0;
+  overflow: hidden;
+  aspect-ratio: 9 / 16;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--input-bg);
+  cursor: zoom-in;
+}
+
+.lookTile:hover {
+  border-color: var(--color-accent);
+}
+
+.lookTileImg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+}
+
+/* 아래 이름 띠 — 사진 위에 얹히므로 사진 색과 상관없이 읽히게 어두운 띠로 깐다 */
+.lookTileMeta {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.4rem;
+  padding: 1.2rem 0.55rem 0.4rem;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.72), rgba(0, 0, 0, 0));
+  text-align: left;
+}
+
+.lookTileMetaText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.lookTileLikes {
+  flex: 0 0 auto;
+  color: #fecdd6;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.lookTileMeta .lookTileClass {
+  color: #f1f5f9;
+}
+
+.lookTileMeta .lookTileAuthor {
+  color: #cbd5e1;
+}
+
+.lookTileClass {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.lookTileAuthor {
+  overflow: hidden;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.lookTileBadges {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  display: flex;
+  gap: 0.25rem;
+}
+
+.lookTileBadge {
+  padding: 0.1rem 0.4rem;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #e9d5ff;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+/* ─── 팝업 ─── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1060;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.72);
+}
+
+.modal {
+  position: relative;
+  max-width: min(1200px, 100%);
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+  border-radius: 12px;
+  background: var(--card-bg);
+}
+
+/* 착장 팝업 — 사진을 위에 크게, 아바타 정보는 아래 카드 격자로 */
+.modalLook {
+  display: flex;
+  flex-direction: column;
+  width: min(1100px, 100%);
+}
+
+.modalLookImage {
+  display: block;
+  width: 100%;
+  max-height: 68vh;
+  object-fit: contain;
+  background: #000;
+}
+
+.modalClass {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.modalAuthor {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.modalDelete {
+  margin-left: 0.4rem;
+}
+
+.modalImage {
+  display: block;
+  width: 100%;
+  max-height: calc(100vh - 2rem);
+  object-fit: contain;
+  background: #000;
+}
+
+.modalSide {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem 1rem 1.25rem;
+}
+
+.modalSideHead {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.modalClose {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 2;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #f1f5f9;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* ─── 아바타·염색 카드 (팝업) ─── */
+.pieceCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pieceCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.6rem;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-secondary);
+}
+
+.pieceCardHead {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.pieceCardText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.pieceIcon,
+.pieceIconEmpty {
+  flex: 0 0 auto;
+  width: 2.6rem;
+  height: 2.6rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--input-bg);
+  object-fit: cover;
+}
+
+.piecePart {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.pieceName {
+  overflow: hidden;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.pieceDyes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.dyeLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.dyeArea {
+  flex: 0 0 auto;
+  min-width: 2.6rem;
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+.dyeGloss {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+.dyeChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.45rem 0.15rem 0.2rem;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--input-bg);
+  cursor: copy;
+}
+
+.dyeChip:hover {
+  border-color: var(--color-accent);
+}
+
+.dyeChipLabel {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.dyeChipHex {
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* 색 칸 — 흰색·검은색 코드도 보이게 테두리를 둔다 */
+.hexSwatch {
+  flex: 0 0 auto;
+  width: 1rem;
+  height: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  background: repeating-conic-gradient(var(--border-color) 0 25%, transparent 0 50%) 50% / 8px 8px;
+}
+
+/* ─── 착장 등록 폼 ─── */
+.lookForm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  margin-bottom: 1.25rem;
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-secondary);
+}
+
+.lookFormHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.lookFormTitle {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.lookFormBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.lookFormBlock > .select {
+  max-width: 240px;
+}
+
+.lookFormBlock > .textBtn {
+  align-self: flex-start;
+}
+
+.lookFormLabel {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.apiRow {
+  display: flex;
+  gap: 0.4rem;
+  max-width: 420px;
+}
+
+.apiRow > .textInput {
+  flex: 1;
+}
+
+/* 불러온 캐릭터(작게) + 아바타 카드 격자 */
+.loadedLayout {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.loadedLayoutNoChar {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.charImage {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+}
+
+.pieceGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 0.5rem;
+}
+
+.pieceGrid:empty {
+  display: none;
+}
+
+@media (max-width: 575.98px) {
+  .loadedLayout {
+    grid-template-columns: 96px minmax(0, 1fr);
+  }
+
+  .pieceGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.pieceEditor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.6rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--card-bg);
+}
+
+.pieceEditor > .textBtn {
+  align-self: flex-start;
+}
+
+.pieceEditorRow {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.pieceEditorFields {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.pieceEditorFields > .select,
+.pieceEditorFields > .textInput {
+  width: 100%;
+  height: 1.95rem;
+  font-size: 0.82rem;
+}
+
+.dyeLegend {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.iconBtnSmall {
+  flex: 0 0 auto;
+  width: 1.6rem;
+  height: 1.6rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.iconBtnSmall:hover {
+  color: var(--color-danger);
+}
+
+.dyeEditorRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  padding-left: 0.25rem;
+}
+
+.glossInput {
+  width: 3.6rem;
+  height: 1.95rem;
+  font-size: 0.78rem;
+}
+
+.hexField {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  height: 1.95rem;
+  padding: 0 0.45rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--input-bg);
+}
+
+.hexField:focus-within {
+  border-color: var(--color-accent);
+}
+
+.hexFieldBad {
+  border-color: var(--color-danger);
+}
+
+.hexField > .hexSwatch {
+  margin-right: 0.2rem;
+}
+
+.hexHash {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.hexInput {
+  width: 4.6rem;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+}
+
+.hexInput:focus {
+  outline: none;
+}
+
+
+/* ─── 착장 등록: 여러 장 + 대표 고르기 ─── */
+.labelNote {
+  margin-left: 0.35rem;
+  font-size: 0.74rem;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.dropZoneMini {
+  min-height: 56px;
+}
+
+.shotGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 0.5rem;
+}
+
+.shot {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 9 / 16;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--input-bg);
+}
+
+.shotCover {
+  border-color: var(--color-accent);
+}
+
+.shotImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+}
+
+.shotCoverBtn {
+  position: absolute;
+  left: 0.3rem;
+  bottom: 0.3rem;
+  padding: 0.12rem 0.45rem;
+  border: none;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #e2e8f0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.shotCoverBtnOn {
+  background: var(--color-accent);
+  color: #fff;
+}
+
+.shotRemove {
+  position: absolute;
+  top: 0.3rem;
+  right: 0.3rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: #e2e8f0;
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* ─── 착장 팝업: 사진 넘기기 ─── */
+.viewer {
+  position: relative;
+  background: #000;
+}
+
+.viewerNav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2.6rem;
+  height: 2.6rem;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #f1f5f9;
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.viewerNav:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.viewerPrev {
+  left: 0.6rem;
+}
+
+.viewerNext {
+  right: 0.6rem;
+}
+
+.viewerCount {
+  position: absolute;
+  left: 50%;
+  bottom: 0.6rem;
+  transform: translateX(-50%);
+  padding: 0.12rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #e2e8f0;
+  font-family: var(--font-num);
+  font-size: 0.78rem;
+}
+
+.viewerThumbs {
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.5rem 0.75rem;
+  overflow-x: auto;
+  background: var(--bg-secondary);
+}
+
+.viewerThumb {
+  flex: 0 0 auto;
+  width: 60px;
+  aspect-ratio: 9 / 16;
+  padding: 0;
+  overflow: hidden;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  background: var(--input-bg);
+  opacity: 0.6;
+  cursor: pointer;
+}
+
+.viewerThumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+}
+
+.viewerThumbOn {
+  border-color: var(--color-accent);
+  opacity: 1;
+}
+
+/* 착용샷 더보기 */
+.moreBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  width: 100%;
+  margin-top: 0.75rem;
+  padding: 0.6rem;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--input-bg);
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.moreBtn:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+/* ─── 착용샷 정렬 ─── */
+.sortRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 0.6rem;
+}
+
+.sortCount {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.sortSeg {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.sortSeg > button {
+  padding: 0.35rem 0.8rem;
+  border: none;
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.sortSeg > button.sortOn {
+  background: var(--text-primary);
+  color: var(--card-bg);
+}
+
+/* ─── 착장 좋아요 ─── */
+.lookLikeBtn,
+.lookLikeStatic {
+  margin-left: auto;
+  padding: 0.35rem 0.85rem;
+  border: 1px solid var(--color-danger);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-danger);
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.lookLikeBtn {
+  cursor: pointer;
+}
+
+.lookLikeBtnOn {
+  background: var(--color-danger);
+  color: #fff;
+}
+
+.lookLikeBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.lookLikeStatic {
+  border-color: var(--border-color);
+  color: var(--text-muted);
+}
+
+/* ─── 대표 사진 틀 맞추기 ─── */
+.cropBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+}
+
+.cropper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 560px;
+}
+
+.cropBox {
+  position: relative;
+  align-self: flex-start;
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #000;
+  touch-action: none;
+  user-select: none;
+}
+
+.cropImg {
+  display: block;
+  max-width: 100%;
+  max-height: 440px;
+  pointer-events: none;
+}
+
+/* 틀 밖은 어둡게 — 큰 그림자로 틀 바깥을 덮는다 */
+.cropFrame {
+  position: absolute;
+  border: 2px solid var(--color-accent);
+  border-radius: 4px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55);
+  cursor: move;
+  touch-action: none;
+}
+
+.cropControls {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.cropControls input[type='range'] {
+  flex: 1;
+  max-width: 260px;
+  accent-color: var(--color-accent);
+}
+
+.cropLabel {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* "N개 전체 보기" — 데스크톱은 숫자만 보이고(아래 발 줄에 링크가 따로 있다), 모바일은 이 줄이 링크가 된다 */
+a.featureLooksCount {
+  text-decoration: none;
+}
+
+.featureLooksCountMore {
+  display: none;
+  color: var(--color-accent);
+  font-weight: 800;
+}
+
+.heroPriceWrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ======================================================
+   모바일 — 아바타 탭·상세·팝업·등록 폼
+   ====================================================== */
+@media (max-width: 767.98px) {
+  /* 탭 — 화면 폭을 반씩 나눠 크게 */
+  .galleryTabs {
+    gap: 0.35rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .galleryTab {
+    flex: 1;
+    padding: 0.6rem 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  /* ─── 아바타 탭 카드: 이미지 → 제목·가격 → 인기 착용샷(가로 넘김) ─── */
+  .feature {
+    margin-bottom: 0.9rem;
+    border-radius: 14px;
+  }
+
+  .featureImageLink {
+    min-height: 0;
+  }
+
+  .featureSide {
+    gap: 0.45rem;
+    padding: 0.85rem 0.9rem 0.8rem;
+  }
+
+  .featureTitle {
+    font-size: 1rem;
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  .featurePrice {
+    font-size: 1.5rem;
+  }
+
+  .featurePrice small {
+    font-size: 0.88rem;
+  }
+
+  .featurePeriod {
+    font-size: 0.8rem;
+  }
+
+  .featureLooksHead {
+    margin-top: 0.15rem;
+    padding-top: 0.6rem;
+  }
+
+  .featureLooksCountMore {
+    display: inline;
+  }
+
+  /* 4칸 격자 대신 가로로 넘기는 띠 — 칸이 너무 작아지지 않게 폭을 고정 */
+  .featureLooks {
+    display: flex;
+    gap: 0.45rem;
+    margin: 0 -0.9rem;
+    padding: 0 0.9rem 0.15rem;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  .featureLooks::-webkit-scrollbar {
+    display: none;
+  }
+
+  .featureLooks > li {
+    flex: 0 0 96px;
+    scroll-snap-align: start;
+  }
+
+  .featureLookMeta {
+    padding: 0.9rem 0.35rem 0.3rem;
+    font-size: 0.66rem;
+  }
+
+  .featureFoot {
+    padding-top: 0.5rem;
+  }
+
+  /* 위 "N개 전체 보기" 가 같은 일을 한다 */
+  .featureMore {
+    display: none;
+  }
+
+  .featureViews {
+    margin-left: auto;
+  }
+
+  /* ─── 상세: 대표 이미지 아래 정보는 촘촘하게 ─── */
+  .hero {
+    gap: 0.75rem;
+  }
+
+  .heroImageBtn {
+    border-radius: 10px;
+  }
+
+  .heroInfo {
+    gap: 0.35rem;
+  }
+
+  .heroRow {
+    padding-bottom: 0.4rem;
+  }
+
+  .heroLabel {
+    font-size: 0.8rem;
+  }
+
+  .heroPrice {
+    font-size: 1.2rem;
+  }
+
+  .heroValue {
+    font-size: 0.85rem;
+  }
+
+  .heroFoot {
+    margin-top: 0.1rem;
+  }
+
+  /* 제목 줄과 "+ 내 착장 등록" — 버튼을 아래로 내려 손가락 크기로 */
+  .looksHead {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .looksHead > .primaryBtnSmall {
+    padding: 0.65rem;
+    font-size: 0.92rem;
+  }
+
+  .loginHint {
+    text-align: center;
+  }
+
+  /* 직업 필터 — 여러 줄로 쌓이지 않게 한 줄 가로 넘김 */
+  .classBar {
+    flex-wrap: nowrap;
+    margin: 0 -0.25rem 0.75rem;
+    padding: 0 0.25rem 0.1rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .classBar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .classBtn {
+    flex: 0 0 auto;
+    padding: 0.38rem 0.75rem;
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+
+  .classBarSub {
+    margin-top: -0.4rem;
+    padding: 0.45rem 0.5rem;
+  }
+
+  .sortRow {
+    margin-bottom: 0.5rem;
+  }
+
+  .sortCount {
+    font-size: 0.85rem;
+  }
+
+  /* 착용샷 2칸 — 아래 띠는 직업·좋아요만(작성자는 팝업에서) */
+  .looksGrid {
+    gap: 0.45rem;
+  }
+
+  .lookTileMeta {
+    padding: 1rem 0.45rem 0.35rem;
+  }
+
+  .lookTileMeta .lookTileAuthor {
+    display: none;
+  }
+
+  .lookTileClass {
+    font-size: 0.76rem;
+  }
+
+  .lookTileBadge {
+    font-size: 0.62rem;
+  }
+
+  /* ─── 착용샷 팝업 — 전체 화면 시트 ─── */
+  .overlay {
+    align-items: stretch;
+    padding: 0;
+  }
+
+  .modal {
+    width: 100%;
+    max-width: 100%;
+    max-height: none;
+    height: 100%;
+    border-radius: 0;
+  }
+
+  .modalLook {
+    width: 100%;
+  }
+
+  .modal:not(.modalLook) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #000;
+  }
+
+  .modal:not(.modalLook) .modalImage {
+    max-height: 100%;
+  }
+
+  .modalLookImage,
+  .modalImage {
+    max-height: 62vh;
+  }
+
+  .modalClose {
+    position: fixed;
+    top: 0.6rem;
+    right: 0.6rem;
+    width: 2.4rem;
+    height: 2.4rem;
+    font-size: 1.35rem;
+  }
+
+  .viewerNav {
+    width: 2.2rem;
+    height: 2.2rem;
+    font-size: 1.35rem;
+  }
+
+  .viewerThumbs {
+    padding: 0.45rem 0.6rem;
+  }
+
+  .viewerThumb {
+    width: 44px;
+  }
+
+  .modalSide {
+    padding: 0.8rem 0.85rem 2rem;
+  }
+
+  .modalSideHead {
+    flex-wrap: wrap;
+    row-gap: 0.4rem;
+  }
+
+  .pieceCards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* ─── 착장 등록 폼 ─── */
+  .lookForm {
+    gap: 0.75rem;
+    padding: 0.8rem;
+  }
+
+  .lookFormBlock > .select {
+    max-width: none;
+  }
+
+  .apiRow {
+    max-width: none;
+  }
+
+  .shotGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.35rem;
+  }
+
+  .shotCoverBtn {
+    left: 0.2rem;
+    bottom: 0.2rem;
+    padding: 0.08rem 0.3rem;
+    font-size: 0.64rem;
+  }
+
+  .cropImg {
+    max-height: 360px;
+  }
+
+  .cropControls input[type='range'] {
+    max-width: none;
+  }
+
+  .loadedLayout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.5rem;
+  }
+
+  .charImage {
+    width: 96px;
+  }
+
+  .dyeEditorRow {
+    gap: 0.25rem;
+    padding-left: 0;
+  }
+
+  .hexInput {
+    width: 3.9rem;
+  }
+
+  .glossInput {
+    width: 3rem;
+  }
+
+  .labelNote {
+    display: block;
+    margin: 0.15rem 0 0;
+  }
+}

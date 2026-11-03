@@ -55,7 +55,7 @@ export default function HomeClient({ initialQuotes, asOf, packages }: {
   return (
     <div className={styles.mainContainer}>
       <Container fluid className="mt-2 mt-md-3" style={{ maxWidth: '1400px', margin: '0 auto' }}>
-        {/* 맨 위 띠 — 알데바란의 바다 배경 + 판매 중 패키지 */}
+        {/* 맨 위 띠 — 판매 중인 최신 패키지(일반·아바타) */}
         <MarketHero packages={packages} />
 
         {/* 가격 추이 차트 */}

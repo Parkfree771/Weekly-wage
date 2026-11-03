@@ -3,14 +3,19 @@
 // 여기서 현재 사용자의 ID 토큰을 붙인다. 토큰이 없으면(로그아웃 상태) 부르지 않는다 — 어차피 거절된다.
 import { auth } from '@/lib/firebase-client';
 
-export async function revalidatePackage(postId: string, opts: { keepalive?: boolean } = {}): Promise<void> {
+// detailOnly: 상세만 다시 만든다 — 갤러리 목록이 바뀌지 않는 변경(아바타 착장 등록·삭제)용.
+//   갤러리 재생성은 글 최대 200건 읽기라 필요 없을 때는 건너뛴다.
+export async function revalidatePackage(
+  postId: string,
+  opts: { keepalive?: boolean; detailOnly?: boolean } = {},
+): Promise<void> {
   try {
     const token = await auth.currentUser?.getIdToken();
     if (!token) return;
     await fetch('/api/package/revalidate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ postId }),
+      body: JSON.stringify(opts.detailOnly ? { postId, detailOnly: true } : { postId }),
       keepalive: opts.keepalive,
     });
   } catch {
