@@ -51,7 +51,7 @@ export default function HeroPackageCard({ post }: { post: PackagePost }) {
         <span className={styles.pkgTitle}>{post.title}</span>
       </span>
       <span className={styles.pkgBody}>
-        <span className={styles.pkgItems}>
+        <span className={`${styles.pkgItems} ${ordered.length > 4 ? styles.pkgItemsOver : ''}`}>
           {shown.map((it, i) => {
             const icon = iconOf(it);
             return (
@@ -65,8 +65,8 @@ export default function HeroPackageCard({ post }: { post: PackagePost }) {
             );
           })}
           {rest > 0 && <span className={styles.pkgMore}>+{rest}</span>}
-          {/* 모바일 — 아이콘 4개까지만, 넘치면 "…" (CSS 로 5번째를 숨기고 이 표시를 켠다) */}
-          {ordered.length > 4 && <span className={styles.pkgMoreMobile}>…</span>}
+          {/* 모바일 — 4칸. 넘치면 아이콘 3개 + 4번째 칸에 "+N" (CSS 로 4번째부터 숨기고 이 칸을 켠다) */}
+          {ordered.length > 4 && <span className={`font-numeric ${styles.pkgMoreMobile}`}>+{ordered.length - 3}</span>}
         </span>
         <span className={styles.pkgNumbers}>
           <span className={`font-numeric ${styles.pkgPrice}`}>{post.royalCrystalPrice.toLocaleString('ko-KR')}원</span>

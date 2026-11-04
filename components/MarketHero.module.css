@@ -374,10 +374,14 @@
     scroll-padding-left: 12px;
   }
 
-  /* 카드 폭 고정 160 — 360px 폰에서도 2장이 다 보이고, 넘치면 가로로 넘긴다(스크롤 막대 없음).
-     좁아진 만큼 3줄: 제목 / 아이콘(최대 4 + …) / 가격·이득률 (앱 MarketHero 와 같은 구성) */
+  /* 카드 폭 = (화면 폭 - 페이지 좌우 여백 12×2 - 카드 간격 12) / 2 — 맨 위 본문 폭을 정확히 반으로 나눠
+     어떤 폰이든 2장이 본문 양 끝까지 딱 채우고, 나머지는 가로로 넘긴다(스크롤 막대 없음).
+     모든 카드 같은 크기(줄어들지 않게 flex-shrink 0).
+     위에서부터: 제목(한 줄) / 구성 아이템 4칸(폭 꽉 채움) / 가격·이득률 — 빈 데가 없게 (앱 MarketHero 와 같은 구성) */
   .pkg {
-    width: 160px;
+    flex: 0 0 calc((100vw - 36px) / 2);
+    width: calc((100vw - 36px) / 2);
+    max-width: none;
     height: 124px;
     gap: 6px;
     padding: 10px;
@@ -388,42 +392,62 @@
     padding: 0;
   }
 
-  .pkgTitle {
-    font-size: 0.9rem;
-  }
-
-  .pkgBody {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 6px;
-  }
-
-  .pkgItems {
-    overflow: hidden;
-    gap: 4px;
-  }
-
-  .pkgItem:nth-child(n + 5),
-  .pkgMore {
+  /* 판매 중 표시는 모바일에서 뺀다 — 제목이 카드 폭을 다 쓴다(한 줄, 넘치면 …) */
+  .pkgHead > .pkgBadge {
     display: none;
   }
 
-  .pkgMoreMobile {
-    display: block;
-    align-self: center;
-    font-size: 0.74rem;
-    font-weight: 700;
-    color: var(--text-secondary);
+  .pkgTitle {
+    font-size: 0.9rem;
+    line-height: 1.25;
+  }
+
+  .pkgBody {
+    flex: 1;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: space-between;
+    gap: 6px;
+  }
+
+  /* 구성 아이템 — 4칸 같은 폭으로 카드 폭을 꽉 채운다(폰 폭에서). 한 칸 최대 40 — 넓은 화면에서 카드 밖으로 넘치지 않게 */
+  .pkgItems {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 40px));
+    gap: 5px;
+    overflow: hidden;
+  }
+
+  .pkgItem:nth-child(n + 5),
+  .pkgItemsOver .pkgItem:nth-child(4),
+  .pkgMore,
+  .pkgQty {
+    display: none;
   }
 
   .pkgItem img {
-    width: 26px;
-    height: 26px;
-    border-radius: 7px;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+    border-radius: 8px;
     padding: 2px;
   }
 
-  /* 가격·라벨은 왼쪽 두 줄, 이득률은 오른쪽 */
+  /* 넘칠 때 4번째 칸 — 아이콘 칸과 같은 눌린 홈에 "+N" */
+  .pkgMoreMobile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1;
+    border-radius: 8px;
+    background: var(--neu-well);
+    box-shadow: var(--neu-pressed);
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: var(--text-secondary);
+  }
+
+  /* 맨 아래 — 가격·라벨은 왼쪽 두 줄, 이득률은 오른쪽 */
   .pkgNumbers {
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas: "price benefit" "label benefit";
