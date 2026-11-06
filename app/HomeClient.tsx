@@ -9,6 +9,8 @@ import styles from './page.module.css';
 import type { ItemQuote } from '@/components/ItemSelector';
 import type { PackagePost } from '@/types/package';
 import MarketHero from '@/components/MarketHero';
+import MarketHeatmap from '@/components/MarketHeatmap';
+import { PriceChartProvider } from '@/components/PriceChartContainer';
 
 // 차트 틀(카테고리·아이템 버튼)은 서버에서도 그린다 — 서버가 넘긴 시세(initialQuotes)가 아이템 버튼에
 // 첫 HTML 부터 실려 스피너 없이 보이고 검색엔진도 읽는다. 차트 그림 자체(Compact/MiniPriceChart)는
@@ -31,14 +33,8 @@ const PriceEventCompare = dynamic(() => import('@/components/PriceEventCompare')
 
 // 시세 히트맵(주식 히트맵 스타일) — 칸을 누르면 위 차트가 그 아이템으로 바뀐다(차트 컨텍스트 사용).
 // 서버 시세(initialQuotes)로 첫 HTML 부터 그려 검색 봇도 종목·등락을 읽는다.
-const MarketHeatmap = dynamic(() => import('@/components/MarketHeatmap'));
-
-const PriceChartProvider = dynamic(
-  () => import('@/components/PriceChartContainer').then(mod => ({ default: mod.PriceChartProvider })),
-  {
-    loading: () => <div style={{ minHeight: '650px' }} />,
-  }
-);
+// 차트 틀과 히트맵은 dynamic 이 아닌 일반 import(맨 위) — 서버가 마크업을 그리는 컴포넌트를 dynamic 으로 불러오면
+// CSS 가 첫 HTML 의 <link> 에 안 실리고 JS 조각이 받아진 뒤에야 붙어, 스타일 없는 버튼·아이콘이 먼저 보인다.
 
 
 export default function HomeClient({ initialQuotes, asOf, packages }: {

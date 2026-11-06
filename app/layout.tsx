@@ -14,9 +14,10 @@ import Script from "next/script";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import "./globals.css";
 
+// weight 를 안 넘긴다(가변 폰트 파일 하나로 100~900) — 굵기 5개를 정적으로 받으면 한글 글자 묶음(124개)마다
+// @font-face 가 굵기 수만큼 붙어 렌더 차단 폰트 CSS 가 압축 후에도 120KB 였다(2026-11-06 실측). 가변이면 1/5.
 const notoSansKr = Noto_Sans_KR({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
   display: "swap",
   preload: true,
   adjustFontFallback: true,

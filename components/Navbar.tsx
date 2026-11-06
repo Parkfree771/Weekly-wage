@@ -34,10 +34,12 @@ type NavGroup = {
 // 바로가기 그룹은 href 를 주고, items 에도 같은 주소를 하나 둔다 — 활성 표시·숨김 처리(NAV_HIDDEN_PATHS)가 items 를 본다.
 // 메뉴 아이콘 — 64px 사본(public/nav)을 작게. 장식이라 alt 는 비운다(옆 글자가 이름)
 // 그룹 아이콘(지금은 패키지 효율 크리스탈만)은 하위 메뉴 아이콘보다 크게 — 크기를 키워도 줄 높이는 그대로(.nav-icon-group 음수 여백)
+// 하위 메뉴 아이콘은 loading="lazy" — 드롭다운은 닫혀 있어도 서버 HTML 에 들어 있어, eager 면 React 가
+// 첫 화면에 안 보이는 아이콘까지 전부 <link rel="preload"> 로 앞당겨 받는다. 그룹 아이콘은 내비 줄에 바로 보여 그대로.
 function NavIcon({ src, size, group }: { src?: string; size: number; group?: boolean }) {
   if (!src) return null;
   // eslint-disable-next-line @next/next/no-img-element
-  return <img src={src} alt="" width={size} height={size} className={`nav-icon ${group ? 'nav-icon-group' : ''}`} style={{ width: size, height: size }} decoding="async" />;
+  return <img src={src} alt="" width={size} height={size} className={`nav-icon ${group ? 'nav-icon-group' : ''}`} style={{ width: size, height: size }} loading={group ? undefined : 'lazy'} decoding="async" />;
 }
 
 const NAV_GROUPS: NavGroup[] = [
