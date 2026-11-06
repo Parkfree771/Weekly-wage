@@ -4,7 +4,7 @@
 //
 // 착장 목록은 서버(ISR)가 글과 같이 읽어 넘긴다 — 방문자마다 Firestore 를 읽지 않는다.
 // 착장을 올리거나 지우면 화면은 바로 고치고, 상세 ISR 사본만 다시 만든다(revalidate detailOnly).
-// 조회수·따봉은 일반 상세와 같은 경로(/api/package/view · ReactionBar)를 쓴다.
+// 조회수는 일반 상세와 같은 경로(/api/package/view)를 쓴다. 아바타 글엔 따봉이 없다 — 좋아요는 착장에만 단다.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -18,7 +18,6 @@ import { isSaleEnded, formatSalePeriodDateOnly, toSaleDate } from '@/lib/package
 import { publishStats, fetchStats, seedStatsFromPosts, subscribeStats, wasViewedRecently, markViewed } from '@/lib/package-stats-client';
 import { CLASS_GROUPS, classGroupOf, hexForGame } from '@/lib/avatar-dye';
 import type { AvatarLook, PackagePost } from '@/types/package';
-import ReactionBar from '@/components/package/ReactionBar';
 import styles from '@/app/package/package.module.css';
 import av from './Avatar.module.css';
 
@@ -162,6 +161,15 @@ export default function AvatarPackageDetail({ initialPost, initialLooks }: Props
     if (target) openLookAt(target);
   }, [looks]);
   const shotCount = openLook ? lookImages(openLook).length : 0;
+  // 팝업을 열면 그 착장의 사진을 전부 미리 받는다 — 넘길 때마다 그제야 받으면 빈 칸으로 멈칫한다
+  useEffect(() => {
+    if (!openLook) return;
+    for (const img of lookImages(openLook)) {
+      const pre = new Image();
+      pre.decoding = 'async';
+      pre.src = img.url;
+    }
+  }, [openLook]);
   const stepShot = useCallback((d: number) => {
     setShotIdx((i) => (shotCount > 0 ? (i + d + shotCount) % shotCount : 0));
   }, [shotCount]);
@@ -371,9 +379,9 @@ export default function AvatarPackageDetail({ initialPost, initialLooks }: Props
               <span className={av.heroLabel}>착용샷</span>
               <span className={av.heroValue}>{looks.length.toLocaleString()}개</span>
             </div>
-            <div className={av.heroFoot}>
-              <ReactionBar postId={postId} likeCount={post.likeCount || 0} sosoCount={post.sosoCount || 0} likeOnly showLabels />
-              <span className={av.heroMeta}>조회 {(post.viewCount || 0).toLocaleString()} · {post.authorName || '익명'}</span>
+            <div className={av.heroRow}>
+              <span className={av.heroLabel}>조회수</span>
+              <span className={av.heroValue}>{(post.viewCount || 0).toLocaleString()}</span>
             </div>
             {isOwner && (
               <div className={av.ownerActions}>
@@ -477,11 +485,9 @@ export default function AvatarPackageDetail({ initialPost, initialLooks }: Props
                     <span className={`${av.featureRank} ${i === 0 ? av.featureRankTop : ''}`}>{i + 1}</span>
                   )}
                   <span className={av.lookTileMeta}>
-                    <span className={av.lookTileMetaText}>
-                      <span className={av.lookTileClass}>{l.className}</span>
-                      <span className={av.lookTileAuthor}>{l.authorName}</span>
-                    </span>
-                    <span className={av.lookTileLikes}>좋아요 {l.likeCount || 0}</span>
+                    {/* 카드엔 직업·하트만 — 올린 사람은 눌러서 여는 팝업에 나온다 */}
+                    <span className={av.lookTileClass}>{l.className}</span>
+                    <span className={av.lookTileLikes} aria-label={`좋아요 ${l.likeCount || 0}`}>❤️ {l.likeCount || 0}</span>
                   </span>
                   <span className={av.lookTileBadges}>
                     {lookImages(l).length > 1 && <span className={av.lookTileBadge}>사진 {lookImages(l).length}</span>}
@@ -518,7 +524,7 @@ export default function AvatarPackageDetail({ initialPost, initialLooks }: Props
           <div className={`${av.modal} ${av.modalLook}`}>
             <button type="button" className={av.modalClose} onClick={() => setOpenLook(null)} aria-label="닫기">×</button>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <div className={av.viewer}>
+            <div className={`${av.viewer} ${shotCount > 1 ? av.viewerMulti : ''}`}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={lookImages(openLook)[shotIdx]?.url ?? openLook.image.url} alt={`${openLook.className} 착용샷 ${shotIdx + 1}`}
                 className={av.modalLookImage} />
@@ -547,11 +553,13 @@ export default function AvatarPackageDetail({ initialPost, initialLooks }: Props
                 <span className={av.modalAuthor}>{openLook.authorName}</span>
                 {user ? (
                   <button type="button" className={`${av.lookLikeBtn} ${liked ? av.lookLikeBtnOn : ''}`}
-                    onClick={toggleLike} disabled={liked === null || likeBusy} aria-pressed={!!liked}>
-                    좋아요 {openLook.likeCount || 0}
+                    onClick={toggleLike} disabled={liked === null || likeBusy} aria-pressed={!!liked}
+                    aria-label={`좋아요 ${openLook.likeCount || 0}`}>
+                    {liked ? '❤️' : '🤍'} {openLook.likeCount || 0}
                   </button>
                 ) : (
-                  <span className={av.lookLikeStatic} title="로그인하면 좋아요를 누를 수 있어요">좋아요 {openLook.likeCount || 0}</span>
+                  <span className={av.lookLikeStatic} title="로그인하면 좋아요를 누를 수 있어요"
+                    aria-label={`좋아요 ${openLook.likeCount || 0}`}>❤️ {openLook.likeCount || 0}</span>
                 )}
                 {user && (user.uid === openLook.authorUid || admin) && (
                   <button type="button" className={`${styles.deleteBtn} ${av.modalDelete}`} onClick={() => handleDeleteLook(openLook)}>

@@ -128,10 +128,6 @@
   cursor: pointer;
 }
 
-.dropZoneSmall {
-  min-height: 160px;
-}
-
 .dropZone:hover {
   border-color: var(--color-accent);
 }
@@ -564,20 +560,6 @@
   color: var(--text-primary);
 }
 
-.heroFoot {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  margin-top: 0.25rem;
-}
-
-.heroMeta {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-}
-
 .ownerActions {
   display: flex;
   justify-content: flex-end;
@@ -724,12 +706,6 @@
   text-align: left;
 }
 
-.lookTileMetaText {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
 .lookTileLikes {
   flex: 0 0 auto;
   color: #fecdd6;
@@ -741,22 +717,10 @@
   color: #f1f5f9;
 }
 
-.lookTileMeta .lookTileAuthor {
-  color: #cbd5e1;
-}
-
 .lookTileClass {
   font-size: 0.82rem;
   font-weight: 700;
   color: var(--text-primary);
-}
-
-.lookTileAuthor {
-  overflow: hidden;
-  font-size: 0.72rem;
-  color: var(--text-muted);
-  white-space: nowrap;
-  text-overflow: ellipsis;
 }
 
 .lookTileBadges {
@@ -804,12 +768,14 @@
   width: min(1100px, 100%);
 }
 
+/* 원본 크기보다 키우지 않는다 — 착장 캡쳐는 보통 300×500 안팎이라 칸에 맞춰 늘리면 뭉개진다.
+   작은 사진은 제 크기 그대로 검은 칸 가운데, 큰 사진만 칸에 맞춰 줄인다. */
 .modalLookImage {
   display: block;
-  width: 100%;
+  max-width: 100%;
   max-height: 68vh;
+  margin: 0 auto;
   object-fit: contain;
-  background: #000;
 }
 
 .modalClass {
@@ -1009,26 +975,6 @@
   color: var(--text-primary);
 }
 
-.lookFormBlock {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.lookFormBlock > .select {
-  max-width: 240px;
-}
-
-.lookFormBlock > .textBtn {
-  align-self: flex-start;
-}
-
-.lookFormLabel {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--text-secondary);
-}
-
 .apiRow {
   display: flex;
   gap: 0.4rem;
@@ -1194,83 +1140,262 @@
 }
 
 
-/* ─── 착장 등록: 여러 장 + 대표 고르기 ─── */
-.labelNote {
-  margin-left: 0.35rem;
-  font-size: 0.74rem;
-  font-weight: 400;
-  color: var(--text-muted);
+/* ─── 착장 등록: 단계 칸 (1 사진 · 2 직업 · 3 아바타) ─── */
+.lfSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--card-bg);
 }
 
-.dropZoneMini {
-  min-height: 56px;
+.lfSection > .textBtn {
+  align-self: flex-start;
 }
 
-.shotGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+.lfSectionHead {
+  display: flex;
+  align-items: center;
   gap: 0.5rem;
 }
 
-.shot {
+.lfStep {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.lfSectionTitle {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.lfCount {
+  margin-left: auto;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.lfOptional {
+  padding: 0.05rem 0.45rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.lfSubTitle {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.lfNoteStrong {
+  color: var(--color-accent);
+}
+
+.lfClassSelect {
+  max-width: 240px;
+}
+
+/* ─── 착장 등록: 사진 칸 — 파일을 끌고 오면 주황 실선 + 안내 판으로 켜진다 ─── */
+.photoTray {
+  position: relative;
+  padding: 0.75rem;
+  border: 2px dashed var(--border-color);
+  border-radius: 10px;
+  background: var(--input-bg);
+}
+
+.photoTrayActive {
+  border-style: solid;
+  border-color: var(--color-accent);
+}
+
+.photoTrayError {
+  border-color: var(--color-danger);
+}
+
+.photoEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  width: 100%;
+  min-height: 200px;
+  padding: 1rem;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.photoEmpty svg {
+  color: var(--color-accent);
+}
+
+.photoEmpty strong {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.photoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 0.6rem;
+}
+
+/* 사진 칸 — 자르지 않고 사진 전체를 검은 바탕에 보여 준다(무엇을 올렸는지 그대로) */
+.photo {
   position: relative;
   overflow: hidden;
   aspect-ratio: 9 / 16;
   border: 2px solid var(--border-color);
   border-radius: 8px;
-  background: var(--input-bg);
+  background: #000;
 }
 
-.shotCover {
-  border-color: var(--color-accent);
+.photoIsCover {
+  border: 3px solid var(--color-accent);
 }
 
-.shotImg {
+.photoImg {
+  display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  object-position: center top;
+  object-fit: contain;
 }
 
-.shotCoverBtn {
+.photoCoverTag {
   position: absolute;
-  left: 0.3rem;
-  bottom: 0.3rem;
-  padding: 0.12rem 0.45rem;
+  top: 0;
+  left: 0;
+  padding: 0.2rem 0.6rem;
+  border-bottom-right-radius: 8px;
+  background: var(--color-accent);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.photoSetCover {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  padding: 0.4rem 0;
   border: none;
-  border-radius: 6px;
-  background: rgba(0, 0, 0, 0.6);
-  color: #e2e8f0;
-  font-size: 0.72rem;
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff;
+  font-size: 0.75rem;
   font-weight: 700;
   cursor: pointer;
 }
 
-.shotCoverBtnOn {
+.photoSetCover:hover {
   background: var(--color-accent);
-  color: #fff;
 }
 
-.shotRemove {
+.photoRemove {
   position: absolute;
   top: 0.3rem;
   right: 0.3rem;
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1.6rem;
+  height: 1.6rem;
   padding: 0;
   border: none;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.6);
-  color: #e2e8f0;
-  font-size: 0.95rem;
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff;
+  font-size: 1rem;
   line-height: 1;
   cursor: pointer;
+}
+
+.photoRemove:hover {
+  background: var(--color-danger);
+}
+
+.photoAdd {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  aspect-ratio: 9 / 16;
+  border: 2px dashed var(--border-color);
+  border-radius: 8px;
+  background: var(--card-bg);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.photoAdd:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.photoAddPlus {
+  font-size: 1.6rem;
+  line-height: 1;
+  color: var(--color-accent);
+}
+
+/* 끄는 중 — 사진 칸 전체를 주황 판으로 덮는다. 마우스 이벤트는 아래로 흘려 끌기 깊이 계산을 흐트러뜨리지 않는다 */
+.photoDropOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: var(--color-accent);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 800;
+  pointer-events: none;
+}
+
+.coverAdjust {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.25rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border-color);
 }
 
 /* ─── 착장 팝업: 사진 넘기기 ─── */
 .viewer {
   position: relative;
   background: #000;
+}
+
+/* 사진이 여러 장이면 칸 높이를 고정한다 — 사진마다 높이가 달라 넘길 때 창이 출렁이지 않게. 사진은 가운데 */
+.viewerMulti {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 68vh;
 }
 
 .viewerNav {
@@ -1438,13 +1563,6 @@
 }
 
 /* ─── 대표 사진 틀 맞추기 ─── */
-.cropBlock {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  margin-top: 0.4rem;
-}
-
 .cropper {
   display: flex;
   flex-direction: column;
@@ -1641,10 +1759,6 @@ a.featureLooksCount {
     font-size: 0.85rem;
   }
 
-  .heroFoot {
-    margin-top: 0.1rem;
-  }
-
   /* 제목 줄과 "+ 내 착장 등록" — 버튼을 아래로 내려 손가락 크기로 */
   .looksHead {
     flex-direction: column;
@@ -1703,10 +1817,6 @@ a.featureLooksCount {
     padding: 1rem 0.45rem 0.35rem;
   }
 
-  .lookTileMeta .lookTileAuthor {
-    display: none;
-  }
-
   .lookTileClass {
     font-size: 0.76rem;
   }
@@ -1747,6 +1857,10 @@ a.featureLooksCount {
   .modalLookImage,
   .modalImage {
     max-height: 62vh;
+  }
+
+  .viewerMulti {
+    height: 62vh;
   }
 
   .modalClose {
@@ -1791,25 +1905,32 @@ a.featureLooksCount {
     padding: 0.8rem;
   }
 
-  .lookFormBlock > .select {
+  .lfSection {
+    padding: 0.8rem;
+  }
+
+  .lfClassSelect {
     max-width: none;
   }
+
+  .photoTray {
+    padding: 0.5rem;
+  }
+
+  .photoGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.4rem;
+  }
+
+  .photoEmpty {
+    min-height: 160px;
+  }
+
 
   .apiRow {
     max-width: none;
   }
 
-  .shotGrid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 0.35rem;
-  }
-
-  .shotCoverBtn {
-    left: 0.2rem;
-    bottom: 0.2rem;
-    padding: 0.08rem 0.3rem;
-    font-size: 0.64rem;
-  }
 
   .cropImg {
     max-height: 360px;
@@ -1839,10 +1960,5 @@ a.featureLooksCount {
 
   .glossInput {
     width: 3rem;
-  }
-
-  .labelNote {
-    display: block;
-    margin: 0.15rem 0 0;
   }
 }

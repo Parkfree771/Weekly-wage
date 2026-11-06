@@ -3,6 +3,8 @@
 // 올리기 전에 브라우저에서 WebP 로 줄인다 — 원본 캡쳐(PNG 수 MB)를 그대로 올리면 저장·전송량이 금방 찬다.
 //   원본: 긴 변 1920px · 품질 0.88 (상세·크게 보기 — 캡쳐가 잘 보이는 게 핵심이라 FHD 그대로)
 //   썸네일: 긴 변 800px · 품질 0.8 (갤러리 카드·착장 목록 — 레티나에서도 흐리지 않게)
+// 착장 사진(keepOriginal)은 긴 변이 1920px 이하면 파일을 다시 굽지 않고 그대로 올린다 — 착장 캡쳐는 보통
+// 캐릭터만 잘라 300×500 안팎이라 용량이 작고, 다시 구우면 크게 보기에서 뭉개진다. 1920 을 넘는 것만 줄인다.
 // 업로드는 브라우저가 Firebase Storage 에 바로 한다 — 네트리파이 함수를 거치지 않는다.
 // firebase/storage 는 올릴 때만 필요하므로 지연 import 한다(보기만 하는 방문자는 받지 않는다).
 
@@ -72,16 +74,20 @@ function encode(
 }
 
 /**
- * 파일 → 원본·썸네일 WebP 두 장.
+ * 파일 → 원본·썸네일 두 장 (썸네일은 항상 WebP).
  * thumbCrop 을 주면 썸네일만 그 영역으로 자른다(대표 사진의 9:16 틀). 원본은 항상 전체 그대로.
+ * keepOriginal 이면 긴 변 1920px 이하인 원본은 파일 그대로 둔다.
  */
-export async function compressImage(file: File, thumbCrop?: CropRect) {
+export async function compressImage(file: File, thumbCrop?: CropRect, keepOriginal = false) {
   if (!file.type.startsWith('image/')) throw new Error('이미지 파일만 올릴 수 있습니다.');
   if (file.size > MAX_SOURCE_BYTES) throw new Error('이미지가 너무 큽니다 (20MB 이하).');
   const src = await loadBitmap(file);
   try {
+    const iw = 'naturalWidth' in src ? src.naturalWidth : src.width;
+    const ih = 'naturalHeight' in src ? src.naturalHeight : src.height;
+    const asIs = keepOriginal && Math.max(iw, ih) <= FULL_MAX;
     const [full, thumb] = await Promise.all([
-      encode(src, FULL_MAX, FULL_QUALITY),
+      asIs ? Promise.resolve({ blob: file as Blob, w: iw, h: ih }) : encode(src, FULL_MAX, FULL_QUALITY),
       encode(src, THUMB_MAX, THUMB_QUALITY, thumbCrop),
     ]);
     return { full, thumb };
@@ -94,20 +100,27 @@ export async function compressImage(file: File, thumbCrop?: CropRect) {
  * 압축 후 Storage 에 올린다.
  * @param dir 저장 폴더 — 'avatarPackages/{uid}' 또는 'avatarLooks/{postId}/{uid}' (storage.rules 와 맞춘다)
  */
-export async function uploadAvatarImage(file: File, dir: string, thumbCrop?: CropRect): Promise<StoredImage> {
-  const { full, thumb } = await compressImage(file, thumbCrop);
+export async function uploadAvatarImage(
+  file: File, dir: string, thumbCrop?: CropRect, keepOriginal = false,
+): Promise<StoredImage> {
+  const { full, thumb } = await compressImage(file, thumbCrop, keepOriginal);
   const [{ getStorage, ref, uploadBytes, getDownloadURL }, { app }] = await Promise.all([
     import('firebase/storage'),
     import('@/lib/firebase-client'),
   ]);
   const storage = getStorage(app);
   const stamp = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-  const path = `${dir}/${stamp}.webp`;
+  // 원본을 그대로 둔 경우 형식(png·jpeg 등)이 파일 따라 간다
+  const fullType = full.blob.type;
+  const path = `${dir}/${stamp}.${fullType.split('/')[1]}`;
   const thumbPath = `${dir}/${stamp}_t.webp`;
   // 한 번 올린 파일은 바뀌지 않는다 — 브라우저가 길게 캐시해도 된다
-  const meta = { contentType: 'image/webp', cacheControl: 'public, max-age=31536000, immutable' };
+  const cacheControl = 'public, max-age=31536000, immutable';
   const [fullRef, thumbRef] = [ref(storage, path), ref(storage, thumbPath)];
-  await Promise.all([uploadBytes(fullRef, full.blob, meta), uploadBytes(thumbRef, thumb.blob, meta)]);
+  await Promise.all([
+    uploadBytes(fullRef, full.blob, { contentType: fullType, cacheControl }),
+    uploadBytes(thumbRef, thumb.blob, { contentType: 'image/webp', cacheControl }),
+  ]);
   const [url, thumbUrl] = await Promise.all([getDownloadURL(fullRef), getDownloadURL(thumbRef)]);
   return { url, path, thumbUrl, thumbPath, w: full.w, h: full.h };
 }

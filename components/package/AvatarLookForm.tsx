@@ -107,6 +107,10 @@ export default function AvatarLookForm({ postId, uid, authorName, defaultClass, 
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  // 파일을 폼 위로 끌고 오면 사진 칸을 켠다. 자식 요소를 지날 때마다 enter/leave 가 번갈아 와서 깊이를 센다
+  const [dragging, setDragging] = useState(false);
+  const dragDepth = useRef(0);
+  const hasFiles = (e: React.DragEvent) => Array.from(e.dataTransfer.types).includes('Files');
 
   // 미리보기 주소는 폼이 닫힐 때 한꺼번에 푼다
   const shotsRef = useRef<Shot[]>([]);
@@ -227,7 +231,7 @@ export default function AvatarLookForm({ postId, uid, authorName, defaultClass, 
           setProgress(`사진 올리는 중 ${i + 1}/${ordered.length}`);
           // 대표(맨 앞)만 썸네일을 틀대로 자른다 — 원본은 전체 그대로
           const crop = i === 0 ? crops[ordered[i].id] : undefined;
-          images.push(await uploadAvatarImage(ordered[i].file, `avatarLooks/${postId}/${uid}`, crop));
+          images.push(await uploadAvatarImage(ordered[i].file, `avatarLooks/${postId}/${uid}`, crop, true));
         }
       } catch (err) {
         await Promise.all(images.map((img) => deleteAvatarImage(img)));
@@ -262,17 +266,112 @@ export default function AvatarLookForm({ postId, uid, authorName, defaultClass, 
   };
 
   return (
-    <form className={av.lookForm} onSubmit={handleSubmit}>
+    <form
+      className={av.lookForm}
+      onSubmit={handleSubmit}
+      // 폼 어디에 놓아도 사진으로 받는다 — 사진 칸만 정확히 겨냥하지 않아도 된다
+      onDragEnter={(e) => { if (!hasFiles(e)) return; e.preventDefault(); dragDepth.current += 1; setDragging(true); }}
+      onDragOver={(e) => { if (!hasFiles(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; }}
+      onDragLeave={(e) => {
+        if (!hasFiles(e)) return;
+        dragDepth.current -= 1;
+        if (dragDepth.current <= 0) { dragDepth.current = 0; setDragging(false); }
+      }}
+      onDrop={(e) => {
+        if (!hasFiles(e)) return;
+        e.preventDefault();
+        dragDepth.current = 0;
+        setDragging(false);
+        addFiles(e.dataTransfer.files);
+      }}
+    >
       <div className={av.lookFormHead}>
         <h3 className={av.lookFormTitle}>내 착장 등록</h3>
         <button type="button" className={av.textBtn} onClick={onCancel}>닫기</button>
       </div>
 
-      {/* 1. 직업 */}
-      <div className={av.lookFormBlock}>
-        <span className={av.lookFormLabel}>직업 *</span>
+      {/* 1. 착장 사진 — 여러 장, 대표 1장이 착장 목록 썸네일 */}
+      <section className={av.lfSection}>
+        <div className={av.lfSectionHead}>
+          <span className={av.lfStep}>1</span>
+          <h4 className={av.lfSectionTitle}>착장 사진</h4>
+          <span className={av.lfCount}>{shots.length} / {MAX_LOOK_IMAGES}장</span>
+        </div>
+
+        <div className={`${av.photoTray} ${dragging ? av.photoTrayActive : ''} ${errors.image ? av.photoTrayError : ''}`}>
+          {shots.length === 0 ? (
+            <button type="button" className={av.photoEmpty} onClick={() => fileRef.current?.click()}>
+              <svg viewBox="0 0 24 24" width="34" height="34" aria-hidden="true">
+                <path d="M12 16V4m0 0l-4.5 4.5M12 4l4.5 4.5M4 15v3.5A1.5 1.5 0 005.5 20h13a1.5 1.5 0 001.5-1.5V15"
+                  fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <strong>사진을 여기로 끌어다 놓으세요</strong>
+              <span>또는 눌러서 선택 · Ctrl+V 붙여넣기 · 여러 장 가능</span>
+            </button>
+          ) : (
+            <div className={av.photoGrid}>
+              {shots.map((s, i) => {
+                const isCover = s.id === coverId;
+                return (
+                  <div key={s.id} className={`${av.photo} ${isCover ? av.photoIsCover : ''}`}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={s.url} alt={`${i + 1}번째 사진`} className={av.photoImg} />
+                    {isCover ? (
+                      <span className={av.photoCoverTag}>대표</span>
+                    ) : (
+                      <button type="button" className={av.photoSetCover} onClick={() => setCoverId(s.id)}>
+                        대표로 지정
+                      </button>
+                    )}
+                    <button type="button" className={av.photoRemove} onClick={() => removeShot(s.id)}
+                      aria-label={`${i + 1}번째 사진 빼기`} title="빼기">×</button>
+                  </div>
+                );
+              })}
+              {shots.length < MAX_LOOK_IMAGES && (
+                <button type="button" className={av.photoAdd} onClick={() => fileRef.current?.click()}>
+                  <span className={av.photoAddPlus} aria-hidden="true">+</span>
+                  사진 추가
+                </button>
+              )}
+            </div>
+          )}
+          {dragging && (
+            <div className={av.photoDropOverlay} aria-hidden="true">
+              놓으면 사진이 추가돼요
+            </div>
+          )}
+        </div>
+        <input ref={fileRef} type="file" accept="image/*" multiple hidden
+          onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }} />
+        {errors.image && <p className={av.fieldError}>{errors.image}</p>}
+        {shots.length > 0 && (
+          <p className={av.formNote}>
+            <b className={av.lfNoteStrong}>대표</b> 사진이 착장 목록에 썸네일로 보입니다. 다른 사진을 쓰려면 &lsquo;대표로 지정&rsquo;을 누르세요.
+          </p>
+        )}
+
+        {coverShot && (
+          <div className={av.coverAdjust}>
+            <span className={av.lfSubTitle}>대표 썸네일 영역</span>
+            <p className={av.formNote}>틀을 끌어 옮기고 크기를 조절하세요. 목록에는 틀 안만 보이고, 크게 보기는 사진 전체가 보입니다.</p>
+            <CoverCropper
+              url={coverShot.url}
+              value={crops[coverShot.id] ?? null}
+              onChange={(c) => setCrops((prev) => ({ ...prev, [coverShot.id]: c }))}
+            />
+          </div>
+        )}
+      </section>
+
+      {/* 2. 직업 */}
+      <section className={av.lfSection}>
+        <div className={av.lfSectionHead}>
+          <span className={av.lfStep}>2</span>
+          <h4 className={av.lfSectionTitle}>직업</h4>
+        </div>
         <select
-          className={`${av.select} ${errors.className ? av.inputBad : ''}`}
+          className={`${av.select} ${av.lfClassSelect} ${errors.className ? av.inputBad : ''}`}
           value={className}
           onChange={(e) => setClassName(e.target.value)}
           aria-label="직업"
@@ -285,66 +384,15 @@ export default function AvatarLookForm({ postId, uid, authorName, defaultClass, 
           ))}
         </select>
         {errors.className && <p className={av.fieldError}>{errors.className}</p>}
-      </div>
-
-      {/* 2. 캡쳐 — 여러 장, 대표 1장이 갤러리 썸네일 */}
-      <div className={av.lookFormBlock}>
-        <span className={av.lookFormLabel}>
-          캡쳐 이미지 * <small className={av.labelNote}>최대 {MAX_LOOK_IMAGES}장 · 대표 사진이 목록에 보입니다</small>
-        </span>
-        {shots.length > 0 && (
-          <div className={av.shotGrid}>
-            {shots.map((s) => {
-              const isCover = s.id === coverId;
-              return (
-                <div key={s.id} className={`${av.shot} ${isCover ? av.shotCover : ''}`}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={s.url} alt="" className={av.shotImg} />
-                  <button type="button" className={`${av.shotCoverBtn} ${isCover ? av.shotCoverBtnOn : ''}`}
-                    onClick={() => setCoverId(s.id)} aria-pressed={isCover}>
-                    {isCover ? '대표' : '대표로'}
-                  </button>
-                  <button type="button" className={av.shotRemove} onClick={() => removeShot(s.id)}
-                    aria-label="이 사진 빼기" title="빼기">×</button>
-                </div>
-              );
-            })}
-          </div>
-        )}
-        {coverShot && (
-          <div className={av.cropBlock}>
-            <span className={av.lookFormLabel}>
-              대표 사진 맞추기 <small className={av.labelNote}>틀을 끌어 옮기고 크기를 조절하세요 · 목록에는 틀 안만 보입니다</small>
-            </span>
-            <CoverCropper
-              url={coverShot.url}
-              value={crops[coverShot.id] ?? null}
-              onChange={(c) => setCrops((prev) => ({ ...prev, [coverShot.id]: c }))}
-            />
-          </div>
-        )}
-        {shots.length < MAX_LOOK_IMAGES && (
-          <button
-            type="button"
-            className={`${av.dropZone} ${shots.length > 0 ? av.dropZoneMini : av.dropZoneSmall} ${errors.image ? av.dropZoneError : ''}`}
-            onClick={() => fileRef.current?.click()}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => { e.preventDefault(); addFiles(e.dataTransfer.files); }}
-          >
-            <span className={av.dropHint}>
-              {shots.length > 0 ? '+ 사진 추가' : '눌러서 이미지 선택 (여러 장 가능)'}
-              <small>끌어다 놓기 · Ctrl+V 붙여넣기도 됩니다</small>
-            </span>
-          </button>
-        )}
-        <input ref={fileRef} type="file" accept="image/*" multiple hidden
-          onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }} />
-        {errors.image && <p className={av.fieldError}>{errors.image}</p>}
-      </div>
+      </section>
 
       {/* 3. 아바타 정보 */}
-      <div className={av.lookFormBlock}>
-        <span className={av.lookFormLabel}>착용 아바타 · 염색 (선택)</span>
+      <section className={av.lfSection}>
+        <div className={av.lfSectionHead}>
+          <span className={av.lfStep}>3</span>
+          <h4 className={av.lfSectionTitle}>착용 아바타 · 염색</h4>
+          <span className={av.lfOptional}>선택</span>
+        </div>
         <div className={av.apiRow}>
           <input
             type="text"
@@ -432,7 +480,7 @@ export default function AvatarLookForm({ postId, uid, authorName, defaultClass, 
           + 아바타 직접 추가
         </button>
         {errors.pieces && <p className={av.fieldError}>{errors.pieces}</p>}
-      </div>
+      </section>
 
       {error && <p className={av.fieldError}>{error}</p>}
       <button type="submit" className={av.primaryBtn} disabled={submitting}>
