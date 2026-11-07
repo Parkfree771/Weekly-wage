@@ -1702,10 +1702,6 @@
   cursor: default;
 }
 
-.lookLikeStatic {
-  border-color: var(--border-color);
-  color: var(--text-muted);
-}
 
 /* ─── 대표 사진 틀 맞추기 ─── */
 .cropper {

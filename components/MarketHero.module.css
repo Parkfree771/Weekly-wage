@@ -495,7 +495,7 @@
     font-size: clamp(0.98rem, 4.5vw, 1.2rem);
   }
 
-  /* 아바타 — 배지 왼쪽 위 · D-day 오른쪽 위, 아래 글줄은 제목(최대 2줄) · 가격 한 줄 */
+  /* 아바타 — 배지 왼쪽 위 · D-day 오른쪽 위, 아래 글줄은 제목(한 줄, 넘치면 …) · 가격 */
   .avatarBadgeCorner {
     top: 8px;
     left: 8px;
