@@ -196,7 +196,7 @@
 
 .commonRateInput:focus {
   outline: none;
-  border-bottom-color: var(--color-accent);
+  border-bottom-color: var(--color-primary);
 }
 
 /* 상자 맨 아래 상태 띠 — "공통 환율 적용 중" 라벨 + 해제 버튼 (적용 중일 때만) */
@@ -574,7 +574,7 @@
 }
 
 .filterSelect:focus {
-  border-color: var(--color-accent);
+  border-color: var(--color-primary);
   outline: none;
   box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
 }
@@ -595,7 +595,7 @@
   align-items: center;
   gap: 0.35rem;
   color: #fff;
-  background: var(--color-accent);
+  background: var(--color-primary);
   border: none;
   border-radius: 8px;
   padding: 0.5rem 1.2rem;
@@ -605,7 +605,7 @@
 }
 
 .registerLink:hover {
-  background: var(--color-accent-dark);
+  background: var(--color-primary-dark);
   color: #fff;
 }
 
@@ -719,7 +719,7 @@
 }
 
 .pageBtn:hover:not(:disabled) {
-  border-color: var(--color-accent);
+  border-color: var(--color-primary);
   color: var(--color-accent);
 }
 
@@ -729,15 +729,15 @@
 }
 
 .pageBtnActive {
-  background: var(--color-accent);
-  border-color: var(--color-accent);
+  background: var(--color-primary);
+  border-color: var(--color-primary);
   color: #fff;
 }
 
 /* 현재 페이지 버튼은 다시 눌러도 아무 일 없지만(handlePageChange 가 무시) 흐려지면 안 된다 */
 .pageBtnActive:hover:not(:disabled) {
   color: #fff;
-  border-color: var(--color-accent);
+  border-color: var(--color-primary);
 }
 
 .pageGap {
@@ -996,7 +996,7 @@
 }
 
 .quantityInput:focus {
-  border-color: var(--color-accent);
+  border-color: var(--color-primary);
   outline: none;
   box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.15);
 }
@@ -1062,7 +1062,7 @@
 }
 
 .formInput:focus {
-  border-color: var(--color-accent);
+  border-color: var(--color-primary);
   outline: none;
   box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
 }
@@ -1086,19 +1086,19 @@
 }
 
 .typeButton:hover {
-  border-color: var(--color-accent);
+  border-color: var(--color-primary);
   color: var(--color-accent);
 }
 
 .typeButtonActive {
-  background: var(--color-accent);
-  border-color: var(--color-accent);
+  background: var(--color-primary);
+  border-color: var(--color-primary);
   color: #fff;
 }
 
 .typeButtonActive:hover {
-  background: var(--color-accent-dark);
-  border-color: var(--color-accent-dark);
+  background: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
   color: #fff;
 }
 
@@ -1125,19 +1125,19 @@
 }
 
 .priceCurrencyBtn:hover {
-  border-color: var(--color-accent);
+  border-color: var(--color-primary);
   color: var(--color-accent);
 }
 
 .priceCurrencyBtnActive {
-  background: var(--color-accent);
-  border-color: var(--color-accent);
+  background: var(--color-primary);
+  border-color: var(--color-primary);
   color: #fff;
 }
 
 .priceCurrencyBtnActive:hover {
-  background: var(--color-accent-dark);
-  border-color: var(--color-accent-dark);
+  background: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
   color: #fff;
 }
 
@@ -1243,7 +1243,7 @@
 }
 
 .salePeriodInput:focus {
-  border-color: var(--color-accent);
+  border-color: var(--color-primary);
   outline: none;
   box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
 }
@@ -1415,7 +1415,7 @@
 }
 
 .tradeModeBtnActive {
-  background: var(--color-accent);
+  background: var(--color-primary);
   color: #fff;
 }
 
@@ -1453,7 +1453,7 @@
 }
 
 .ratioInput:focus {
-  border-color: var(--color-accent);
+  border-color: var(--color-primary);
   outline: none;
   box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
 }
@@ -1475,8 +1475,8 @@
 /* 등록 버튼 */
 .registerButton {
   color: #fff;
-  background: var(--color-accent);
-  border: 2px solid var(--color-accent);
+  background: var(--color-primary);
+  border: 2px solid var(--color-primary);
   border-radius: 10px;
   padding: 0.6rem 2rem;
   font-size: 0.95rem;
@@ -1486,8 +1486,8 @@
 }
 
 .registerButton:hover {
-  background: var(--color-accent-dark);
-  border-color: var(--color-accent-dark);
+  background: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
 }
 
 .registerButton:disabled {
@@ -1946,12 +1946,12 @@
 }
 
 .itemCardCheckLabel:hover .itemCardCheckBox {
-  border-color: var(--color-accent);
+  border-color: var(--color-primary);
 }
 
 .itemCardCheckInput:checked + .itemCardCheckBox {
-  background: var(--color-accent);
-  border-color: var(--color-accent);
+  background: var(--color-primary);
+  border-color: var(--color-primary);
 }
 
 .itemCardCheckIcon {
@@ -2187,7 +2187,7 @@
 }
 
 .itemCardChoiceBtnActive {
-  border-color: var(--color-accent);
+  border-color: var(--color-primary);
   background: rgba(249, 115, 22, 0.08);
   color: var(--text-primary);
   font-weight: 600;
@@ -2212,7 +2212,7 @@
 }
 
 .itemCardChoiceSelect:focus {
-  border-color: var(--color-accent);
+  border-color: var(--color-primary);
   outline: none;
 }
 
@@ -2240,11 +2240,11 @@
 
 /* ─── 상세 카드 (계산 결과 · 아이템 구성 · 보너스 구성품 공용) ─── */
 /* --border-color(알파 0.12) 1px 로는 카드 사이에 광고가 끼면 어디까지가 한 상자인지 구분이 안 된다.
-   색은 카드 헤더 바(::before 그라데이션 시작색)와 같은 --color-accent 로 맞춘다. */
+   색은 카드 헤더 바(::before 그라데이션)와 같은 --color-primary(남보라)로 맞춘다 — 띠·테두리 한 계열. */
 .detailCard {
   position: relative;
   background: var(--card-bg);
-  border: 1.5px solid var(--color-accent);
+  border: 1.5px solid var(--color-primary);
   border-radius: 12px;
   padding: 1.25rem;
   overflow: hidden;
@@ -2257,7 +2257,7 @@
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, var(--color-accent), var(--color-warning));
+  background: var(--color-primary);
   border-radius: 12px 12px 0 0;
 }
 
@@ -2427,7 +2427,7 @@
 }
 
 .resultRateInput:focus-within {
-  border-color: var(--color-accent);
+  border-color: var(--color-primary);
 }
 
 .resultRateIcon {
@@ -2548,7 +2548,7 @@
   border-radius: 6px;
   font-size: 0.72rem;
   font-weight: 600;
-  border: 1px solid var(--color-accent);
+  border: 1px solid var(--color-primary);
   cursor: pointer;
   text-decoration: none;
   background: var(--card-bg);
@@ -2558,7 +2558,7 @@
 }
 
 .editBtn:hover {
-  background: var(--color-accent);
+  background: var(--color-primary);
   color: #fff;
 }
 
@@ -3172,13 +3172,13 @@
 
 .choiceOptionSelected {
   background: rgba(249, 115, 22, 0.08);
-  border-color: var(--color-accent);
+  border-color: var(--color-primary);
   color: var(--text-primary);
   font-weight: 600;
 }
 
 .choiceOptionSelected::before {
-  background: var(--color-accent);
+  background: var(--color-primary);
 }
 
 .choiceOptionIcon {
@@ -3238,7 +3238,7 @@
 }
 
 .choiceSelect:focus {
-  border-color: var(--color-accent);
+  border-color: var(--color-primary);
   outline: none;
 }
 
@@ -3324,7 +3324,7 @@
 
 .catalogSearch:focus {
   outline: none;
-  border-color: var(--color-accent);
+  border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
 }
 
@@ -3392,8 +3392,8 @@
 
 .catalogTabActive,
 .catalogTabActive:hover {
-  border-color: var(--color-accent);
-  background: var(--color-accent);
+  border-color: var(--color-primary);
+  background: var(--color-primary);
   color: #fff;
   box-shadow: 0 2px 6px -1px rgba(249, 115, 22, 0.45);
 }
@@ -3419,7 +3419,7 @@
 .catalogSectionTitle {
   margin: 0;
   padding-left: 0.6rem;
-  border-left: 3px solid var(--color-accent);
+  border-left: 3px solid var(--color-primary);
   font-size: 0.95rem;
   font-weight: 800;
   line-height: 1.2;
@@ -3485,7 +3485,7 @@
 }
 
 .catalogEmptyBtn:hover {
-  border-color: var(--color-accent);
+  border-color: var(--color-primary);
   color: var(--color-accent);
 }
 
@@ -3512,7 +3512,7 @@
 }
 
 .availableItem:hover {
-  border-color: var(--color-accent);
+  border-color: var(--color-primary);
   background: rgba(249, 115, 22, 0.05);
   box-shadow: var(--shadow-md);
   transform: translateY(-1px);
@@ -3531,7 +3531,7 @@
   height: 20px;
   padding: 0 5px;
   border-radius: 10px;
-  background: var(--color-accent);
+  background: var(--color-primary);
   color: #fff;
   font-size: 0.7rem;
   font-weight: 700;
@@ -3811,7 +3811,7 @@
 }
 
 .gachaItemCardHighlight {
-  border-color: var(--color-accent);
+  border-color: var(--color-primary);
   background: rgba(249, 115, 22, 0.08);
   box-shadow: 0 0 16px rgba(249, 115, 22, 0.35);
 }
@@ -3978,7 +3978,7 @@
   font-size: 1.3rem;
   font-weight: 800;
   color: #fff;
-  background: linear-gradient(135deg, var(--color-accent), var(--color-danger));
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
   border: none;
   border-radius: 10px;
   cursor: pointer;
@@ -4072,13 +4072,13 @@
   font-weight: 700;
   color: var(--color-accent);
   background: transparent;
-  border: 2px solid var(--color-accent);
+  border: 2px solid var(--color-primary);
   border-radius: 10px;
   cursor: pointer;
 }
 
 .gachaRerollButton:hover {
-  background: var(--color-accent);
+  background: var(--color-primary);
   color: #fff;
 }
 
@@ -4629,3 +4629,4 @@
 :global([data-theme="dark"]) .packageBoxItemIconPeon .packageBoxItemIcon {
   box-shadow: 0 0 0 2px #4da3f0;
 }
+

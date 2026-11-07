@@ -28,7 +28,7 @@ type CharacterSearchProps = {
 const SEARCH_CACHE_TTL = 5 * 60 * 1000;
 const searchCache = new Map<string, { at: number; characters: Character[] }>();
 
-export default function CharacterSearch({ onSelectionChange, onCharactersLoaded, onSearch, searched, autoSearchName, demoCharacters, buttonColor = 'var(--color-accent)' }: CharacterSearchProps) {
+export default function CharacterSearch({ onSelectionChange, onCharactersLoaded, onSearch, searched, autoSearchName, demoCharacters, buttonColor = 'var(--color-primary)' }: CharacterSearchProps) {
   const [characterName, setCharacterName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [characters, setCharacters] = useState<Character[]>(demoCharacters ?? []);

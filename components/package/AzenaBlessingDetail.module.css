@@ -204,7 +204,7 @@
 
 .segBtnActive {
   color: #fff;
-  background: var(--color-accent);
+  background: var(--color-primary);
 }
 
 /* 화살표는 굵기(font-weight)가 잘 먹지 않는 글리프라 획을 직접 덧그려 두껍게 만든다 */
@@ -349,12 +349,12 @@
 .popBtnActive {
   color: var(--text-primary);
   background: rgba(249, 115, 22, 0.08);
-  border-color: var(--color-accent);
+  border-color: var(--color-primary);
   font-weight: 700;
 }
 
 .popBtnOpen {
-  border-color: var(--color-accent);
+  border-color: var(--color-primary);
 }
 
 .popBtnLabel {
@@ -380,7 +380,7 @@
   max-height: 320px;
   padding: 8px;
   background: var(--card-bg);
-  border: 1px solid var(--color-accent);
+  border: 1px solid var(--color-primary);
   border-radius: 10px;
   box-shadow: var(--shadow-lg);
 }
@@ -468,8 +468,8 @@
 
 .optRowActive {
   color: #fff;
-  background: var(--color-accent);
-  border-color: var(--color-accent);
+  background: var(--color-primary);
+  border-color: var(--color-primary);
 }
 
 .optRowActive .popGold {

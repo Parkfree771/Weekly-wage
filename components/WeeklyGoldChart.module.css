@@ -58,7 +58,7 @@
 }
 
 .segItemOn {
-  background: #6366f1;
+  background: #ca8a04;
   color: #fff;
 }
 
@@ -240,7 +240,7 @@
   position: absolute;
   left: 0;
   right: 0;
-  border-top: 1.5px dashed #6366f1;
+  border-top: 1.5px dashed #ca8a04;
   opacity: 0.7;
   pointer-events: none;
 }
@@ -250,7 +250,7 @@
   right: 0;
   padding: 1.5px 5px;
   border-radius: 4px;
-  background: #6366f1;
+  background: #ca8a04;
   color: #fff;
   font-size: 8.5px;
   font-weight: 800;

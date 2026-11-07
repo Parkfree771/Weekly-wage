@@ -9,6 +9,7 @@ import type { PackagePost } from '@/types/package';
 import { isNewReleasePost } from '@/lib/package-shared';
 import { isSaleEnded, toSaleDate } from '@/lib/package-sale';
 import av from './Avatar.module.css';
+import HeartIcon from './HeartIcon';
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -89,8 +90,8 @@ function AvatarFeatureCard({ post }: { post: PackagePost }) {
                   <img src={l.image.thumbUrl || l.image.url} alt="" loading="lazy" decoding="async" />
                   <span className={`${av.featureRank} ${i === 0 ? av.featureRankTop : ''}`}>{i + 1}</span>
                   <span className={av.featureLookMeta}>
-                    <span>{l.className}</span>
-                    <span className={av.featureLookLikes} aria-label={`좋아요 ${l.likeCount ?? 0}`}>❤️ {l.likeCount ?? 0}</span>
+                    <span className={av.featureLookClass}>{l.className}</span>
+                    <span className={av.featureLookLikes} aria-label={`좋아요 ${l.likeCount ?? 0}`}><HeartIcon size={11} /> {l.likeCount ?? 0}</span>
                   </span>
                 </Link>
               </li>
@@ -103,7 +104,6 @@ function AvatarFeatureCard({ post }: { post: PackagePost }) {
         )}
 
         <div className={av.featureFoot}>
-          <span className={av.featureViews}>조회수 {(post.viewCount || 0).toLocaleString()}</span>
           <Link href={href} className={av.featureMore} prefetch={false}>착용샷 전체 보기 &#8250;</Link>
         </div>
       </div>

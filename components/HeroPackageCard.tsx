@@ -51,7 +51,7 @@ export default function HeroPackageCard({ post }: { post: PackagePost }) {
         <span className={styles.pkgTitle}>{post.title}</span>
       </span>
       <span className={styles.pkgBody}>
-        <span className={`${styles.pkgItems} ${ordered.length > 4 ? styles.pkgItemsOver : ''}`}>
+        <span className={`${styles.pkgItems} ${ordered.length > 4 ? styles.pkgItemsOver : ''} ${ordered.length > 5 ? styles.pkgItemsOverWide : ''}`}>
           {shown.map((it, i) => {
             const icon = iconOf(it);
             return (
@@ -65,8 +65,10 @@ export default function HeroPackageCard({ post }: { post: PackagePost }) {
             );
           })}
           {rest > 0 && <span className={styles.pkgMore}>+{rest}</span>}
-          {/* 모바일 — 4칸. 넘치면 아이콘 3개 + 4번째 칸에 "+N" (CSS 로 4번째부터 숨기고 이 칸을 켠다) */}
+          {/* 모바일 — 좁은 폰 4칸: 넘치면 아이콘 3개 + 4번째 칸 "+N" / 넓은 폰(400px~) 5칸: 아이콘 4개 + 5번째 칸 "+N".
+              어느 칸을 켤지는 CSS 가 화면 폭으로 고른다 */}
           {ordered.length > 4 && <span className={`font-numeric ${styles.pkgMoreMobile}`}>+{ordered.length - 3}</span>}
+          {ordered.length > 5 && <span className={`font-numeric ${styles.pkgMoreMobile} ${styles.pkgMoreWide}`}>+{ordered.length - 4}</span>}
         </span>
         <span className={styles.pkgNumbers}>
           <span className={`font-numeric ${styles.pkgPrice}`}>{post.royalCrystalPrice.toLocaleString('ko-KR')}원</span>

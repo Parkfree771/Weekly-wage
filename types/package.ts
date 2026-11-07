@@ -65,6 +65,8 @@ export type AvatarLook = {
   source: 'api' | 'manual';
   /** 착장 좋아요 수 — likes/{uid} 문서와 같이 ±1 (firestore.rules 가 짝을 검사) */
   likeCount?: number;
+  /** 착장 상세(팝업) 조회수 — 열 때 +1 (firestore.rules: viewCount 하나만 +1). 숫자는 팝업 안에서만 보인다 */
+  viewCount?: number;
   createdAt: Timestamp | string | null;
 };
 

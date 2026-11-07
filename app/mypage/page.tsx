@@ -38,8 +38,10 @@ const BOUND_GOLD_FILTER = 'hue-rotate(280deg) saturate(1.0)';
 const BOUND_GOLD_TEXT = '#e879f9'; // fuchsia-400
 
 // 캐릭터별 골드 split 계산: 더보기 비용은 귀속 골드에서 우선 차감 후 일반 골드에서 차감
+// allBound: 골드 지정 6명 밖 캐릭터 — 클리어 골드 전부 귀속 (lib/gold-chars.ts)
 function calcCharRaidGoldSplit(
   state: { raids: Record<string, boolean[]>; raidGoldReceive?: Record<string, boolean>; raidMoreGoldExclude?: Record<string, boolean> },
+  allBound = false,
 ): { total: number; free: number; bound: number } {
   let total = 0;
   let bound = 0;
@@ -55,7 +57,7 @@ function calcCharRaidGoldSplit(
       if (!checked || !raid.gates[i]) return;
       if (receiveGold) {
         raidGold += raid.gates[i].gold;
-        raidBound += raid.gates[i].boundGold;
+        raidBound += allBound ? raid.gates[i].gold : raid.gates[i].boundGold;
       }
       if (buyMore) {
         raidMoreCost += raid.gates[i].moreGold;
@@ -110,6 +112,11 @@ const HomeworkCalendar = dynamic(() => import('@/components/HomeworkCalendar'), 
 const ContentValueModal = dynamic(() => import('@/components/ContentValueModal'), { ssr: false });
 import type { ContentValueTarget } from '@/components/ContentValueModal';
 import styles from './mypage.module.css';
+import { getGoldCharNames, GOLD_CHAR_MAX } from '@/lib/gold-chars';
+
+// 원정대 등록 시 자동 선택 수 · 카드 기본 노출 수 (더 있으면 더보기)
+const AUTO_SELECT_COUNT = 10;
+const CARD_SHOW_COUNT = 10;
 
 // 카드 i 버튼 아이콘 — 글자 i 는 폰트마다 원 안에서 위치가 어긋나 SVG 로 그린다(점+기둥이 상하 중앙)
 const INFO_ICON = (
@@ -218,6 +225,8 @@ export default function MyPage() {
   // 상태 - 초기값을 DEMO 로 두어 SSR HTML 에 본문 콘텐츠가 박히도록 함 (SEO).
   // 로그인 사용자는 onAuthStateChanged 후 loadExpeditionData 가 실제 데이터로 덮어씀.
   const [characters, setCharacters] = useState<Character[]>(DEMO_CHARACTERS);
+  // 골드 획득 캐릭터 (최대 6) — 나머지는 레이드 골드 전부 귀속
+  const goldCharNames = useMemo(() => getGoldCharNames(characters), [characters]);
   const [weeklyChecklist, setWeeklyChecklist] = useState<WeeklyChecklist>(DEMO_WEEKLY_CHECKLIST);
   const [weeklyGoldHistory, setWeeklyGoldHistory] = useState<WeeklyGoldRecord[]>(DEMO_GOLD_HISTORY);
   const [commonContent, setCommonContent] = useState<CommonContentState>(DEMO_COMMON_CONTENT);
@@ -266,6 +275,7 @@ export default function MyPage() {
   const [selectedCharNames, setSelectedCharNames] = useState<Set<string>>(new Set());
   const [selectedCharOrder, setSelectedCharOrder] = useState<string[]>([]); // 선택 순서
   const [selectedRepChar, setSelectedRepChar] = useState<string>(''); // 대표 캐릭터
+  const [selectedGoldNames, setSelectedGoldNames] = useState<Set<string>>(new Set()); // 골드 획득 캐릭터 (최대 6)
   const [isRegistering, setIsRegistering] = useState(false);
   const [registerError, setRegisterError] = useState<string | null>(null);
 
@@ -312,21 +322,19 @@ export default function MyPage() {
   }, []);
 
   // 캐릭터별 카드 레이드 구성 (표시 레이드·난이도·순서) — 기기 저장(localStorage), DB 미저장
-  const [cardRaidConfig, setCardRaidConfig] = useState<Record<string, string[]>>(() => {
-    if (typeof window === 'undefined') return {};
-    try {
-      const saved = localStorage.getItem('mypage-cardRaids');
-      return saved ? JSON.parse(saved) : {};
-    } catch { return {}; }
-  });
+  // 첫 렌더는 서버와 같은 빈 값으로 그리고, 마운트 뒤에 저장값을 읽는다.
+  // (초기값에서 바로 localStorage 를 읽으면 서버 HTML(기본 난이도)과 첫 클라이언트 렌더(저장 난이도)가 달라 hydration 오류)
+  const [cardRaidConfig, setCardRaidConfig] = useState<Record<string, string[]>>({});
   // 캐릭터별 2줄(일일·주간) 구성 — 동일하게 기기 저장
-  const [cardRow2Config, setCardRow2Config] = useState<Record<string, string[]>>(() => {
-    if (typeof window === 'undefined') return {};
+  const [cardRow2Config, setCardRow2Config] = useState<Record<string, string[]>>({});
+  useEffect(() => {
     try {
-      const saved = localStorage.getItem('mypage-cardRow2');
-      return saved ? JSON.parse(saved) : {};
-    } catch { return {}; }
-  });
+      const raids = localStorage.getItem('mypage-cardRaids');
+      if (raids) setCardRaidConfig(JSON.parse(raids));
+      const row2 = localStorage.getItem('mypage-cardRow2');
+      if (row2) setCardRow2Config(JSON.parse(row2));
+    } catch {}
+  }, []);
   const [raidEditChar, setRaidEditChar] = useState<Character | null>(null);
   const [raidEditList, setRaidEditList] = useState<string[]>([]);
   const [row2EditList, setRow2EditList] = useState<string[]>([]);
@@ -615,10 +623,11 @@ export default function MyPage() {
       let additionalGold = 0;
       let freeGold = 0;
       let boundGold = 0;
+      const resetGoldNames = getGoldCharNames(chars);
       chars.forEach(char => {
         const cs = checklist[char.name];
         if (!cs) return;
-        const split = calcCharRaidGoldSplit(cs);
+        const split = calcCharRaidGoldSplit(cs, !resetGoldNames.has(char.name));
         raidGold += split.total;
         freeGold += split.free;
         boundGold += split.bound;
@@ -765,9 +774,7 @@ export default function MyPage() {
     if (!user || !userProfile || imageLoadAttempted.current) return;
 
     const { chars } = getExpeditionData(userProfile, activeExpedition);
-    const charsWithoutImage = chars
-      .slice(0, 6)
-      .filter(c => !c.imageUrl);
+    const charsWithoutImage = chars.filter(c => !c.imageUrl);
 
     if (charsWithoutImage.length === 0) return;
 
@@ -848,11 +855,12 @@ export default function MyPage() {
       const dedupedChars = Array.from(bestMap.values());
 
       setAllSiblings(dedupedChars);
-      // 상위 6개 자동 선택 (1640 이상만)
-      const top6Names = dedupedChars.filter(c => c.itemLevel >= 1640).slice(0, 6).map(c => c.name);
-      setSelectedCharNames(new Set(top6Names));
-      setSelectedCharOrder(top6Names);
-      setSelectedRepChar(top6Names[0] || '');
+      // 상위 10개 자동 선택 (1640 이상만) — 골드 캐릭터는 그중 앞 6명
+      const topNames = dedupedChars.filter(c => c.itemLevel >= 1640).slice(0, AUTO_SELECT_COUNT).map(c => c.name);
+      setSelectedCharNames(new Set(topNames));
+      setSelectedCharOrder(topNames);
+      setSelectedGoldNames(new Set(topNames.slice(0, GOLD_CHAR_MAX)));
+      setSelectedRepChar(topNames[0] || '');
       setRegisterStep(2);
     } catch {
       setRegisterError('검색 중 오류가 발생했습니다.');
@@ -866,14 +874,27 @@ export default function MyPage() {
     if (selectedCharNames.has(charName)) {
       setSelectedCharNames(prev => { const s = new Set(prev); s.delete(charName); return s; });
       setSelectedCharOrder(prev => prev.filter(n => n !== charName));
+      setSelectedGoldNames(prev => { const s = new Set(prev); s.delete(charName); return s; });
       if (selectedRepChar === charName) setSelectedRepChar('');
-    } else if (selectedCharNames.size < 6) {
+    } else {
       setSelectedCharNames(prev => new Set([...prev, charName]));
+      // 골드 칸이 남아 있으면 새로 넣은 캐릭터도 골드 캐릭터로
+      setSelectedGoldNames(prev => (prev.size < GOLD_CHAR_MAX ? new Set([...prev, charName]) : prev));
       setSelectedCharOrder(prev => {
         if (prev.includes(charName)) return prev;
         return [...prev, charName];
       });
     }
+  };
+
+  // 골드 획득 캐릭터 지정 토글 (최대 6)
+  const toggleGoldChar = (name: string) => {
+    setSelectedGoldNames(prev => {
+      const s = new Set(prev);
+      if (s.has(name)) s.delete(name);
+      else if (s.size < GOLD_CHAR_MAX) s.add(name);
+      return s;
+    });
   };
 
   // 순서 변경 (위/아래)
@@ -902,7 +923,8 @@ export default function MyPage() {
       const orderedNames = selectedCharOrder.filter(n => selectedCharNames.has(n));
       const selectedChars = orderedNames
         .map(name => allSiblings.find(c => c.name === name)!)
-        .filter(Boolean);
+        .filter(Boolean)
+        .map(c => ({ ...c, gold: selectedGoldNames.has(c.name) }));
 
       const repChar = selectedRepChar || selectedChars[0]?.name || '';
 
@@ -946,11 +968,73 @@ export default function MyPage() {
     setRegisterError(null);
   };
 
+  // 원정대 갱신 (편집 모달) — 게임에서 지운 캐릭터·새로 만든 캐릭터를 원정대 목록에 반영.
+  // 등록 때 받아 둔 allCharacters 는 그대로 굳어 있으므로, 지금 원정대 캐릭터 이름으로 다시 조회한다.
+  // 첫 이름이 지워진 캐릭터면 404 이므로 다음 이름으로 차례로 시도.
+  const [isRefreshingRoster, setIsRefreshingRoster] = useState(false);
+  const [rosterMessage, setRosterMessage] = useState<string | null>(null);
+  const handleRefreshRoster = async () => {
+    const tryNames = [...new Set([...selectedCharOrder, ...characters.map(c => c.name), ...allSiblings.map(c => c.name)])];
+    if (tryNames.length === 0) return;
+    setIsRefreshingRoster(true);
+    setRosterMessage(null);
+    try {
+      let siblings: any[] | null = null;
+      for (const name of tryNames) {
+        const res = await fetch(`/api/lostark?characterName=${encodeURIComponent(name)}&refresh=1`);
+        if (res.status === 404) continue;
+        if (!res.ok) break;
+        const data = await res.json();
+        if (Array.isArray(data.siblings) && data.siblings.length > 0) { siblings = data.siblings; break; }
+      }
+      if (!siblings) {
+        setRosterMessage('원정대 정보를 가져오지 못했습니다. 잠시 후 다시 시도해주세요.');
+        return;
+      }
+      const prevByName = new Map(allSiblings.map(c => [c.name, c]));
+      const bestMap = new Map<string, Character>();
+      siblings.forEach((char: any) => {
+        const c: Character = {
+          name: char.CharacterName || '',
+          server: char.ServerName || '',
+          class: char.CharacterClassName || '',
+          itemLevel: parseFloat(char.ItemAvgLevel?.replace(/,/g, '') || '0'),
+          combatLevel: char.CharacterLevel || 0,
+          imageUrl: prevByName.get(char.CharacterName)?.imageUrl || characters.find(x => x.name === char.CharacterName)?.imageUrl || '',
+          lastUpdated: new Date().toISOString(),
+        };
+        const ex = bestMap.get(c.name);
+        if (!ex || c.itemLevel > ex.itemLevel) bestMap.set(c.name, c);
+      });
+      const fresh = Array.from(bestMap.values()).sort((a, b) => b.itemLevel - a.itemLevel);
+      const alive = new Set(fresh.map(c => c.name));
+      const removed = selectedCharOrder.filter(n => selectedCharNames.has(n) && !alive.has(n));
+      const added = fresh.filter(c => !prevByName.has(c.name)).length;
+
+      setAllSiblings(fresh);
+      setSelectedCharNames(prev => new Set([...prev].filter(n => alive.has(n))));
+      setSelectedCharOrder(prev => prev.filter(n => alive.has(n)));
+      setSelectedGoldNames(prev => new Set([...prev].filter(n => alive.has(n))));
+      if (selectedRepChar && !alive.has(selectedRepChar)) setSelectedRepChar('');
+
+      const parts: string[] = [];
+      if (removed.length > 0) parts.push(`삭제된 캐릭터 ${removed.length}명 제외(${removed.join(', ')})`);
+      if (added > 0) parts.push(`새 캐릭터 ${added}명 추가`);
+      setRosterMessage(parts.length > 0 ? `${parts.join(' · ')} — 저장을 눌러야 반영됩니다.` : '원정대 목록이 최신입니다. (레벨 갱신됨)');
+    } catch {
+      setRosterMessage('원정대 정보를 가져오지 못했습니다. 잠시 후 다시 시도해주세요.');
+    } finally {
+      setIsRefreshingRoster(false);
+    }
+  };
+
   // 원정대 편집 열기
   const openEditModal = () => {
+    setRosterMessage(null);
     const uniqueNames = [...new Set(characters.map(c => c.name))];
     setSelectedCharNames(new Set(uniqueNames));
     setSelectedCharOrder(uniqueNames);
+    setSelectedGoldNames(new Set(goldCharNames));
     // 기존 대표 캐릭터 또는 첫 번째
     const expData = getExpeditionData(userProfile, activeExpedition);
     const currentMain = activeExpedition === 1 ? userProfile?.mainCharacter : expData.chars[0]?.name;
@@ -968,7 +1052,8 @@ export default function MyPage() {
       const orderedNames = selectedCharOrder.filter(n => selectedCharNames.has(n));
       const selectedChars = orderedNames
         .map(name => allSiblings.find(c => c.name === name)!)
-        .filter(Boolean);
+        .filter(Boolean)
+        .map(c => ({ ...c, gold: selectedGoldNames.has(c.name) }));
 
       const repChar = selectedRepChar || selectedChars[0]?.name || '';
 
@@ -984,6 +1069,7 @@ export default function MyPage() {
       const prefix = getFirestorePrefix(activeExpedition);
       await updateDoc(userRef, {
         [`${prefix}characters`]: selectedChars,
+        [`${prefix}allCharacters`]: allSiblings,
         [`${prefix}mainCharacter`]: repChar,
         [`${prefix}weeklyChecklist`]: newChecklist,
       });
@@ -1118,6 +1204,7 @@ export default function MyPage() {
           value: encodeRaidLogValue(
             cs?.raidGoldReceive?.[raidName] === false,
             cs?.raidMoreGoldExclude?.[raidName] === true,
+            !goldCharNames.has(charName),
           ),
         }));
       } else {
@@ -1494,7 +1581,7 @@ export default function MyPage() {
     characters.forEach(char => {
       const state = weeklyChecklist[char.name];
       if (!state) return;
-      const { total: charTotal, bound: charBound } = calcCharRaidGoldSplit(state);
+      const { total: charTotal, bound: charBound } = calcCharRaidGoldSplit(state, !goldCharNames.has(char.name));
       total += charTotal;
       bound += charBound;
       // 추가 골드는 일반 골드(원하는 곳에 자유롭게 사용)
@@ -1513,7 +1600,7 @@ export default function MyPage() {
     });
 
     return { total, free: total - bound, bound };
-  }, [characters, weeklyChecklist, commonContent, COMMON_CONTENTS]);
+  }, [characters, goldCharNames, weeklyChecklist, commonContent, COMMON_CONTENTS]);
 
   const totalGold = totalGoldSplit.total;
 
@@ -1588,7 +1675,7 @@ export default function MyPage() {
     );
   }
 
-  const displayCharacters = showAllCharacters ? characters : characters.slice(0, 6);
+  const displayCharacters = showAllCharacters ? characters : characters.slice(0, CARD_SHOW_COUNT);
 
   // 캐릭터별 일일 컨텐츠 펼침/닫힘
 
@@ -1820,9 +1907,9 @@ export default function MyPage() {
         {/* 모바일 전용 — 앱과 동일 레이아웃: 원정대 이미지 줄 + 골드 차트를 카드 위에 (데스크톱은 기존 그대로) */}
         {!isDesktop && characters.length > 0 && (
           <>
-            {/* 원정대 캐릭터 이미지 줄 (최대 6개) — 누르면 해당 캐릭터 카드로 스크롤 */}
+            {/* 원정대 캐릭터 이미지 줄 (한 줄 6개, 넘치면 다음 줄) — 누르면 해당 캐릭터 카드로 스크롤 */}
             <div className={styles.rosterStrip}>
-              {characters.slice(0, 6).map((c, idx) => (
+              {characters.map((c, idx) => (
                 <button key={c.name} className={styles.rosterCell} onClick={() => scrollToChar(c.name)} title={c.name}>
                   <span className={styles.rosterThumb}>
                     {c.imageUrl ? (
@@ -1887,7 +1974,8 @@ export default function MyPage() {
             const charState = weeklyChecklist[char.name] || createEmptyWeeklyState(char.itemLevel);
 
             // 캐릭터별 골드 계산 (일반/귀속 분리)
-            const raidSplit = calcCharRaidGoldSplit(charState);
+            const isGoldChar = goldCharNames.has(char.name);
+            const raidSplit = calcCharRaidGoldSplit(charState, !isGoldChar);
             let charGold = raidSplit.total;
             let charFree = raidSplit.free;
             let charBound = raidSplit.bound;
@@ -1978,45 +2066,68 @@ export default function MyPage() {
               <div className={`${styles.characterCard} ${!isDesktop && char.itemLevel >= 1640 ? styles.characterCardMergedBottom : ''}`}>
                 {/* 카드 헤더: 닉네임 + 갱신버튼 + 레벨 */}
                 <div className={styles.cardHeader}>
+                  {/* 왼쪽: 순번 · 닉네임 · 골드 표시(노란=골드 지정 6명 / 분홍=전부 귀속) · 대표 */}
                   <span className={styles.characterName}>
+                    <span className={styles.charNum}>{charIdx + 1}.</span>
                     {char.name}
+                    <Image
+                      src="/gold.webp"
+                      alt={isGoldChar ? '골드 획득' : '귀속 골드'}
+                      title={isGoldChar ? '골드 획득 캐릭터' : '골드 지정 밖 — 레이드 골드 전부 귀속'}
+                      width={20}
+                      height={20}
+                      className={styles.charGoldMark}
+                      style={isGoldChar ? undefined : { filter: BOUND_GOLD_FILTER }}
+                    />
                     {char.name === representativeChar && <span className={styles.repBadge}>대표</span>}
+                  </span>
+                  {/* 오른쪽: [레벨 + 갱신] 한 칸(무엇을 갱신하는지 바로 보이게) · 설정 · 달력 */}
+                  <div className={styles.headerRight}>
+                    <div className={styles.levelChip}>
+                      <span className={styles.characterLevel}>Lv.{char.itemLevel.toFixed(0)}</span>
+                        <button
+                          className={`${styles.levelRefreshBtn} ${!isDemo && !canRefresh(char.name) ? styles.headerToolBtnCooldown : ''}`}
+                          onClick={() => isDemo ? setDemoLoginPrompt(true) : handleRefresh(char.name)}
+                          disabled={!isDemo && (refreshingChar === char.name || !canRefresh(char.name))}
+                          title={isDemo ? '레벨 갱신 (로그인 필요)' : canRefresh(char.name) ? '레벨 갱신' : `레벨 갱신 — ${Math.floor(getRemainingCooldown(char.name) / 60)}분 ${getRemainingCooldown(char.name) % 60}초 후 가능`}
+                          aria-label="레벨 갱신"
+                        >
+                          {refreshingChar === char.name ? (
+                            <Spinner animation="border" size="sm" style={{ width: '12px', height: '12px', borderWidth: '2px' }} />
+                          ) : (
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                              <path d="M20 12a8 8 0 1 1-2.34-5.66" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+                              <path d="M20 4v4.5h-4.5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          )}
+                        </button>
+                    </div>
                     <button
-                      className={`${styles.refreshBtn} ${styles.cardGearBtn}`}
+                      className={styles.headerToolBtn}
                       onClick={() => openRaidEditor(char)}
                       title="카드에 표시할 레이드·난이도·순서 편집"
+                      aria-label="레이드 설정"
                     >
-                      ⚙
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4Z" stroke="currentColor" strokeWidth="2.2" />
+                        <path d="M19.4 13.5a7.6 7.6 0 0 0 0-3l2-1.6-2-3.4-2.4.9a7.5 7.5 0 0 0-2.6-1.5L14 2.4h-4l-.4 2.5A7.5 7.5 0 0 0 7 6.4l-2.4-.9-2 3.4 2 1.6a7.6 7.6 0 0 0 0 3l-2 1.6 2 3.4 2.4-.9a7.5 7.5 0 0 0 2.6 1.5l.4 2.5h4l.4-2.5a7.5 7.5 0 0 0 2.6-1.5l2.4.9 2-3.4-2-1.6Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+                      </svg>
                     </button>
-                  </span>
-                  <div className={styles.headerRight}>
                     {!isDemo && activeExpedition === 1 && (
                       <button
-                        className={styles.refreshBtn}
-                        onClick={() => { setCalendarChar(char.name); setCalendarOpen(true); }}
-                        title="이 캐릭터의 숙제 기록 달력"
+                      className={styles.headerToolBtn}
+                      onClick={() => { setCalendarChar(char.name); setCalendarOpen(true); }}
+                      title="이 캐릭터의 숙제 기록 달력"
+                      aria-label="숙제 기록 달력"
                       >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                          <rect x="3.5" y="5" width="17" height="15.5" rx="2.5" stroke="currentColor" strokeWidth="2" />
-                          <line x1="8" y1="2.8" x2="8" y2="6.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                          <line x1="16" y1="2.8" x2="16" y2="6.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                          <path d="M3.5 9.5H20.5" stroke="currentColor" strokeWidth="2" />
-                        </svg>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <rect x="3.5" y="5" width="17" height="15.5" rx="2.5" stroke="currentColor" strokeWidth="2.2" />
+                        <line x1="8" y1="2.8" x2="8" y2="6.5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+                        <line x1="16" y1="2.8" x2="16" y2="6.5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+                        <path d="M3.5 9.5H20.5" stroke="currentColor" strokeWidth="2.2" />
+                      </svg>
                       </button>
                     )}
-                    <button
-                      className={`${styles.refreshBtn} ${!isDemo && !canRefresh(char.name) ? styles.refreshDisabled : ''}`}
-                      onClick={() => isDemo ? setDemoLoginPrompt(true) : handleRefresh(char.name)}
-                      disabled={!isDemo && (refreshingChar === char.name || !canRefresh(char.name))}
-                      title={isDemo ? '레벨 갱신 (로그인 필요)' : canRefresh(char.name) ? '레벨 갱신' : `${Math.floor(getRemainingCooldown(char.name) / 60)}분 ${getRemainingCooldown(char.name) % 60}초 후 가능`}
-                    >
-                      {refreshingChar === char.name ? (
-                        <Spinner animation="border" size="sm" style={{ width: '12px', height: '12px' }} />
-                      ) : (
-                        '↻'
-                      )}
-                    </button>
-                    <span className={styles.characterLevel}>Lv.{char.itemLevel.toFixed(0)}</span>
                   </div>
                 </div>
 
@@ -2439,7 +2550,7 @@ export default function MyPage() {
                         if (raid?.gates[i]) {
                           if (receiveGold) {
                             raidGoldSum += raid.gates[i].gold;
-                            raidBoundSum += raid.gates[i].boundGold;
+                            raidBoundSum += isGoldChar ? raid.gates[i].boundGold : raid.gates[i].gold;
                           }
                           if (buyMore) {
                             raidMoreCost += raid.gates[i].moreGold;
@@ -2767,14 +2878,14 @@ export default function MyPage() {
         </div>
 
         {/* 더보기 버튼 */}
-        {characters.length > 6 && (
+        {characters.length > CARD_SHOW_COUNT && (
           <div className="text-center mt-3">
             <Button
               variant="outline-secondary"
               size="sm"
               onClick={() => setShowAllCharacters(!showAllCharacters)}
             >
-              {showAllCharacters ? '접기' : `더보기 (+${characters.length - 6})`}
+              {showAllCharacters ? '접기' : `더보기 (+${characters.length - CARD_SHOW_COUNT})`}
             </Button>
           </div>
         )}
@@ -2991,7 +3102,7 @@ export default function MyPage() {
                 {/* 선택된 캐릭터 (드래그로 순서 변경) */}
                 {selectedCharOrder.filter(n => selectedCharNames.has(n)).length > 0 && (
                   <div className={styles.selectedList}>
-                    <div className={styles.selectedListTitle}>선택된 캐릭터</div>
+                    <div className={styles.selectedListTitle}>선택된 캐릭터 · 골드 획득 {selectedGoldNames.size}/{GOLD_CHAR_MAX} (지정 밖 캐릭터는 레이드 골드 전부 귀속)</div>
                     {selectedCharOrder.filter(n => selectedCharNames.has(n)).map((name, idx) => {
                       const char = allSiblings.find(c => c.name === name);
                       if (!char) return null;
@@ -3009,6 +3120,12 @@ export default function MyPage() {
                             <span className={styles.selectDetails}>{char.class} · Lv.{char.itemLevel.toFixed(0)}</span>
                           </div>
                           <button
+                            className={`${styles.orderRepBtn} ${selectedGoldNames.has(name) ? styles.orderGoldActive : ''}`}
+                            onClick={() => toggleGoldChar(name)}
+                            disabled={!selectedGoldNames.has(name) && selectedGoldNames.size >= GOLD_CHAR_MAX}
+                            title={selectedGoldNames.has(name) ? '골드 획득 캐릭터' : '골드 지정 밖 — 레이드 골드 전부 귀속'}
+                          >골드</button>
+                          <button
                             className={`${styles.orderRepBtn} ${isRep ? styles.orderRepActive : ''}`}
                             onClick={() => setSelectedRepChar(isRep ? '' : name)}
                           >대표</button>
@@ -3022,7 +3139,7 @@ export default function MyPage() {
                 <div className={styles.characterSelectGrid}>
                   {allSiblings.filter(c => !selectedCharNames.has(c.name)).map((char) => {
                     const tooLow = char.itemLevel < 1640;
-                    const canSelect = !tooLow && selectedCharNames.size < 6;
+                    const canSelect = !tooLow;
                     return (
                       <div
                         key={char.name}
@@ -3082,9 +3199,16 @@ export default function MyPage() {
         {/* 원정대 편집 모달 */}
         {!isDemo && <Modal show={showEditModal} onHide={() => setShowEditModal(false)} centered size="lg">
           <Modal.Header closeButton>
-            <Modal.Title>원정대{activeExpedition > 1 ? ` ${activeExpedition}` : ''} 편집 ({selectedCharNames.size}/6)</Modal.Title>
+            <Modal.Title>원정대{activeExpedition > 1 ? ` ${activeExpedition}` : ''} 편집 ({selectedCharNames.size}명 · 골드 {selectedGoldNames.size}/{GOLD_CHAR_MAX})</Modal.Title>
           </Modal.Header>
           <Modal.Body>
+            <div className="d-flex align-items-center justify-content-between gap-2 mb-2">
+              <small className="text-muted">게임에서 캐릭터를 지우거나 새로 만들었다면 원정대를 갱신하세요.</small>
+              <Button variant="outline-primary" size="sm" onClick={handleRefreshRoster} disabled={isRefreshingRoster} style={{ whiteSpace: 'nowrap' }}>
+                {isRefreshingRoster ? <Spinner animation="border" size="sm" /> : '원정대 갱신'}
+              </Button>
+            </div>
+            {rosterMessage && <Alert variant="info" className="py-2 px-3 small">{rosterMessage}</Alert>}
             {allSiblings.length === 0 ? (
               <div className="text-center py-4">
                 <p className="text-muted mb-0">
@@ -3095,7 +3219,7 @@ export default function MyPage() {
               <>
                 {selectedCharOrder.filter(n => selectedCharNames.has(n)).length > 0 && (
                   <div className={styles.selectedList}>
-                    <div className={styles.selectedListTitle}>선택된 캐릭터</div>
+                    <div className={styles.selectedListTitle}>선택된 캐릭터 · 골드 획득 {selectedGoldNames.size}/{GOLD_CHAR_MAX} (지정 밖 캐릭터는 레이드 골드 전부 귀속)</div>
                     {selectedCharOrder.filter(n => selectedCharNames.has(n)).map((name, idx) => {
                       const char = allSiblings.find(c => c.name === name);
                       if (!char) return null;
@@ -3113,6 +3237,12 @@ export default function MyPage() {
                             <span className={styles.selectDetails}>{char.class} · Lv.{char.itemLevel.toFixed(0)}</span>
                           </div>
                           <button
+                            className={`${styles.orderRepBtn} ${selectedGoldNames.has(name) ? styles.orderGoldActive : ''}`}
+                            onClick={() => toggleGoldChar(name)}
+                            disabled={!selectedGoldNames.has(name) && selectedGoldNames.size >= GOLD_CHAR_MAX}
+                            title={selectedGoldNames.has(name) ? '골드 획득 캐릭터' : '골드 지정 밖 — 레이드 골드 전부 귀속'}
+                          >골드</button>
+                          <button
                             className={`${styles.orderRepBtn} ${isRep ? styles.orderRepActive : ''}`}
                             onClick={() => setSelectedRepChar(isRep ? '' : name)}
                           >대표</button>
@@ -3125,7 +3255,7 @@ export default function MyPage() {
                 <div className={styles.characterSelectGrid}>
                   {allSiblings.filter(c => !selectedCharNames.has(c.name)).map((char) => {
                     const tooLow = char.itemLevel < 1640;
-                    const canSelect = !tooLow && selectedCharNames.size < 6;
+                    const canSelect = !tooLow;
                     return (
                       <div
                         key={char.name}

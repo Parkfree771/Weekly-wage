@@ -1,19 +1,19 @@
 :root {
   --foreground-rgb: 0, 0, 0;
-  /* 2026-11 아바타 탭 시안 팔레트(사용자 확정) — 차분한 회청 바탕 + 선명한 파랑 버튼 */
-  --background-start-rgb: 243, 245, 249;
-  --background-end-rgb: 243, 245, 249;
+  /* 원래 팔레트(알데바란 이전 남보라) — 2026-11-07 사이트 전체 복귀 */
+  --background-start-rgb: 248, 249, 252;
+  --background-end-rgb: 241, 243, 248;
 
   /* 60-30-10 Design System */
-  /* 30% - Primary Blue (2026-11 시안 팔레트). rgba(var(--brand-rgb), a) 로 투명도만 바꿔 쓴다 */
-  --color-primary: #4b6bfb;
-  --brand-rgb: 75, 107, 251;
-  --color-primary-light: rgba(var(--brand-rgb), 0.08);
-  --color-primary-dark: #3953d6;
-  /* 10% - Accent — 버튼·활성 탭. 시안대로 주황 대신 같은 파랑 계열로 맞춘다 */
-  --color-accent: #4b6bfb;
-  --color-accent-light: rgba(75, 107, 251, 0.1);
-  --color-accent-dark: #3953d6;
+  /* 30% - Primary 남보라 (원래 색, 2026-11-07 복귀). rgba(var(--brand-rgb), a) 로 투명도만 바꿔 쓴다 */
+  --color-primary: #3b50b5;
+  --brand-rgb: 59, 80, 181;
+  --color-primary-light: rgba(59, 80, 181, 0.08);
+  --color-primary-dark: #2d3e8f;
+  /* 10% - Accent Orange — 포인트(강조 글자). 버튼·테두리는 primary(남보라) */
+  --color-accent: #e8722a;
+  --color-accent-light: rgba(232, 114, 42, 0.1);
+  --color-accent-dark: #d4621e;
 
   /* 골드 금액 글자색 — 액센트(주황)와 따로 둔다.
      액센트는 판·테두리·버튼을 칠하는 색이라 글자로 쓰면 주황으로 읽히는데,
@@ -25,34 +25,34 @@
   --gold-text: #8f6a00;
 
   /* Legacy brand aliases */
-  --brand-hue: 229;
-  --brand-saturation: 96%;
-  --brand-lightness: 64%;
+  --brand-hue: 228;
+  --brand-saturation: 51%;
+  --brand-lightness: 47%;
   --brand-primary: var(--color-primary);
   --brand-primary-light: var(--color-primary-light);
   --brand-primary-dark: var(--color-primary-dark);
 
-  --text-primary: #1d2433;
-  --text-secondary: #5b6475;
-  --text-muted: #8a93a5;
-  --text-disabled: #b3bac7;
-  --border-color: #e3e7ef;
+  --text-primary: #1a1f36;
+  --text-secondary: #3c4257;
+  --text-muted: #697386;
+  --text-disabled: #a3acb9;
+  --border-color: rgba(59, 80, 181, 0.12);
   --input-bg: #ffffff;
   --card-bg: #ffffff;
-  --card-body-bg-blue: #f7f8fb;
+  --card-body-bg-blue: #f4f5fb;
   --card-body-bg-stone: #f7f8fb;
   --card-body-bg-orange: #fef8f4;
   /* 트랙·패널 등 카드보다 한 단계 안쪽 표면. 정의가 없어서 여러 모듈이 폴백(#f5f5f5)으로 새고 있었다 */
-  --bg-secondary: #f7f8fb;
+  --bg-secondary: #f4f5fb;
   /* Elevation System (Neo-Skeuomorphism) */
-  --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.04), 0 1px 3px 0 rgba(15, 23, 42, 0.06);
-  --shadow-md: 0 6px 16px -6px rgba(15, 23, 42, 0.12), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
-  --shadow-lg: 0 14px 32px -10px rgba(15, 23, 42, 0.18), 0 4px 10px -4px rgba(15, 23, 42, 0.07);
-  --shadow-xl: 0 24px 48px -12px rgba(15, 23, 42, 0.22), 0 8px 16px -8px rgba(15, 23, 42, 0.08);
+  --shadow-sm: 0 1px 3px 0 rgba(59, 80, 181, 0.12), 0 1px 2px -1px rgba(59, 80, 181, 0.08);
+  --shadow-md: 0 4px 12px -2px rgba(59, 80, 181, 0.18), 0 2px 6px -2px rgba(59, 80, 181, 0.1);
+  --shadow-lg: 0 12px 28px -4px rgba(59, 80, 181, 0.22), 0 6px 12px -4px rgba(59, 80, 181, 0.12);
+  --shadow-xl: 0 20px 40px -6px rgba(59, 80, 181, 0.28), 0 10px 20px -6px rgba(59, 80, 181, 0.15);
 
   /* Generic card backgrounds (fallback) */
   --card-header-bg: #ffffff;
-  --card-body-bg: #f7f8fb;
+  --card-body-bg: #f4f5fb;
 
   /* Card Header Backgrounds */
   --card-header-bg-blue: #ffffff;
@@ -65,13 +65,13 @@
   --primary-dark: var(--color-primary-dark);
 
   /* Text Gradients */
-  --gradient-text-blue: linear-gradient(135deg, #4b6bfb 0%, #6b84fc 100%);
-  --gradient-text-stone: linear-gradient(135deg, #5b6475 0%, #8a93a5 100%);
-  --gradient-text-violet: linear-gradient(135deg, #4b6bfb 0%, #8b5cf6 100%);
+  --gradient-text-blue: linear-gradient(135deg, #3b50b5 0%, #5a6fd6 100%);
+  --gradient-text-stone: linear-gradient(135deg, #3c4257 0%, #697386 100%);
+  --gradient-text-violet: linear-gradient(135deg, #3b50b5 0%, #6B7ED6 100%);
   --gradient-text-orange: linear-gradient(135deg, #e8722a 0%, #f59e0b 100%);
 
   /* Footer */
-  --footer-text-primary-gradient: linear-gradient(135deg, #4b6bfb 0%, #6b84fc 100%);
+  --footer-text-primary-gradient: linear-gradient(135deg, #3b50b5 0%, #5a6fd6 100%);
 
   /* Profit/Loss Colors */
   --profit-color: #10b981;
@@ -111,7 +111,7 @@
   --color-cyan-light: rgba(95, 212, 232, 0.1);
 
   /* Table Colors */
-  --table-row-alternate: rgba(var(--brand-rgb), 0.03);
+  --table-row-alternate: rgba(59, 80, 181, 0.03);
 
   /* Accordion */
   --accordion-icon-invert: 0;
@@ -120,19 +120,19 @@
   --bs-body-color: var(--text-primary);
   --bs-body-bg: var(--card-bg);
   --bs-emphasis-color: var(--text-primary);
-  --bs-emphasis-color-rgb: 29, 36, 51;
+  --bs-emphasis-color-rgb: 26, 31, 54;
 }
 
 [data-theme="dark"] {
   --foreground-rgb: 255, 255, 255;
-  --background-start-rgb: 10, 22, 32;
-  --background-end-rgb: 10, 22, 32;
+  --background-start-rgb: 20, 24, 32;
+  --background-end-rgb: 20, 24, 32;
 
   /* 60-30-10 Dark Mode */
-  --color-primary: #3a93c8;
-  --brand-rgb: 58, 147, 200;
-  --color-primary-light: rgba(var(--brand-rgb), 0.12);
-  --color-primary-dark: #2f7eae;
+  --color-primary: #6B7ED6;
+  --brand-rgb: 107, 126, 214;
+  --color-primary-light: rgba(107, 126, 214, 0.12);
+  --color-primary-dark: #5468c0;
   --color-accent: #D4A54A;
   --color-accent-light: rgba(212, 165, 74, 0.15);
   --color-accent-dark: #c4952e;
@@ -140,21 +140,21 @@
   /* 어두운 판 위에서는 코인 색을 그대로 올릴 수 있다 (카드 배경 대비 약 9.7:1) */
   --gold-text: #f5c542;
 
-  --brand-saturation: 66%;
-  --brand-lightness: 62%;
+  --brand-saturation: 45%;
+  --brand-lightness: 63%;
   --brand-primary: var(--color-primary);
 
-  --text-primary: #e2ebf1;
-  --text-secondary: #b2c2cf;
-  --text-muted: #8399aa;
-  --text-disabled: #566b7b;
-  --border-color: rgba(var(--brand-rgb), 0.15);
-  --input-bg: #12212e;
-  --card-bg: #12212e;
-  --card-body-bg-blue: #182b3a;
-  --card-body-bg-stone: #172734;
-  --card-body-bg-orange: #272a30;
-  --bg-secondary: #182b3a;
+  --text-primary: #E0E4EC;
+  --text-secondary: #b0b8c8;
+  --text-muted: #8890A4;
+  --text-disabled: #5a6178;
+  --border-color: rgba(107, 126, 214, 0.15);
+  --input-bg: #1c2233;
+  --card-bg: #1c2233;
+  --card-body-bg-blue: #252d42;
+  --card-body-bg-stone: #222a3d;
+  --card-body-bg-orange: #2a2535;
+  --bg-secondary: #252d42;
   /* Elevation System (Neo-Skeuomorphism) */
   --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.35), 0 1px 2px -1px rgba(0, 0, 0, 0.2);
   --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.5), 0 2px 6px -2px rgba(0, 0, 0, 0.3);
@@ -162,27 +162,27 @@
   --shadow-xl: 0 20px 40px -6px rgba(0, 0, 0, 0.7), 0 10px 20px -6px rgba(0, 0, 0, 0.4);
 
   /* Generic card backgrounds (fallback) */
-  --card-header-bg: #12212e;
-  --card-body-bg: #182b3a;
+  --card-header-bg: #1c2233;
+  --card-body-bg: #252d42;
 
   /* Card Header Backgrounds */
-  --card-header-bg-blue: #12212e;
-  --card-header-bg-stone: #12212e;
-  --card-header-bg-violet: #12212e;
-  --card-header-bg-orange: #12212e;
+  --card-header-bg-blue: #1c2233;
+  --card-header-bg-stone: #1c2233;
+  --card-header-bg-violet: #1c2233;
+  --card-header-bg-orange: #1c2233;
 
   /* Primary aliases */
   --primary-color: var(--color-primary);
   --primary-dark: var(--color-primary-dark);
 
   /* Text Gradients */
-  --gradient-text-blue: linear-gradient(135deg, #5cb3e0 0%, #8fd3ea 100%);
-  --gradient-text-stone: linear-gradient(135deg, #b2c2cf 0%, #d3dde5 100%);
-  --gradient-text-violet: linear-gradient(135deg, #7cc4e6 0%, #a8dcf0 100%);
+  --gradient-text-blue: linear-gradient(135deg, #6B7ED6 0%, #8b9de6 100%);
+  --gradient-text-stone: linear-gradient(135deg, #b0b8c8 0%, #d0d6e0 100%);
+  --gradient-text-violet: linear-gradient(135deg, #8b9de6 0%, #a8b4f0 100%);
   --gradient-text-orange: linear-gradient(135deg, #D4A54A 0%, #e8c06a 100%);
 
   /* Footer */
-  --footer-text-primary-gradient: linear-gradient(135deg, #5cb3e0 0%, #8fd3ea 100%);
+  --footer-text-primary-gradient: linear-gradient(135deg, #6B7ED6 0%, #8b9de6 100%);
 
   /* Profit/Loss Colors */
   --profit-color: #34d399;
@@ -216,7 +216,7 @@
   --color-cyan-light: rgba(103, 232, 249, 0.12);
 
   /* Table Colors */
-  --table-row-alternate: rgba(var(--brand-rgb), 0.06);
+  --table-row-alternate: rgba(107, 126, 214, 0.06);
 
   /* Accordion */
   --accordion-icon-invert: 1;
@@ -225,7 +225,7 @@
   --bs-body-color: var(--text-primary);
   --bs-body-bg: var(--card-bg);
   --bs-emphasis-color: var(--text-primary);
-  --bs-emphasis-color-rgb: 226, 235, 241;
+  --bs-emphasis-color-rgb: 224, 228, 236;
 }
 
 /* 폰트 시스템: 본문은 Noto Sans KR 하나로 (2026-10 리프레시 — 예전엔 JetBrains Mono 가 영문·숫자를 맡았다).
@@ -525,12 +525,12 @@ textarea:-ms-input-placeholder {
   padding: 14px 0;
   contain: layout style;
   border-top: 1px solid rgba(var(--brand-rgb), 0.1);
-  background: rgba(255, 255, 255, 0.6);
+  background: #f8f9fb;
   box-shadow: 0 -1px 3px 0 rgba(var(--brand-rgb), 0.04);
 }
 
 [data-theme="dark"] .site-footer {
-  background: #0c1a26;
+  background: #141820;
   border-top: 1px solid rgba(var(--brand-rgb), 0.12);
   box-shadow: 0 -1px 3px 0 rgba(0, 0, 0, 0.3);
 }
@@ -670,9 +670,9 @@ html {
 /* Main Navbar */
 .main-navbar {
   background: #ffffff;
-  /* 2026-11 시안 팔레트 — 색 띠(2px)·번진 그림자 대신 가는 회색 선 한 줄 */
-  border-bottom: 1px solid var(--border-color);
-  box-shadow: none;
+  /* 2026-11-07 원래 색(남보라)으로 복귀 — 남보라 띠 2px + 옅은 그림자 */
+  border-bottom: 2px solid rgba(var(--brand-rgb), 0.28);
+  box-shadow: 0 2px 6px 0 rgba(var(--brand-rgb), 0.12), 0 1px 0 0 rgba(var(--brand-rgb), 0.08);
   height: 52px;
   z-index: 1030;
   display: flex;
@@ -682,7 +682,7 @@ html {
 }
 
 [data-theme="dark"] .main-navbar {
-  background: #0c1a26;
+  background: #141820;
   border-bottom: 2px solid rgba(var(--brand-rgb), 0.35);
   box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.5), 0 1px 0 0 rgba(var(--brand-rgb), 0.12);
 }
@@ -978,7 +978,7 @@ html, body {
   border: 1px solid rgba(var(--brand-rgb), 0.28);
   border-radius: 12px;
   background: var(--card-bg);
-  box-shadow: 0 1px 2px rgba(16, 58, 92, 0.08);
+  box-shadow: 0 1px 2px rgba(var(--brand-rgb), 0.08);
   font-size: 1.02rem;
   font-weight: 700;
   color: var(--text-primary);
@@ -1197,7 +1197,7 @@ html, body {
 }
 
 [data-theme="dark"] .navbar-offcanvas {
-  background-color: #0b1620;
+  background-color: #1c2233;
 }
 
 .navbar-offcanvas-header {

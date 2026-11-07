@@ -29,17 +29,19 @@ export default function HeroAvatarCard({ post }: { post: PackagePost }) {
         <img className={styles.avatarBg} src={img.thumbUrl || img.url} alt="" loading="lazy" decoding="async" />
       )}
       <span className={styles.avatarShade} aria-hidden />
+      {/* 배지는 그림 왼쪽 위 모서리 — 아래 글줄은 제목이 폭을 다 쓴다 */}
+      <span className={`${styles.pkgBadge} ${styles.pkgBadgeAvatar} ${styles.avatarBadgeCorner}`}>아바타</span>
+      {/* 남은 날짜는 오른쪽 위 모서리 — 아래 글줄은 제목 · 가격 한 줄 */}
+      {daysLeft !== null && (
+        <span className={`${styles.avatarDday} ${styles.avatarDdayCorner} ${daysLeft <= 3 ? styles.avatarDdaySoon : ''}`}>
+          {daysLeft === 0 ? '오늘 마감' : `D-${daysLeft}`}
+        </span>
+      )}
       <span className={styles.avatarOverlay}>
         <span className={styles.avatarInfo}>
-          <span className={`${styles.pkgBadge} ${styles.pkgBadgeAvatar}`}>아바타</span>
           <span className={styles.avatarTitle}>{post.title}</span>
         </span>
         <span className={styles.avatarNumbers}>
-          {daysLeft !== null && (
-            <span className={`${styles.avatarDday} ${daysLeft <= 3 ? styles.avatarDdaySoon : ''}`}>
-              {daysLeft === 0 ? '오늘 마감' : `D-${daysLeft}`}
-            </span>
-          )}
           <span className={`font-numeric ${styles.avatarPrice}`}>{(post.royalCrystalPrice || 0).toLocaleString('ko-KR')}원</span>
         </span>
       </span>

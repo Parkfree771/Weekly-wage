@@ -752,7 +752,7 @@
   font-size: 0.9rem;
   padding: 0.6rem 0.5rem;
   color: #fff !important;
-  border-bottom: 2px solid var(--color-accent) !important;
+  border-bottom: 2px solid var(--color-primary) !important;
   border-right: 1px solid rgba(255, 255, 255, 0.15);
   text-align: center;
 }

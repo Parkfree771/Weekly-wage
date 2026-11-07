@@ -4,7 +4,8 @@
 //
 // 착장 목록은 서버(ISR)가 글과 같이 읽어 넘긴다 — 방문자마다 Firestore 를 읽지 않는다.
 // 착장을 올리거나 지우면 화면은 바로 고치고, 상세 ISR 사본만 다시 만든다(revalidate detailOnly).
-// 조회수는 일반 상세와 같은 경로(/api/package/view)를 쓴다. 아바타 글엔 따봉이 없다 — 좋아요는 착장에만 단다.
+// 아바타 글 자체엔 조회수·따봉이 없다(집계 요청도 안 보냄). 조회수·좋아요는 착장에만 —
+// 조회수는 착장 상세(팝업)를 열 때 착장 문서에 +1 을 바로 쓰고(24시간 안 재열람은 생략), 숫자도 팝업 안에서만 보인다.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -15,11 +16,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { isAdmin } from '@/lib/admin';
 import { revalidatePackage } from '@/lib/revalidate-client';
 import { isSaleEnded, formatSalePeriodDateOnly, toSaleDate } from '@/lib/package-sale';
-import { publishStats, fetchStats, seedStatsFromPosts, subscribeStats, wasViewedRecently, markViewed } from '@/lib/package-stats-client';
+import { wasViewedRecently, markViewed } from '@/lib/package-stats-client';
 import { CLASS_GROUPS, classGroupOf, hexForGame } from '@/lib/avatar-dye';
 import type { AvatarLook, PackagePost } from '@/types/package';
 import styles from '@/app/package/package.module.css';
 import av from './Avatar.module.css';
+import HeartIcon from './HeartIcon';
 
 // 등록 폼은 로그인한 사람이 버튼을 눌렀을 때만 쓴다
 const AvatarLookForm = dynamic(() => import('./AvatarLookForm'), { ssr: false });
@@ -113,20 +115,61 @@ export default function AvatarPackageDetail({ initialPost, initialLooks }: Props
   const [openLook, setOpenLook] = useState<AvatarLook | null>(null);
   // 팝업에서 보고 있는 사진 번호
   const [shotIdx, setShotIdx] = useState(0);
-  const openLookAt = (l: AvatarLook) => { setShotIdx(0); setOpenLook(l); };
+  // 착장 상세 열기 — 조회수 +1 (같은 기기 24시간 안 재열람은 쓰기 생략). 읽기는 없다:
+  // 숫자는 서버가 넘긴 착장 목록 값에 내 +1 만 더해 보여 준다.
+  const openLookAt = (l: AvatarLook) => {
+    setShotIdx(0);
+    const seenKey = `look:${l.id}`;
+    if (wasViewedRecently(seenKey)) {
+      setOpenLook(l);
+      return;
+    }
+    markViewed(seenKey);
+    const bumped = { ...l, viewCount: (l.viewCount || 0) + 1 };
+    setOpenLook(bumped);
+    setLooks((prev) => prev.map((x) => (x.id === l.id ? { ...x, viewCount: bumped.viewCount } : x)));
+    import('@/lib/avatar-look-service')
+      .then(({ addLookView }) => addLookView(postId, l.id))
+      .catch(() => {});
+  };
   const [liked, setLiked] = useState<boolean | null>(null);
   const [likeBusy, setLikeBusy] = useState(false);
   const openLookId = openLook?.id ?? null;
+  // 내가 이 착장을 눌렀는지 — 페이지 안에서 한 번 읽은 착장은 다시 열어도 읽지 않는다(Firestore 읽기 절약)
+  const likedCache = useRef(new Map<string, boolean>());
   useEffect(() => {
     setLiked(null);
     if (!openLookId || !user) return;
+    const cached = likedCache.current.get(openLookId);
+    if (cached !== undefined) { setLiked(cached); return; }
     let cancelled = false;
     import('@/lib/avatar-look-service')
       .then(({ hasLikedLook }) => hasLikedLook(postId, openLookId, user.uid))
-      .then((v) => { if (!cancelled) setLiked(v); })
+      .then((v) => { likedCache.current.set(openLookId, v); if (!cancelled) setLiked(v); })
       .catch(() => { if (!cancelled) setLiked(false); });
     return () => { cancelled = true; };
   }, [openLookId, user, postId]);
+
+  // 좋아요가 바뀌면 상세·갤러리(인기 착장 4개) ISR 사본을 다시 만들어야 다른 사람·새로고침에 반영된다.
+  // 누를 때마다 부르면 재생성(착장 최대 300 + 갤러리 읽기)이 클릭 수만큼 돈다 →
+  // 팝업을 닫을 때 / 페이지를 떠날 때 바뀐 게 있으면 한 번만 부른다.
+  const likesDirty = useRef(false);
+  const flushLikes = useCallback(() => {
+    if (!likesDirty.current) return;
+    likesDirty.current = false;
+    revalidatePackage(postId, { keepalive: true });
+  }, [postId]);
+  useEffect(() => { if (!openLookId) flushLikes(); }, [openLookId, flushLikes]);
+  useEffect(() => {
+    const onHide = () => { if (document.visibilityState === 'hidden') flushLikes(); };
+    document.addEventListener('visibilitychange', onHide);
+    window.addEventListener('pagehide', flushLikes);
+    return () => {
+      document.removeEventListener('visibilitychange', onHide);
+      window.removeEventListener('pagehide', flushLikes);
+      flushLikes(); // 다른 화면으로 이동(언마운트)
+    };
+  }, [flushLikes]);
   const toggleLike = async () => {
     if (!openLook || !user || liked === null || likeBusy) return;
     const next = !liked;
@@ -139,6 +182,8 @@ export default function AvatarPackageDetail({ initialPost, initialLooks }: Props
     try {
       const { setLookLike } = await import('@/lib/avatar-look-service');
       await setLookLike(postId, openLook.id, user.uid, next);
+      likedCache.current.set(openLook.id, next);
+      likesDirty.current = true;
     } catch (err) {
       console.error('착장 좋아요 실패:', err);
       // 되돌린다
@@ -196,37 +241,6 @@ export default function AvatarPackageDetail({ initialPost, initialLooks }: Props
       .catch((err) => console.error('착장 로딩 실패:', err));
     return () => { cancelled = true; };
   }, [initialLooks, postId]);
-
-  // 조회수 — 일반 상세와 같은 규칙(24시간 안 재방문은 POST 생략, 집계만 받는다)
-  const viewCountedFor = useRef<string | null>(null);
-  useEffect(() => {
-    seedStatsFromPosts([initialPost]);
-    if (viewCountedFor.current === postId) return;
-    viewCountedFor.current = postId;
-    if (wasViewedRecently(postId)) {
-      fetchStats([postId]);
-      return;
-    }
-    fetch('/api/package/view', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ postId }),
-    })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((json) => {
-        if (!json?.ok) return;
-        markViewed(postId);
-        if (json.stats) publishStats(postId, json.stats);
-      })
-      .catch(() => {});
-  }, [postId, initialPost]);
-
-  useEffect(() =>
-    subscribeStats((id, st) => {
-      setPost((prev) => (prev.id === id
-        ? { ...prev, viewCount: st.viewCount, likeCount: st.likeCount, sosoCount: st.sosoCount }
-        : prev));
-    }), []);
 
   // 직업별·분류별 개수 — 버튼에 같이 보여 준다. 순서는 고정(찾기 쉽게)
   const counts = useMemo(() => {
@@ -379,10 +393,6 @@ export default function AvatarPackageDetail({ initialPost, initialLooks }: Props
               <span className={av.heroLabel}>착용샷</span>
               <span className={av.heroValue}>{looks.length.toLocaleString()}개</span>
             </div>
-            <div className={av.heroRow}>
-              <span className={av.heroLabel}>조회수</span>
-              <span className={av.heroValue}>{(post.viewCount || 0).toLocaleString()}</span>
-            </div>
             {isOwner && (
               <div className={av.ownerActions}>
                 <Link href={`/package/edit/${postId}`} className={styles.editBtn}>수정</Link>
@@ -392,10 +402,12 @@ export default function AvatarPackageDetail({ initialPost, initialLooks }: Props
           </div>
         </section>
 
-        {/* 직업별 착용샷 */}
-        <section className={styles.detailCard}>
+        {/* 직업별 착용샷 — 유저가 올린 착장. 위 패키지 정보 카드와 다른 상자(옅은 바탕·띠 없음)로 구분 */}
+        <section className={av.looksBox}>
           <div className={av.looksHead}>
-            <h2 className={styles.detailCardHeader}>직업별 착용샷</h2>
+            <div className={av.looksTitleWrap}>
+              <h2 className={av.looksTitle}>직업별 착용샷</h2>
+            </div>
             {user ? (
               !formOpen && (
                 <button type="button" className={av.primaryBtnSmall} onClick={() => setFormOpen(true)}>
@@ -406,6 +418,8 @@ export default function AvatarPackageDetail({ initialPost, initialLooks }: Props
               <span className={av.loginHint}>로그인하면 내 착장을 올릴 수 있어요</span>
             )}
           </div>
+
+          <div className={av.looksBody}>
 
           {formOpen && user && (
             <AvatarLookForm
@@ -487,7 +501,7 @@ export default function AvatarPackageDetail({ initialPost, initialLooks }: Props
                   <span className={av.lookTileMeta}>
                     {/* 카드엔 직업·하트만 — 올린 사람은 눌러서 여는 팝업에 나온다 */}
                     <span className={av.lookTileClass}>{l.className}</span>
-                    <span className={av.lookTileLikes} aria-label={`좋아요 ${l.likeCount || 0}`}>❤️ {l.likeCount || 0}</span>
+                    <span className={av.lookTileLikes} aria-label={`좋아요 ${l.likeCount || 0}`}><HeartIcon size={11} /> {l.likeCount || 0}</span>
                   </span>
                   <span className={av.lookTileBadges}>
                     {lookImages(l).length > 1 && <span className={av.lookTileBadge}>사진 {lookImages(l).length}</span>}
@@ -502,6 +516,7 @@ export default function AvatarPackageDetail({ initialPost, initialLooks }: Props
               더보기 <span className={av.classCount}>{restCount}</span>
             </button>
           )}
+          </div>
         </section>
       </div>
 
@@ -551,15 +566,17 @@ export default function AvatarPackageDetail({ initialPost, initialLooks }: Props
               <div className={av.modalSideHead}>
                 <span className={av.modalClass}>{openLook.className}</span>
                 <span className={av.modalAuthor}>{openLook.authorName}</span>
+                <span className={av.lookViews}>조회 {(openLook.viewCount || 0).toLocaleString()}</span>
                 {user ? (
                   <button type="button" className={`${av.lookLikeBtn} ${liked ? av.lookLikeBtnOn : ''}`}
                     onClick={toggleLike} disabled={liked === null || likeBusy} aria-pressed={!!liked}
                     aria-label={`좋아요 ${openLook.likeCount || 0}`}>
-                    {liked ? '❤️' : '🤍'} {openLook.likeCount || 0}
+                    <HeartIcon filled={!!liked} size={15} />
+                    <span className={av.lookLikeNum}>{openLook.likeCount || 0}</span>
                   </button>
                 ) : (
                   <span className={av.lookLikeStatic} title="로그인하면 좋아요를 누를 수 있어요"
-                    aria-label={`좋아요 ${openLook.likeCount || 0}`}>❤️ {openLook.likeCount || 0}</span>
+                    aria-label={`좋아요 ${openLook.likeCount || 0}`}><HeartIcon size={15} /><span className={av.lookLikeNum}>{openLook.likeCount || 0}</span></span>
                 )}
                 {user && (user.uid === openLook.authorUid || admin) && (
                   <button type="button" className={`${styles.deleteBtn} ${av.modalDelete}`} onClick={() => handleDeleteLook(openLook)}>

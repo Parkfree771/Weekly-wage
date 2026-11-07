@@ -563,7 +563,7 @@
 
 /* 고른 표시는 확정 구성품과 같은 체크박스(.itemCheckBoxChecked)를 그대로 쓴다 — 색도 --color-accent 로 같다 */
 .bonusCell:hover .itemCheckBox {
-  border-color: var(--color-accent);
+  border-color: var(--color-primary);
 }
 
 /* 체크박스 (아이콘 우상단 오버레이) */
@@ -583,12 +583,12 @@
 }
 
 .itemCheckBoxChecked {
-  background: var(--color-accent);
-  border-color: var(--color-accent);
+  background: var(--color-primary);
+  border-color: var(--color-primary);
 }
 
 .itemCell:hover .itemCheckBox {
-  border-color: var(--color-accent);
+  border-color: var(--color-primary);
 }
 
 .itemCheckIcon {
@@ -1097,7 +1097,7 @@
 }
 
 .rateRow:focus-within {
-  border-color: var(--color-accent);
+  border-color: var(--color-primary);
 }
 
 .rateIconGold {
@@ -1158,7 +1158,7 @@
 
 /* ─── 가챠 아이템 셀 상태 ─── */
 .itemCellHighlight {
-  border-color: var(--color-accent);
+  border-color: var(--color-primary);
   box-shadow: 0 0 10px rgba(249, 115, 22, 0.5);
   transition: none;
 }
@@ -1208,7 +1208,7 @@
   font-size: 0.9rem;
   font-weight: 800;
   color: #fff;
-  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-dark));
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
   border: none;
   border-radius: 10px;
   cursor: pointer;
@@ -1280,7 +1280,7 @@
   font-weight: 700;
   color: var(--color-accent);
   background: transparent;
-  border: 1px solid var(--color-accent);
+  border: 1px solid var(--color-primary);
   border-radius: 5px;
   cursor: pointer;
 }

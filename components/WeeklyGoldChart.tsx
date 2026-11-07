@@ -7,7 +7,7 @@ import NextImage from 'next/image';
 import styles from './WeeklyGoldChart.module.css';
 import { WeeklyGoldRecord, getThisWeekWednesday6AM, getCurrentWeekStart } from '@/types/user';
 
-const ACCENT = '#6366f1';
+const ACCENT = '#ca8a04'; // 골드 차트 강조 — 노란 골드 계열 (선택 막대 라벨)
 const BOUND_GOLD_FILTER = 'hue-rotate(280deg) saturate(1.0)';
 
 // 차트 축·막대 라벨 (만 단위 축약)
@@ -23,8 +23,8 @@ const niceCeil = (v: number) => {
 };
 
 // 차트 전용 색 — 앱과 동일
-const CHART_FREE = '#d97706';    // 유통
-const CHART_BOUND = '#c026d3';   // 귀속
+const CHART_FREE = '#eab308';    // 유통 — 노란 골드 (골드 아이콘과 같은 계열)
+const CHART_BOUND = '#e879f9';   // 귀속 — 분홍 골드 (BOUND_GOLD_TEXT 와 동일)
 const CHART_UNSPLIT = '#9ca3af'; // 유통/귀속 분리 기록이 없는 옛 주
 const CHART_PLOT_H = 150;        // 막대 영역 높이 (앱과 동일)
 const CHART_HEADROOM = 10;       // 막대 위 여유

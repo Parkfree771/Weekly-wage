@@ -24,6 +24,8 @@ export type Character = {
   combatLevel?: number;
   imageUrl: string;
   lastUpdated: string;
+  /** 골드 획득 캐릭터(원정대당 최대 6) — 없으면 앞 6명. 지정 밖은 레이드 골드 전부 귀속 (lib/gold-chars.ts) */
+  gold?: boolean;
 };
 
 // 원정대 공통 컨텐츠 체크 상태

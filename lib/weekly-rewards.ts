@@ -13,6 +13,7 @@ import {
   encodeRaidLogValue, encodeSandLogValue, encodeCommonLogValue,
   withActivity, weekDayDateKey, todayGameDateKey,
 } from '@/lib/activity-log';
+import { getGoldCharNames } from '@/lib/gold-chars';
 // 콘텐츠 수치는 전부 단일 원본 테이블에서 가져온다 (직접 하드코딩 금지)
 import {
   EVENT_CONTENTS, EVENT_TIER_KEYS, GUARDIAN_TIERS, RAID_CARD_IMAGES, RIFT_TIERS, SAND_TABLE,
@@ -175,7 +176,7 @@ export function valueActivityEntry(
   if (id.startsWith('raid|')) {
     const raid = raidByLogLabel(entry.label);
     if (!raid) return null;
-    const { noGold, more } = decodeRaidLogValue(entry.value);
+    const { noGold, more, allBound } = decodeRaidLogValue(entry.value);
     let gold = 0;
     let bound = 0;
     let moreCost = 0;
@@ -189,7 +190,7 @@ export function valueActivityEntry(
     raid.gates.forEach((g, i) => {
       if (!noGold) {
         gold += g.gold;
-        bound += g.boundGold;
+        bound += allBound ? g.gold : g.boundGold; // 골드 지정 밖 캐릭터 — 전부 귀속
       }
       if (more) moreCost += g.moreGold;
       addMats(raidClearRewards.find(r => r.raidName === raid.name && r.gate === i + 1)?.materials);
@@ -289,10 +290,12 @@ export function syncLogWithState(log: ActivityLog, state: ActivitySyncState): Ac
     weekKeys.forEach(k => { if (next[k]?.[id]) next = withActivity(next, k, id, null); });
   };
 
+  const goldNames = getGoldCharNames(state.characters);
   state.characters.forEach(char => {
     const cs = state.weeklyChecklist[char.name];
     if (!cs) return;
     const lvl = char.itemLevel;
+    const allBound = !goldNames.has(char.name);
 
     // 일숙 — 요일별 상태 그대로 반영 (값 0이면 제거)
     (['chaosDungeon', 'guardianRaid'] as const).forEach(field => {
@@ -327,6 +330,7 @@ export function syncLogWithState(log: ActivityLog, state: ActivitySyncState): Ac
           value: encodeRaidLogValue(
             cs.raidGoldReceive?.[raidName] === false,
             cs.raidMoreGoldExclude?.[raidName] === true,
+            allBound,
           ),
         });
       } else {

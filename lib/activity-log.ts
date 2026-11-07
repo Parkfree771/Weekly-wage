@@ -15,7 +15,8 @@ export type ActivityEntry = {
   /**
    * 체크 값 — 종류별 인코딩 (월간 정산이 골드/재료를 정확히 역산할 수 있도록 토글 상태를 담는다)
    * · daily: 1 일반 / 2 휴게 / 3 PC방 / 4 PC방+휴게
-   * · raid: 1 + (골드 미획득이면 +2) + (더보기면 +4)  — 구버전 1 = 골드 획득·더보기 없음
+   * · raid: 1 + (골드 미획득이면 +2) + (더보기면 +4) + (전부 귀속이면 +8)  — 구버전 1 = 골드 획득·더보기 없음
+   *   전부 귀속(+8): 골드 지정 6명 밖 캐릭터 — 클리어 골드 전체를 귀속으로 셈. 8을 모르는 구버전은 일반 분배로 읽는다.
    * · weekly(모래시계): 2 + 보상강화레벨(0~5) + 티어 플래그(1750=+8, 1770=+16)  — 구버전 1 = 레벨0·티어 추정
    * · weekly(낙원): 1
    * · common(카게/필보): 2 = 1730 티어, 3 = 1750 티어, 4 = 1770 티어  — 구버전 1 = 현재 레벨로 추정
@@ -25,11 +26,11 @@ export type ActivityEntry = {
 
 // ─── value 인코딩/디코딩 (앱과 동일 규칙 — 절대 변경 금지) ───
 
-export function encodeRaidLogValue(noGold: boolean, more: boolean): number {
-  return 1 + (noGold ? 2 : 0) + (more ? 4 : 0);
+export function encodeRaidLogValue(noGold: boolean, more: boolean, allBound = false): number {
+  return 1 + (noGold ? 2 : 0) + (more ? 4 : 0) + (allBound ? 8 : 0);
 }
-export function decodeRaidLogValue(value: number): { noGold: boolean; more: boolean } {
-  return { noGold: (value & 2) !== 0, more: (value & 4) !== 0 };
+export function decodeRaidLogValue(value: number): { noGold: boolean; more: boolean; allBound: boolean } {
+  return { noGold: (value & 2) !== 0, more: (value & 4) !== 0, allBound: (value & 8) !== 0 };
 }
 
 // 모래시계·공통 모두 아이템 레벨을 그대로 받아 그때그때 티어를 다시 계산한다.

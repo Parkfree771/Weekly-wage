@@ -474,10 +474,7 @@ export default function PackageGalleryClient({ initialPosts, statsAt }: Props) {
             ) : (
               avatarPosts.map((post) => <AvatarFeatureCard key={post.id} post={post} />)
             )}
-            <DesktopBannerAd tall refreshKey="ad-bottom-desktop-avatar" />
-            <div className={`d-block d-md-none ${styles.mobileAdSlot} ${styles.belowPagerAd}`}>
-              <AdBanner thin />
-            </div>
+            {/* 아바타 탭은 하단 광고 없음 — 카드 바로 밑 큰 배너 + 옆 레일이 겹쳐 산만함(2026-11-07) */}
           </>
         ) : (
         <>

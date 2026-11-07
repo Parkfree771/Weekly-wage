@@ -115,11 +115,16 @@ TTL 300 은 그대로 두되, "따봉이 사라졌다 생기는" 문제는 캐�
 | POST /api/package/view | 상세 첫 방문 | **24h 내 재방문은 localStorage/AsyncStorage로 POST 생략** (서버 쿠키 pv와 병행). pv 쿠키는 항목별 타임스탬프 — 통째 TTL 갱신으로 단골의 재조회가 영원히 안 세지던 버그 수정(2026-08-31) |
 | POST /api/package/react | 따봉·흠 클릭 | 사용자 행동당 1회(250ms 디바운스) — 같은 표 재전송이어도 응답에 최신 stats 동봉 |
 | POST /api/package/revalidate | 글·댓글 쓰기 직후 | 쓰기 행동당 1회 |
+| (함수 아님) 아바타 착장 조회수 | 착장 상세 팝업을 열 때 | **브라우저 → Firestore 직접 +1** (규칙: `viewCount` 하나만 정확히 +1). 같은 기기 24h 재열람은 쓰기 생략. 숫자는 ISR 착장 목록 값 + 내 +1 이라 **읽기 0**, 팝업 안에서만 보임. 남의 조회는 ISR(최대 1시간) 뒤 반영 — 조회로는 재생성하지 않는다 |
+| (함수 아님) 아바타 착장 좋아요 | 로그인 사용자가 팝업에서 누를 때 | 브라우저 → Firestore 배치(likes/{uid} + likeCount ±1). 내가 눌렀는지 읽기는 **착장당 페이지 안 1회**(다시 열면 캐시) |
+| POST /api/package/revalidate (아바타) | 착장 등록·삭제 직후 1회 / 좋아요는 **팝업 닫을 때·페이지 떠날 때 묶어서 1회** | 좋아요마다 부르면 상세(착장 최대 300건)+갤러리 재생성이 클릭 수만큼 돈다 |
 | POST /api/feedback | 문의·제보 제출 | 사용자 행동당 1회 |
 | GET /api/inquiry-log | 문의하기 모달을 **열 때만** (세션당 1회) | durable 30일 + `inquiry-log` 태그 — 관리자 쓰기에만 바뀌므로 관리자 쓰기(POST·PATCH·DELETE) 때 퍼지로 갱신. 데이터는 Firestore `inquiryLog` |
 | /api/cron/* | GitHub Actions 시간당 3회 + heal 일 1회 | 월 ~2,300회, 무시 가능 |
 | /api/admin/* | 수동 운영 | 무시 가능 |
 | 페이지 HTML·RSC | 모든 방문·봇 | 정적 페이지는 durable, 홈·/package·상세는 ISR 3600 (아래 "ISR 3600 개정") |
+
+아바타 글 자체는 조회수를 세지 않는다(2026-11-07) — 상세에서 view POST·stats 조회 없음. 조회수·좋아요는 착장에만.
 
 이 표에 없는 "페이지뷰마다 자동으로 나가는 요청"을 새로 만들지 않는다.
 만들어야 하면 durable 300 이상 + 이 표에 한 줄 추가가 조건이다.

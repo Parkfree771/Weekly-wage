@@ -7,6 +7,7 @@ import {
   doc,
   addDoc,
   deleteDoc,
+  updateDoc,
   getDoc,
   getDocs,
   increment,
@@ -53,6 +54,13 @@ export async function getAvatarLooks(postId: string): Promise<AvatarLook[]> {
       createdAt: ts && typeof ts.toDate === 'function' ? ts.toDate().toISOString() : null,
     };
   });
+}
+
+// ─── 착장 조회수 ───
+// 착장 상세(팝업)를 열 때 viewCount +1 — 비로그인도 가능. firestore.rules 가 viewCount 하나만, 정확히 +1 만 허용.
+// 중복 방지는 호출부(같은 기기 24시간)에서 한다. 숫자는 따로 읽지 않는다(목록 값 + 내 +1).
+export async function addLookView(postId: string, lookId: string): Promise<void> {
+  await updateDoc(doc(db, 'packagePosts', postId, SUB, lookId), { viewCount: increment(1) });
 }
 
 // ─── 착장 좋아요 (로그인 1인 1표) ───
