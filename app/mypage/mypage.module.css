@@ -393,7 +393,7 @@
 }
 
 .pageWrapper :global(.btn-outline-primary:hover) {
-  background-color: var(--color-accent) !important;
+  background-color: var(--color-primary) !important;
   color: #fff !important;
 }
 
@@ -1064,6 +1064,17 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  /* 오른쪽 [레벨|갱신]·설정·달력에 밀려도 헤더 밖으로 넘치지 않게 — 닉네임만 … 로 줄어든다 */
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* 닉네임 — 좁은 폰에서 긴 이름은 … */
+.charNameText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* 카드 닉네임 앞 원정대 순번 */
@@ -1103,6 +1114,7 @@
 .cardHeader .headerRight {
   gap: 6px;
   flex-wrap: nowrap;
+  flex-shrink: 0;
 }
 
 /* 헤더 오른쪽 — [Lv.1750 | 갱신] 한 칸 + 설정 + 달력. 모두 높이 26 · 같은 반투명 흰 칸 */

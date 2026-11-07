@@ -2069,7 +2069,7 @@ export default function MyPage() {
                   {/* 왼쪽: 순번 · 닉네임 · 골드 표시(노란=골드 지정 6명 / 분홍=전부 귀속) · 대표 */}
                   <span className={styles.characterName}>
                     <span className={styles.charNum}>{charIdx + 1}.</span>
-                    {char.name}
+                    <span className={styles.charNameText}>{char.name}</span>
                     <Image
                       src="/gold.webp"
                       alt={isGoldChar ? '골드 획득' : '귀속 골드'}
