@@ -10,6 +10,7 @@ const ROUTES: Array<{ path: string; changeFrequency: 'daily' | 'weekly' | 'month
   { path: '/package',            changeFrequency: 'daily',   priority: 1.0 },
   { path: '/refining',           changeFrequency: 'weekly',  priority: 0.9 },
   { path: '/wangap',             changeFrequency: 'weekly',  priority: 0.9 },
+  { path: '/growth',             changeFrequency: 'weekly',  priority: 0.8 },
   { path: '',                    changeFrequency: 'daily',   priority: 0.8 },
   { path: '/mypage',             changeFrequency: 'weekly',  priority: 0.8 },
   // 아제나의 축복 — 유저 글이 아니라 코드로 박아둔 상시 판매 패키지라 URL 이 계속 유지된다.

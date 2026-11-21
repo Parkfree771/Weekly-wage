@@ -34,6 +34,9 @@ function getPageConfig(pathname: string): PageConfig {
   // appPromoTop 148 = 그 위 "장비 선택" 패널 상단과 나란히. 오른쪽 광고는 프로모 아래
   // 실측 간격(dockedAdMarginTop)으로 왼쪽 광고와 정확히 같은 높이에 맞춰짐.
   if (pathname === '/wangap') return { contentWidth: 1400, adTop: 409, appPromoTop: 148 };
+  // contentWidth 1360 = 시뮬·정리 상자 최대 폭 1320 + 페이지 좌우 여백 16×2 (+여유 8).
+  // adTop 60 = 제목 아래 시뮬 탭 줄 상단 부근(페이지 위 여백 16 + 제목 약 45). 실측 전 값이라 어긋나면 이 숫자만 조정.
+  if (pathname === '/growth') return { contentWidth: 1360, adTop: 60 };
   // contentWidth 1240 = 페이지 컨테이너 최대 폭. adTop 250 = 제목·검색창을 지나 첫 구역 상단 부근.
   if (pathname === '/raid-gold') return { contentWidth: 1240, adTop: 250 };
   // adTop 200 = "메인 카드"(아이템 선택+가격 입력) 상자 상단과 나란히(기존 110에서 크게 내림).
@@ -99,7 +102,7 @@ const AD_ZOOM_COMPENSATE = 1 / DESKTOP_ZOOM;
 // /extreme 은 3막·종막 출시 전 "COMING SOON" 화면이라 빠져 있었다(제작 중 화면 광고 금지 정책) —
 // 2026-09-18 GM노트로 난이도별 보상·칭호·제작소가 공개돼 본문을 채우면서 다시 넣었다.
 const RAIL_PAGES = new Set([
-  '/', '/refining', '/wangap', '/package',
+  '/', '/refining', '/wangap', '/growth', '/package',
   '/raid-gold', '/life-master', '/mypage',
   '/cathedral', '/cerka', '/belgardin', '/hell-reward',
   '/extreme', '/engraving',
