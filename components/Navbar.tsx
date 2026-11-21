@@ -78,6 +78,13 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    label: '성장',
+    colorClass: 'nav-refining',
+    href: '/growth',
+    badge: 'NEW',
+    items: [{ href: '/growth', label: '연마 · 재련 · 마력 주입' }],
+  },
+  {
     label: '직업 각인',
     colorClass: 'nav-character',
     href: '/engraving',
@@ -130,6 +137,7 @@ export default function Navbar() {
   const getNavClass = (href: string) => {
     const pageClass = href === '/refining' ? 'nav-refining' :
                       href === '/wangap' ? 'nav-refining' :
+                      href === '/growth' ? 'nav-refining' :
                       href === '/life-master' ? 'nav-life' :
                       href === '/hell-reward' ? 'nav-hell' :
                       href === '/package' ? 'nav-package' :

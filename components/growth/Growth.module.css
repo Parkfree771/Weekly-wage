@@ -1,0 +1,727 @@
+/* 성장 시뮬 (연마 · 재련 · 마력 주입)
+   방송 화면의 배치(위 탭 / 왼쪽 슬롯 목록 / 가운데 패널)와 어두운 분위기만 따르고,
+   장식 효과는 쓰지 않는다. 사이트 라이트/다크와 무관하게 항상 어두운 화면.
+
+   가운데 패널: 화면 부분(.secMain)은 왼쪽 440px 칸에 제자리대로 쌓이고,
+   설명 말풍선(.note)은 오른쪽에 따로 떠서 선(.links)으로 자기 부분과 이어진다.
+   말풍선은 화면 부분의 위치에 영향을 주지 않는다 (위치 계산은 GrowthSimulator 의 Panel).
+
+   눈에 보이는 규칙 두 가지
+   - 누르는 것(연마·재련·주입 버튼, 다시 뽑기, 보조 재료)은 금색
+   - 읽는 것(옵션 줄, 마력 효과 줄, 성공률)은 패널보다 어둡게 판 칸 */
+
+.wrap {
+  --g-bg: #101218;
+  --g-panel: #151821;
+  --g-field: #0b0c11;
+  --g-line: #262932;
+  --g-line-2: #343846;
+  --g-gold: #d9b46a;
+  --g-gold-light: #f0dba8;
+  --g-text: #eceae4;
+  --g-muted: #9a9eaa;
+  --g-green: #8ad977;
+  max-width: 1320px;
+  margin: 0 auto;
+  background: var(--g-bg);
+  border: 1px solid var(--g-line);
+  border-radius: 14px;
+  color: var(--g-text);
+  font-size: 1rem;
+  line-height: 1.4;
+  overflow: hidden;
+}
+
+.wrap button { font-family: inherit; }
+
+/* ---------- 상단 탭 ---------- */
+.tabBar {
+  display: flex;
+  justify-content: center;
+  background: #0c0d12;
+  border-bottom: 1px solid var(--g-line);
+}
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 2rem;
+  background: none;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -1px;
+  color: var(--g-muted);
+  font-size: 1.05rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+.tab:hover { color: var(--g-text); }
+.tabActive,
+.tabActive:hover {
+  color: var(--g-gold-light);
+  border-bottom-color: var(--g-gold);
+  background: rgba(217, 180, 106, 0.08);
+}
+/* 탭 이름 옆: 어디에 하는 성장인지 (장비 · 장신구 / 슬롯) */
+.tabSub {
+  padding: 0.12rem 0.55rem;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 999px;
+  color: var(--g-muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+.tabActive .tabSub { background: rgba(217, 180, 106, 0.22); color: var(--g-gold-light); }
+
+/* ---------- 본문: 슬롯 목록 / 패널 ---------- */
+.body {
+  display: grid;
+  grid-template-columns: 216px minmax(0, 1fr);
+  min-height: 640px;
+}
+
+/* 왼쪽 슬롯 목록 */
+.slotList {
+  padding: 1rem 0.6rem;
+  background: #0d0f14;
+  border-right: 1px solid var(--g-line);
+}
+.slotGroup + .slotGroup { margin-top: 1rem; }
+.slotGroupTitle {
+  padding: 0 0.5rem 0.4rem;
+  color: var(--g-muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+.slotGroupItems { display: flex; flex-direction: column; gap: 3px; }
+
+.slotItem {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  background: none;
+  border: 0;
+  border-radius: 10px;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.slotItem:hover { background: rgba(255, 255, 255, 0.05); }
+.slotItemActive,
+.slotItemActive:hover {
+  background: rgba(217, 180, 106, 0.16);
+  box-shadow: inset 0 0 0 1.5px var(--g-gold);
+}
+/* 아이콘 바탕 = 고대 등급 바탕색 (투명 배경 원본 아이콘용) */
+.slotIcon,
+.headIcon {
+  flex: 0 0 auto;
+  display: block;
+  overflow: hidden;
+  background: linear-gradient(135deg, #3d3325 0%, #dcc999 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.slotIcon { width: 48px; height: 48px; border-radius: 8px; }
+.slotIcon img,
+.headIcon img,
+.matIcon img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.slotText { display: flex; flex-direction: column; min-width: 0; line-height: 1.3; }
+.slotSub { color: var(--g-gold); font-size: 0.92rem; font-weight: 700; }
+.slotName {
+  color: var(--g-text);
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---------- 가운데 패널 ---------- */
+.panel {
+  padding: 1rem 1.25rem 1.25rem;
+  background-color: var(--g-panel);
+}
+/* 탭마다 위쪽에만 옅게 깔리는 색 — 연마(불) / 재련(강철) / 마력 주입(보라) */
+.tonePolish { background-image: linear-gradient(180deg, rgba(214, 104, 40, 0.18) 0%, rgba(214, 104, 40, 0) 260px); }
+.toneRefine { background-image: linear-gradient(180deg, rgba(150, 160, 185, 0.12) 0%, rgba(150, 160, 185, 0) 260px); }
+.toneInfuse { background-image: linear-gradient(180deg, rgba(140, 84, 220, 0.18) 0%, rgba(140, 84, 220, 0) 260px); }
+
+/* 화면 부분은 440px 칸에 차례로 쌓인다 — 말풍선이 있든 없든 같은 자리.
+   --g-side = 그 칸 오른쪽에 붙는 화면 요소의 자리 (연마 장비 탭의 효과 변환 정보).
+   말풍선과 선은 그 바깥에서 시작한다. */
+.panel { --g-side: 0px; }
+.panelWide { --g-side: 152px; }
+.secs { position: relative; }
+.sec { padding: 0.65rem 0; }
+.sec:first-of-type { padding-top: 0; }
+.secMain { display: flex; flex-direction: column; max-width: 440px; }
+
+/* 화면 부분 ↔ 말풍선을 잇는 선. 440px 칸 오른쪽 40px 폭에 그린다 */
+.links {
+  position: absolute;
+  top: 0;
+  left: calc(440px + var(--g-side));
+  width: 40px;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.links path { fill: none; stroke: #4c5263; stroke-width: 1.5; transition: stroke 0.12s ease; }
+.links circle { fill: #4c5263; transition: fill 0.12s ease; }
+.links .linkOn path { stroke: var(--g-gold); }
+.links .linkOn circle { fill: var(--g-gold); }
+
+/* 설명 말풍선 — 오른쪽 칸에 떠 있고, 세로 위치(top)는 자기 부분 높이에 맞춰 스크립트가 넣는다 */
+.note {
+  position: absolute;
+  left: calc(480px + var(--g-side));
+  right: 0;
+  max-width: 560px;
+  opacity: 0;
+  padding: 0.8rem 1rem 0.9rem;
+  background: #1d202b;
+  border: 1px solid var(--g-line-2);
+  border-radius: 12px;
+  line-height: 1.55;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+/* 위치를 잰 뒤에 보여준다 (재기 전에는 전부 맨 위에 겹쳐 있다) */
+.secsReady .note { opacity: 1; }
+/* 화면 부분이나 말풍선에 마우스를 올리면 그 말풍선과 선이 금색으로 켜진다 */
+.sec:hover .note { background: #242836; border-color: var(--g-gold); }
+/* 이름표(작게) → 핵심 한 줄(가장 크게) → 덧붙이는 설명 */
+.noteTitle {
+  display: block;
+  color: var(--g-gold);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.notePoint {
+  display: block;
+  margin: 0.15rem 0 0;
+  color: #ffffff;
+  font-size: 1.12rem;
+  font-weight: 800;
+  line-height: 1.4;
+  word-break: keep-all;
+}
+.noteText {
+  display: block;
+  margin-top: 0.3rem;
+  color: #b9b6af;
+  font-size: 0.95rem;
+  word-break: keep-all;
+}
+
+/* 말풍선 안 단기 · 중기 · 장기 — 이 부분이 속한 칸만 금색 */
+.terms {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  margin-bottom: 0.5rem;
+}
+.term {
+  padding: 0.3rem 0;
+  background: var(--g-field);
+  border: 1px solid var(--g-line);
+  border-radius: 6px;
+  color: #636877;
+  font-size: 1rem;
+  font-weight: 800;
+  text-align: center;
+}
+.termOn {
+  background: rgba(217, 180, 106, 0.18);
+  border-color: var(--g-gold);
+  color: #f0c95f;
+}
+.termLine {
+  margin: 0 0 0.55rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid var(--g-line-2);
+  color: var(--g-gold);
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.source {
+  margin: 0.75rem 0 0;
+  color: #636877;
+  font-size: 0.75rem;
+  text-align: right;
+}
+
+/* 연마 하위 탭 — 장비 연마 / 장신구 연마. 둘 다 있다는 게 바로 보이게 칸 폭 전체를 반씩 쓴다 */
+.subTabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 1.1rem;
+}
+.subTab {
+  height: 46px;
+  background: var(--g-field);
+  border: 1.5px solid var(--g-line-2);
+  border-radius: 10px;
+  color: var(--g-muted);
+  font-size: 1.02rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: color 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+}
+.subTab:hover { color: var(--g-text); border-color: #4c5160; }
+.subTabActive,
+.subTabActive:hover {
+  background: rgba(217, 180, 106, 0.18);
+  border-color: var(--g-gold);
+  color: var(--g-gold-light);
+}
+
+/* 머리: 아이콘 / 이름 / 단계 */
+.head { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.headIcon { width: 80px; height: 80px; border-radius: 12px; border-color: rgba(217, 180, 106, 0.6); }
+.headName { margin-top: 0.6rem; font-size: 1.25rem; font-weight: 700; }
+.headStage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.55rem;
+  margin-top: 0.25rem;
+  color: #f0cf72;
+  font-size: 1.12rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.next { color: var(--g-green); }
+.arrows { color: #e0a53c; flex: 0 0 auto; }
+.powerLabel { color: var(--g-muted); font-size: 0.88rem; }
+.power { color: var(--g-text); font-size: 1.25rem; font-weight: 700; }
+.up { color: var(--g-green); }
+.down { color: #f0806f; }
+
+.sectionLabel {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0 0 0.5rem;
+  color: var(--g-muted);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+.sectionRight { font-weight: 500; font-variant-numeric: tabular-nums; }
+.phase { color: var(--g-gold); font-weight: 700; }
+
+/* 한 줄짜리 결과 문구 — 자리를 미리 잡아 둬서 나타날 때 화면이 밀리지 않는다 */
+.result {
+  min-height: 1.5rem;
+  margin-top: 0.5rem;
+  text-align: center;
+  color: var(--g-gold-light);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+.resultBad { color: var(--g-muted); }
+
+/* 다시 뽑기 버튼 (연마 옵션 / 마력 효과 공통) — 금색으로 채워 줄 배경과 구분 */
+.reroll {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  background: var(--g-gold);
+  border: 0;
+  border-radius: 50%;
+  color: #1c1608;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.reroll:hover:not(:disabled) { background: var(--g-gold-light); }
+.reroll:disabled { background: #2c303d; color: #6b7080; cursor: not-allowed; }
+
+/* ---------- 연마 ---------- */
+/* 지금 아이템 레벨 */
+.ilvNow { display: flex; align-items: baseline; justify-content: center; gap: 0.5rem; margin-top: 0.3rem; }
+.ilvNowLabel { color: var(--g-muted); font-size: 0.92rem; font-weight: 700; }
+.ilvNowVal { color: #f0cf72; font-size: 1.6rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.ilvNowNext { color: var(--g-green); font-size: 0.92rem; font-weight: 800; }
+
+/* 연마 5칸 트랙: [등급 기본값] [1단계] … [5단계] */
+.pTrack {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 5px;
+  margin-top: 0.85rem;
+}
+.pBase,
+.pSeg {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  padding: 0.5rem 0.2rem;
+  border-radius: 8px;
+  text-align: center;
+}
+.pBase { background: transparent; border: 1px solid var(--g-line-2); }
+.pSeg { background: var(--g-field); border: 1.5px dashed var(--g-line-2); }
+.pStep { color: var(--g-muted); font-size: 0.78rem; font-weight: 700; }
+.pLv { color: #7b8090; font-size: 1rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.pBase .pStep { color: #e6d3a3; }
+.pBase .pLv { color: var(--g-text); }
+.pSegDone {
+  background: linear-gradient(180deg, #ebcb85 0%, #c99b45 100%);
+  border: 1.5px solid #c99b45;
+}
+.pSegDone .pStep { color: #4a3a17; }
+.pSegDone .pLv { color: #1c1608; }
+.pSegNext { border: 1.5px solid var(--g-green); background: rgba(138, 217, 119, 0.1); }
+.pSegNext .pStep { color: var(--g-green); }
+.pSegNext .pLv { color: var(--g-green); }
+
+.optRows { display: flex; flex-direction: column; gap: 6px; }
+.optRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  padding: 0 3.4rem;
+  background: var(--g-field);
+  border: 1px solid var(--g-line-2);
+  border-radius: 8px;
+}
+.optRow .reroll { position: absolute; right: 7px; top: 50%; transform: translateY(-50%); }
+.optRowFlash { border-color: #e0a53c; background: rgba(224, 165, 60, 0.14); }
+.optRowLocked { background: transparent; border-style: dashed; border-color: var(--g-line-2); color: #555a66; }
+.optText { font-size: 1rem; white-space: nowrap; }
+.optText b { margin-left: 0.45rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.lock { display: inline-flex; }
+/* 번뜩임이 뜬 줄 표시 — 줄 왼쪽 (방송 화면의 번개 표시 자리) */
+.flashMark {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 0.1rem 0.4rem;
+  background: #e0a53c;
+  border-radius: 5px;
+  color: #1c1608;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+/* 효과 변환 정보 — 방송 화면처럼 옵션 줄 오른쪽에 붙는다 (440px 칸 바깥, --g-side 자리) */
+.optArea { position: relative; }
+.convertBox {
+  position: absolute;
+  top: 0;
+  left: calc(100% + 14px);
+  width: 132px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.7rem 0.5rem 0.75rem;
+  background: var(--g-field);
+  border: 1px solid var(--g-line-2);
+  border-radius: 10px;
+  text-align: center;
+}
+.convertBox .matIcon { width: 48px; height: 48px; margin-bottom: 0; }
+.convertTitle { color: var(--g-muted); font-size: 0.82rem; font-weight: 700; }
+.convertNeed {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.98rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ---------- 재료 ---------- */
+.mats { display: flex; justify-content: center; gap: 2rem; }
+.mat { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 84px; text-align: center; }
+.matIcon {
+  flex: 0 0 auto;
+  display: block;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 3px;
+  overflow: hidden;
+  background: #1c1f29;
+  border: 1px solid var(--g-line-2);
+  border-radius: 10px;
+}
+.matName { font-size: 0.85rem; font-weight: 600; }
+.matNeed { font-size: 1.1rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.matNeed::after { content: '개'; margin-left: 1px; font-size: 0.85rem; font-weight: 600; }
+.matUsed { color: var(--g-muted); font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+
+/* ---------- 비용 ---------- */
+.costTable {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.98rem;
+}
+.costTable > div { display: flex; align-items: center; justify-content: space-between; }
+.costTable > div > span:first-child { color: var(--g-muted); }
+.costTable > div > span:last-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.coin { width: 16px; height: 16px; object-fit: contain; }
+.gap { display: inline-block; width: 0.6rem; }
+
+/* ---------- 실행 버튼 ----------
+   주 버튼(연마 · 슬롯 재련 · 마력 주입) = 금색 채움
+   보조 버튼(3회 연속 · 저장) = 금색 테두리 */
+.btnRow { display: flex; justify-content: center; gap: 0.6rem; margin-top: 1rem; }
+.btn {
+  width: 180px;
+  height: 48px;
+  background: linear-gradient(180deg, #ebcb85 0%, #c99b45 100%);
+  border: 0;
+  border-radius: 10px;
+  color: #1c1608;
+  font-size: 1.05rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: filter 0.12s ease, background 0.12s ease;
+}
+.btn:hover:not(:disabled) { filter: brightness(1.08); }
+.btn:active:not(:disabled) { filter: brightness(0.95); }
+.btnSub {
+  background: transparent;
+  border: 1.5px solid var(--g-gold);
+  color: var(--g-gold-light);
+}
+.btnSub:hover:not(:disabled) { background: rgba(217, 180, 106, 0.14); filter: none; }
+.btn:disabled {
+  background: #2c303d;
+  border-color: transparent;
+  color: #6b7080;
+  cursor: not-allowed;
+}
+
+/* ---------- 재련 ---------- */
+.rateFrame {
+  padding: 1rem 1.25rem 1.1rem;
+  background: var(--g-field);
+  border: 1px solid rgba(217, 180, 106, 0.45);
+  border-radius: 12px;
+  text-align: center;
+}
+.rateLabel { color: #d8c592; font-size: 0.92rem; font-weight: 600; }
+.rateValue {
+  font-size: 2.9rem;
+  font-weight: 700;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+.janginRow {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.6rem;
+  color: var(--g-muted);
+  font-size: 0.85rem;
+}
+.janginBar { flex: 1; height: 12px; background: #262a35; border-radius: 6px; overflow: hidden; }
+.janginBar i { display: block; height: 100%; background: linear-gradient(90deg, #a77d2c, #f0cf72); }
+.janginVal { min-width: 3.6rem; text-align: right; color: var(--g-text); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.needleRow { display: flex; align-items: center; gap: 0.7rem; }
+.needleRow .matIcon { width: 48px; height: 48px; margin-bottom: 0; }
+.needleText { display: flex; flex-direction: column; font-size: 0.98rem; font-weight: 700; line-height: 1.35; }
+.needleText small { color: var(--g-muted); font-size: 0.82rem; font-weight: 400; font-variant-numeric: tabular-nums; }
+/* 보조 재료 켜고 끄기 — 꺼짐: 금색 테두리 / 켜짐: 금색 채움 */
+.toggle {
+  margin-left: auto;
+  min-width: 96px;
+  height: 38px;
+  padding: 0 0.9rem;
+  background: transparent;
+  border: 1.5px solid var(--g-gold);
+  border-radius: 8px;
+  color: var(--g-gold-light);
+  font-size: 0.9rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.toggle:hover { background: rgba(217, 180, 106, 0.14); }
+.toggleOn,
+.toggleOn:hover { background: var(--g-gold); color: #1c1608; }
+
+/* ---------- 마력 주입 ---------- */
+/* 방송 화면처럼: 제 N위상 | 게이지 */
+.satRow { display: flex; align-items: center; gap: 0.6rem; }
+.phasePill {
+  flex: 0 0 auto;
+  padding: 0.4rem 0.8rem;
+  background: rgba(217, 180, 106, 0.18);
+  border: 1.5px solid var(--g-gold);
+  border-radius: 8px;
+  color: #f0c95f;
+  font-size: 1.05rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+/* 포화도 게이지 — 두껍게, 숫자는 게이지 안 가운데 */
+.satBar {
+  position: relative;
+  flex: 1;
+  height: 34px;
+  background: var(--g-field);
+  border: 1px solid var(--g-line-2);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.satBar i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  display: block;
+  background: linear-gradient(90deg, #b8500e, #f39a2c);
+  transition: width 0.25s ease;
+}
+.satBar span {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+.effects { display: flex; flex-direction: column; gap: 6px; }
+.effectRow {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) minmax(0, 1fr) 30px;
+  align-items: center;
+  column-gap: 7px;
+  height: 46px;
+  padding: 0 7px;
+  background: var(--g-field);
+  border: 1px solid var(--g-line-2);
+  border-radius: 8px;
+}
+.effectRowEmpty { border-style: dashed; background: transparent; }
+.effectRowEmpty .effectName { color: #636877; }
+.effectName { text-align: center; font-size: 1rem; border-right: 1px solid var(--g-line-2); }
+.tries { margin-top: 0.7rem; text-align: center; color: #f0cf72; font-size: 1rem; font-weight: 700; }
+
+/* 한 줄 재료 — 왼쪽 아이콘·이름, 오른쪽 수량이나 비용 (연마 재료 장비, 마력 제어기) */
+.matRow { display: flex; align-items: center; gap: 0.7rem; }
+.matRow + .effects { margin-top: 0.6rem; }
+.matRow .matIcon { width: 48px; height: 48px; margin-bottom: 0; }
+.matRowText { display: flex; flex-direction: column; font-size: 0.98rem; font-weight: 700; line-height: 1.35; }
+.matRowText small,
+.matRowRight small { color: var(--g-muted); font-size: 0.82rem; font-weight: 400; font-variant-numeric: tabular-nums; }
+.matRowRight {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-size: 0.98rem;
+  font-weight: 700;
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+}
+.matRowRight > span { display: inline-flex; align-items: center; gap: 0.3rem; }
+.effectVal {
+  text-align: center;
+  color: #636877;
+  font-size: 1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ---------- 폭이 줄 때: 말풍선을 각 부분 바로 아래로 (꼬리는 위를 가리킨다) ---------- */
+@media (max-width: 1180px) {
+  .links { display: none; }
+  .convertBox {
+    position: static;
+    width: auto;
+    flex-direction: row;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 6px;
+  }
+  .sec { padding: 0.8rem 0; }
+  .sec + .sec { border-top: 1px solid var(--g-line); }
+  .secMain { margin: 0 auto; }
+  .note {
+    position: relative;
+    left: auto;
+    right: auto;
+    opacity: 1;
+    max-width: 440px;
+    margin: 0.75rem auto 0;
+  }
+  .note::before {
+    content: '';
+    position: absolute;
+    left: 24px;
+    top: -6px;
+    width: 10px;
+    height: 10px;
+    background: inherit;
+    border-left: 1px solid var(--g-line-2);
+    border-top: 1px solid var(--g-line-2);
+    transform: rotate(45deg);
+  }
+  .sec:hover .note::before { border-color: var(--g-gold); }
+}
+
+/* ---------- 모바일 ---------- */
+@media (max-width: 768px) {
+  .wrap { border-radius: 12px; }
+  .tab { flex: 1; flex-direction: column; justify-content: center; gap: 0.2rem; padding: 0.7rem 0.3rem; font-size: 0.98rem; }
+  .tab svg { display: none; }
+  .tabSub { font-size: 0.74rem; }
+
+  .body { grid-template-columns: minmax(0, 1fr); min-height: 0; }
+
+  /* 왼쪽 목록 → 위쪽 가로 한 줄 */
+  .slotList {
+    display: flex;
+    gap: 3px;
+    padding: 0.6rem 0.5rem;
+    overflow-x: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--g-line);
+    scrollbar-width: none;
+  }
+  .slotList::-webkit-scrollbar { display: none; }
+  .slotGroup + .slotGroup { margin-top: 0; }
+  .slotGroupTitle { display: none; }
+  .slotGroupItems { flex-direction: row; gap: 3px; }
+  .slotItem { flex-direction: column; gap: 0.25rem; width: 66px; padding: 0.4rem 0.25rem; }
+  .slotText { align-items: center; }
+  .slotSub { font-size: 0.78rem; white-space: nowrap; }
+  .slotName { display: none; }
+
+  .panel { padding: 0.9rem 1rem 1.1rem; }
+  .btn { width: auto; flex: 1; max-width: 180px; }
+  .rateValue { font-size: 2.4rem; }
+  .effectName, .effectVal, .optText { font-size: 0.9rem; }
+}

@@ -1,0 +1,251 @@
+/* 성장 시뮬 아래 "한눈에 정리" — 사이트 카드 톤(라이트/다크 자동).
+   색: 남보라(primary) = 아이템 레벨 / 주황 = 단기 / 초록 = 중기 / 보라 = 장기 */
+
+.summary {
+  max-width: 1320px;
+  margin: 1.5rem auto 0;
+  padding: 1.5rem 1.75rem 1rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+  color: var(--text-primary);
+  line-height: 1.35;
+}
+
+.t0 { --t: #e8722a; --t-bg: rgba(232, 114, 42, 0.1); }
+.t1 { --t: #2f9e6e; --t-bg: rgba(47, 158, 110, 0.1); }
+.t2 { --t: #7b4fd6; --t-bg: rgba(123, 79, 214, 0.1); }
+
+.title {
+  margin: 0 0 1.1rem;
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+
+/* ---------- [장비] → [아이템 레벨] ← [장신구] ---------- */
+.board {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 400px minmax(0, 1fr);
+  align-items: stretch;
+  gap: 0;
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding: 1.1rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+}
+.sideHead { display: flex; align-items: baseline; gap: 0.5rem; }
+.sideHead b { font-size: 1.45rem; font-weight: 900; }
+.sideHead span { color: var(--text-muted); font-size: 0.95rem; font-weight: 700; }
+
+/* 8칸 아이콘 — 4 × 2 */
+.slots {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.6rem 0.4rem;
+}
+.slot { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; }
+.slotIcon,
+.todoIcon {
+  display: block;
+  overflow: hidden;
+  background: linear-gradient(135deg, #3d3325 0%, #dcc999 100%);
+  border: 1px solid rgba(0, 0, 0, 0.15);
+}
+.slotIcon { width: 56px; height: 56px; border-radius: 10px; }
+.slotIcon img,
+.todoIcon img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.slotName { color: var(--text-secondary); font-size: 0.82rem; font-weight: 700; }
+
+/* 할 일 — [기간] 아이콘 이름 ...... 오르는 것 ↑ */
+.todos { display: flex; flex-direction: column; gap: 6px; margin-top: auto; }
+.todo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.7rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-left: 4px solid var(--t);
+  border-radius: 10px;
+}
+.todoTerm {
+  flex: 0 0 auto;
+  padding: 0.15rem 0.5rem;
+  background: var(--t);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+.todoIcon { flex: 0 0 auto; width: 36px; height: 36px; border-radius: 8px; }
+.todoName { font-size: 1.05rem; font-weight: 800; }
+.todoUp {
+  margin-left: auto;
+  color: var(--t);
+  font-size: 1rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.todoLv {
+  border-color: var(--color-primary);
+  border-left-color: var(--t);
+  background: var(--color-primary-light);
+}
+.todoUpLv {
+  padding: 0.25rem 0.7rem;
+  background: var(--color-primary);
+  border-radius: 999px;
+  color: #fff;
+}
+
+/* 가운데 아이템 레벨 */
+.center {
+  display: flex;
+  align-items: center;
+  padding: 0 0.4rem;
+}
+.arrowL,
+.arrowR {
+  flex: 0 0 auto;
+  color: var(--color-primary);
+  font-size: 1.8rem;
+  font-weight: 900;
+}
+.ilv {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 1.2rem 0.75rem;
+  background: var(--color-primary-light);
+  border: 2px solid var(--color-primary);
+  border-radius: 16px;
+  text-align: center;
+}
+.ilvLabel { color: var(--color-primary); font-size: 1.05rem; font-weight: 800; }
+.ilvBig { font-size: 1.8rem; font-weight: 900; line-height: 1.15; }
+.ilvFrom {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  margin-top: 0.45rem;
+}
+.ilvChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.6rem 0.2rem 0.2rem;
+  background: var(--card-bg);
+  border: 1.5px solid var(--color-primary);
+  border-radius: 10px;
+  font-size: 0.98rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.ilvChip img {
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
+  background: linear-gradient(135deg, #3d3325 0%, #dcc999 100%);
+  object-fit: cover;
+}
+.ilvPlus { color: var(--color-primary); font-size: 1.2rem; font-weight: 900; }
+.ilvRule { margin-top: 0.35rem; font-size: 0.95rem; font-weight: 700; }
+.ilvRule b { color: var(--color-primary); }
+.ilvEx { color: var(--text-muted); font-size: 0.85rem; font-weight: 600; }
+.ilvNo {
+  margin-top: 0.35rem;
+  padding: 0.2rem 0.65rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+/* ---------- 아래: 단기·중기·장기 + 따로 ---------- */
+.bottom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 8px;
+  margin-top: 1rem;
+}
+.legend {
+  flex: 1 1 640px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.legendItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.6rem 0.9rem;
+  background: var(--t-bg);
+  border-left: 4px solid var(--t);
+  border-radius: 10px;
+}
+.legendItem b { color: var(--t); font-size: 1.15rem; font-weight: 900; }
+.legendItem span { color: var(--text-secondary); font-size: 0.88rem; font-weight: 600; }
+
+.extra {
+  flex: 0 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+}
+.extraLabel { color: var(--text-muted); font-size: 0.9rem; font-weight: 800; }
+.extraItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.4rem 0.25rem 0.25rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  font-size: 0.98rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.extraItem img { width: 32px; height: 32px; border-radius: 6px; object-fit: cover; }
+.extraItem i {
+  padding: 0.05rem 0.4rem;
+  background: var(--t);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 0.75rem;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.source { margin: 0.7rem 0 0; color: var(--text-muted); font-size: 0.78rem; text-align: right; }
+
+/* ---------- 좁을 때: 장비 / 아이템 레벨 / 장신구 위아래로 ---------- */
+@media (max-width: 1000px) {
+  .board { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .center { padding: 0; }
+  .arrowL, .arrowR { display: none; }
+  .legend { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 600px) {
+  .summary { padding: 1.1rem 0.9rem 0.8rem; border-radius: 12px; }
+  .slotIcon { width: 48px; height: 48px; }
+  .todoName { font-size: 0.98rem; }
+  .extra { flex-wrap: wrap; }
+}
