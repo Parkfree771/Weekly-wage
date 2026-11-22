@@ -33,6 +33,17 @@
 }
 
 .wrap button { font-family: inherit; }
+/* 위에서 검색한 캐릭 상태로 시작할 때 */
+.startFrom {
+  margin: 0 auto 0.75rem;
+  padding: 0.45rem 0.9rem;
+  width: fit-content;
+  background: var(--g-gold);
+  border-radius: 8px;
+  color: #1a1408;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
 
 /* ---------- 상단 탭 ---------- */
 .tabBar {

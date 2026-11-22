@@ -1,4 +1,4 @@
-import GrowthSimulator from '@/components/growth/GrowthSimulator';
+import GrowthLinked from '@/components/growth/GrowthLinked';
 import GrowthSummary from '@/components/growth/GrowthSummary';
 
 export default function GrowthPage() {
@@ -16,7 +16,7 @@ export default function GrowthPage() {
         연마 · 재련 · 마력 주입
       </h1>
       <div style={{ padding: '0 1rem' }}>
-        <GrowthSimulator />
+        <GrowthLinked />
         <GrowthSummary />
       </div>
     </div>

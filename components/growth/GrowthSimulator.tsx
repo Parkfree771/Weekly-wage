@@ -18,6 +18,7 @@ import {
   OPTION_GRADES, OPTION_GRADE_COLORS, OPTION_GRADE_WEIGHTS, OPTION_GRADE_POWER,
   INFUSE_OPTION_POOL, INFUSE_START,
 } from './growthData';
+import type { SimStart } from './migration';
 
 type Tab = 'polish' | 'refine' | 'infuse';
 // sub = 그 성장을 어디에 하는지 (연마는 장비·장신구 자체에, 재련·마력 주입은 칸에)
@@ -250,15 +251,13 @@ function Sec({ note, children }: { note?: NoteData; children: ReactNode }) {
 interface PolishOpt { name: string; value: number; flash?: boolean; }
 interface PolishState { grade: number; polish: number; options: PolishOpt[]; }
 
-const initPolish = (slots: SlotDef[], polishBy: Record<string, number>): Record<string, PolishState> =>
+// 위에서 캐릭터를 검색했으면 칸마다 이관 등급 · 연마로, 아니면 전부 고대 0단계에서 시작
+const initPolish = (slots: SlotDef[], start: SimStart['polish'] = {}): Record<string, PolishState> =>
   Object.fromEntries(slots.map(s => [s.key, {
-    grade: GRADES.length - 1,
-    polish: polishBy[s.key] ?? 0,
+    grade: start[s.key]?.grade ?? GRADES.length - 1,
+    polish: start[s.key]?.polish ?? 0,
     options: POLISH_DEFAULT_OPTIONS.map(o => ({ ...o })),
   }]));
-
-// 처음 들어왔을 때 헷갈리지 않게 전부 0단계에서 시작한다 (방송 화면 값으로 시작하지 않음)
-const EQUIP_POLISH_START: Record<string, number> = {};
 
 function polishValueText(o: PolishOpt) {
   const def = POLISH_OPTION_POOL.find(d => d.name === o.name);
@@ -273,10 +272,10 @@ function polishValueColor(o: PolishOpt) {
   return '#8ad977';
 }
 
-function PolishTab() {
+function PolishTab({ start }: { start?: SimStart }) {
   const [sub, setSub] = useState<'equip' | 'acc'>('equip');
-  const [equip, setEquip] = useState(() => initPolish(EQUIP_SLOTS, EQUIP_POLISH_START));
-  const [acc, setAcc] = useState(() => initPolish(ACC_SLOTS, {}));
+  const [equip, setEquip] = useState(() => initPolish(EQUIP_SLOTS, start?.polish));
+  const [acc, setAcc] = useState(() => initPolish(ACC_SLOTS, start?.polish));
   const [selEquip, setSelEquip] = useState('weapon');
   const [selAcc, setSelAcc] = useState('necklace');
   const [used, setUsed] = useState({ gold: 0, mats: 0, convertMats: 0 });
@@ -430,11 +429,15 @@ function PolishTab() {
 interface RefineState { stage: number; jangin: number; }
 // 전 칸 같은 단계에서 시작. 성공률을 아는 가장 낮은 단계가 11이라 11부터 (growthData REFINE_MIN)
 const REFINE_START: Record<string, number> = Object.fromEntries(EQUIP_SLOTS.map(s => [s.key, REFINE_MIN]));
-const initRefine = () => Object.fromEntries(EQUIP_SLOTS.map(s => [s.key, { stage: REFINE_START[s.key], jangin: 0 }])) as Record<string, RefineState>;
+// 검색한 캐릭은 칸마다 이관 단계로. 11 아래(허리띠 0 등)는 성공률을 몰라 11로 올린다
+const initRefine = (start?: SimStart) => Object.fromEntries(EQUIP_SLOTS.map(s => [s.key, {
+  stage: start ? Math.max(REFINE_MIN, start.refine[s.key] ?? REFINE_MIN) : REFINE_START[s.key],
+  jangin: 0,
+}])) as Record<string, RefineState>;
 const REFINE_SLOTS: SlotDef[] = EQUIP_SLOTS.map(s => ({ ...s, itemName: `${s.label} 슬롯` }));
 
-function RefineTab() {
-  const [data, setData] = useState(initRefine);
+function RefineTab({ start }: { start?: SimStart }) {
+  const [data, setData] = useState(() => initRefine(start));
   const [sel, setSel] = useState('weapon');
   const [needle, setNeedle] = useState(false);
   const [used, setUsed] = useState({ tries: 0, stone: 0, orange: 0, silver: 0, gold: 0, needles: 0 });
@@ -743,10 +746,11 @@ function InfuseTab() {
 }
 
 // =====================================================================
-export default function GrowthSimulator() {
+export default function GrowthSimulator({ start }: { start?: SimStart }) {
   const [tab, setTab] = useState<Tab>('polish');
   return (
     <div className={styles.wrap}>
+      {start && <div className={styles.startFrom}><b>{start.name}</b> 이관 상태에서 시작</div>}
       <div className={styles.tabBar} role="tablist">
         {TABS.map(t => (
           <button
@@ -763,8 +767,8 @@ export default function GrowthSimulator() {
           </button>
         ))}
       </div>
-      {tab === 'polish' && <PolishTab />}
-      {tab === 'refine' && <RefineTab />}
+      {tab === 'polish' && <PolishTab start={start} />}
+      {tab === 'refine' && <RefineTab start={start} />}
       {tab === 'infuse' && <InfuseTab />}
     </div>
   );
