@@ -87,7 +87,16 @@
   border-radius: 10px;
 }
 .scale { display: flex; align-items: flex-end; gap: 0.6rem; }
-.scaleTitle { padding-bottom: 1.45rem; font-size: 0.95rem; font-weight: 800; white-space: nowrap; }
+.scaleTitle {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.3rem;
+  padding-bottom: 1.45rem;
+  font-size: 0.95rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
 .stairs { display: flex; align-items: flex-end; gap: 3px; }
 .step { display: flex; flex-direction: column; align-items: center; min-width: 38px; }
 .mark { height: 1rem; color: var(--text-primary); font-size: 0.8rem; line-height: 1rem; }
@@ -105,6 +114,69 @@
   white-space: nowrap;
 }
 .stepLabelMine { color: var(--text-primary); font-weight: 900; }
+
+/* ---------- 기준 말풍선 — 버튼 아래에 뜨는 표. 내 캐릭 줄은 남보라로 채운다 ---------- */
+.info { position: relative; display: inline-block; vertical-align: middle; }
+.infoBtn {
+  padding: 0.12rem 0.55rem;
+  background: var(--card-bg);
+  border: 1.5px solid var(--color-primary);
+  border-radius: 6px;
+  color: var(--color-primary);
+  font-size: 0.8rem;
+  font-weight: 800;
+  line-height: 1.3;
+}
+.infoBtnOn { background: var(--color-primary); color: #fff; }
+.infoPanel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 30;
+  width: min(560px, calc(100vw - 40px));
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 0.75rem 0.85rem;
+  background: var(--card-bg);
+  border: 1.5px solid var(--color-primary);
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: left;
+  white-space: normal;
+}
+.infoRight { right: 0; left: auto; }
+.infoHead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
+.infoHead b { font-size: 1.05rem; font-weight: 900; }
+.infoClose {
+  padding: 0 0.4rem;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+.infoTable { width: 100%; margin-bottom: 0.6rem; border-collapse: collapse; font-size: 0.88rem; }
+.infoTable th {
+  padding: 0.35rem 0.5rem;
+  border-bottom: 2px solid var(--border-color);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-align: left;
+}
+.infoTable td { padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+.infoTable td b { font-weight: 900; }
+.infoMine td { background: var(--color-primary); color: #fff; font-weight: 800; }
+.infoPlus { margin-left: 0.3rem; color: #e8722a; font-style: normal; font-weight: 900; }
+.infoMine .infoPlus { color: #fff; }
+.infoSub { margin: 0 0 0.6rem; color: var(--text-muted); font-size: 0.82rem; }
+.infoLabel { display: block; margin: 0.2rem 0 0.35rem; font-size: 0.88rem; font-weight: 900; }
+.infoEngs { display: flex; flex-wrap: wrap; gap: 0.3rem 0.7rem; margin-bottom: 0.6rem; font-size: 0.85rem; }
+.infoEngs span { display: inline-flex; align-items: center; gap: 0.3rem; }
+.infoEngs img { width: 22px; height: 22px; border-radius: 50%; }
 
 /* ---------- 두 줄 ---------- */
 .cols {
@@ -150,8 +222,7 @@
 .hPart { grid-area: part; }
 .hNow { grid-area: now; }
 .hAfter { grid-area: after; }
-.hSlot { grid-area: slot; display: flex; align-items: center; justify-content: flex-end; gap: 0.3rem; text-align: right; }
-.hSlot img { width: 20px; height: 20px; border-radius: 4px; }
+.hSlot { grid-area: slot; display: flex; flex-direction: column; align-items: flex-end; gap: 0.25rem; text-align: right; }
 
 .part { grid-area: part; display: flex; align-items: center; gap: 0.5rem; }
 .part b { font-size: 1.1rem; font-weight: 800; white-space: nowrap; }
@@ -245,19 +316,17 @@
 }
 .none { color: var(--text-muted); font-size: 0.9rem; font-weight: 700; }
 
-/* 오른쪽 칸 — 슬롯 재련(네모 · 초록) / 주문서(알약 · 등급색) */
+/* 오른쪽 칸 — 슬롯 재련(네모 · 초록) / 주문서(알약 · 등급색). 이름은 굵게, 값은 더 굵고 크게 */
 .tag {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.22rem 0.6rem 0.22rem 0.25rem;
+  padding: 0.25rem 0.75rem;
   color: #fff;
   white-space: nowrap;
 }
-.tag img { flex: 0 0 auto; width: 28px; height: 28px; border-radius: 6px; object-fit: cover; }
 .tagTxt { display: flex; flex-direction: column; line-height: 1.1; text-align: left; }
-.tagTxt small { font-size: 0.72rem; font-weight: 700; }
-.tagTxt b { font-size: 1.1rem; font-weight: 900; }
+.tagTxt small { font-size: 0.8rem; font-weight: 800; }
+.tagTxt b { font-size: 1.2rem; font-weight: 900; }
 .refineTag { background: #2f9e6e; border-radius: 6px; }
 .scrollTag { border-radius: 999px; }
 .tagOff { background: var(--card-bg); border: 1.5px solid var(--border-color); color: var(--text-muted); }

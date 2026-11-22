@@ -40,7 +40,7 @@ function rankOfColor(html: string): Rank {
 
 // ---------- 장비 레벨 → 등급 · 연마 (img/10) ----------
 // 기존 레벨 "초과" 경계 → 이관 등급(GRADES 인덱스) · 연마. 장비 각각의 레벨 기준 (방송 1:14)
-const LEVEL_TABLE: [number, number, number][] = [
+export const LEVEL_TABLE: [number, number, number][] = [
   [1600, 0, 0], [1675, 0, 1], [1680, 0, 2], [1685, 0, 3], [1690, 0, 4],
   [1695, 1, 0], [1700, 1, 1], [1705, 1, 2], [1710, 1, 3], [1715, 1, 4],
   [1720, 2, 0], [1725, 2, 1], [1730, 2, 2], [1735, 2, 3], [1740, 2, 4],
@@ -50,16 +50,23 @@ const LEVEL_TABLE: [number, number, number][] = [
   [1785, 5, 0], [1790, 5, 2], [1795, 5, 3],
 ];
 export interface NewGear { grade: number; polish: number; level: number; }
+// 레벨이 걸리는 표의 줄 번호 (1600 이하는 -1). 1800 넘는 레벨(에스더)은 맨 끝 줄 = 25강 무기 기준
+export function levelRow(level: number | null): number {
+  if (level == null || level <= 1600) return -1;
+  let row = 0;
+  LEVEL_TABLE.forEach((r, i) => { if (level > r[0]) row = i; });
+  return row;
+}
 function gearOf(level: number | null): NewGear | null {
-  if (level == null || level <= 1600) return null;
-  let row = LEVEL_TABLE[0];
-  for (const r of LEVEL_TABLE) if (level > r[0]) row = r;
-  return { grade: row[1], polish: row[2], level: itemLevelOf(row[1], row[2]) };
+  const i = levelRow(level);
+  if (i < 0) return null;
+  const [, grade, polish] = LEVEL_TABLE[i];
+  return { grade, polish, level: itemLevelOf(grade, polish) };
 }
 
 // ---------- 에스더 무기 (img/13, img/14) ----------
 // [진화, 엘라] → 엘라 단계 · 연마 · 레벨 · 무기 슬롯 재련
-const ESTHER_TABLE: Record<string, { ella: number; polish: number; level: number; refine: number }> = {
+export const ESTHER_TABLE: Record<string, { ella: number; polish: number; level: number; refine: number }> = {
   '6-0': { ella: 2, polish: 0, level: 1625, refine: 0 },
   '7-0': { ella: 2, polish: 0, level: 1625, refine: 0 },
   '6-1': { ella: 2, polish: 0, level: 1625, refine: 9 },
@@ -84,14 +91,14 @@ function estherOf(e: ApiEquip, tip: Tip): EstherResult {
 }
 
 // ---------- 장신구 → 마력 주입 주문서 (img/17, img/18) ----------
-interface AccRule { main: string[]; third: string[]; }
+export interface AccRule { main: string[]; third: string[]; }
 // 1,2옵션 / 3옵션 유효 옵션. '%' 가 붙은 이름은 퍼센트 옵션, 없으면 고정 수치 옵션
-const DEALER_RULE: Record<string, AccRule> = {
+export const DEALER_RULE: Record<string, AccRule> = {
   목걸이: { main: ['추가 피해%', '적에게 주는 피해%'], third: ['공격력', '무기 공격력'] },
   귀걸이: { main: ['공격력%', '무기 공격력%'], third: ['공격력', '무기 공격력'] },
   반지: { main: ['치명타 적중률%', '치명타 피해%'], third: ['공격력', '무기 공격력'] },
 };
-const SUPPORT_RULE: Record<string, AccRule> = {
+export const SUPPORT_RULE: Record<string, AccRule> = {
   목걸이: { main: ['낙인력%', '게이지 획득량%'], third: ['무기 공격력', '최대 생명력'] },
   귀걸이: { main: ['무기 공격력%', '무기 공격력'], third: ['최대 생명력', '파티원 보호막 효과%', '파티원 회복 효과%'] },
   반지: { main: ['아군 공격력 강화 효과%', '아군 피해량 강화 효과%'], third: ['무기 공격력', '최대 생명력'] },
@@ -180,6 +187,24 @@ function accOf(e: ApiEquip, tip: Tip): AccResult {
 // ---------- 팔찌 → 인장 주문서 (img/15, img/16) ----------
 // 줄마다 티어만 매긴다. 1~21등급 점수표는 미공개.
 export interface BraceletLine { text: string; rank: Rank; dealer: string | null; support: string | null; }
+// 기준 말풍선에 보여줄 티어별 옵션 (img/15, img/16 그대로)
+export const DEALER_TIER_OPTIONS: [string, string[]][] = [
+  ['1티어', ['치명타 적중률 & 치명타 시 피해량', '치명타 피해 & 치명타 시 피해량', '추가 피해 & 악마 및 대악마 피해', '재사용 대기 시간 증가 & 적에게 주는 피해', '적에게 주는 피해 & 무력화 대상 피해']],
+  ['2티어+', ['치명 / 특화 / 신속']],
+  ['2티어', ['방향성 공격이 아닌 스킬 피해', '백어택 스킬 피해', '헤드어택 스킬 피해', '추가 피해', '적에게 주는 피해', '치명타 피해', '치명타 적중률']],
+  ['3티어+', ['무기 공격력 & 생명력 50% 이상 무기 공격력', '무기 공격력 & 30초마다 120초 동안 무기 공격력']],
+  ['3티어', ['무기 공격력', '공격 적중 시 매 초 무기 공격력 & 공격 및 이동 속도']],
+  ['4티어', ['대상 방어력 감소 & 아군 공격력 강화', '대상 치명타 저항 감소 & 아군 공격력 강화', '대상 치명타 피해 저항 감소 & 아군 공격력 강화', '파티 보호 효과 대상 피해 증가 & 아군 공격력 강화']],
+  ['5티어', ['힘 / 민첩 / 지능']],
+];
+export const SUPPORT_TIER_OPTIONS: [string, string[]][] = [
+  ['1티어', ['대상 방어력 감소 & 아군 공격력 강화', '대상 치명타 저항 감소 & 아군 공격력 강화', '대상 치명타 피해 저항 감소 & 아군 공격력 강화', '파티 보호 효과 대상 피해 증가 & 아군 공격력 강화']],
+  ['2티어', ['특화 / 신속', '아군 피해량 강화', '아군 공격력 강화']],
+  ['3티어+', ['무기 공격력 & 생명력 50% 이상 무기 공격력', '무기 공격력 & 30초마다 120초 동안 무기 공격력']],
+  ['3티어', ['무기 공격력', '공격 적중 시 매 초 무기 공격력 & 공격 및 이동 속도']],
+  ['4티어', ['힘 / 민첩 / 지능']],
+];
+
 function tierOf(t: string): { dealer: string | null; support: string | null } {
   if (t.includes('아군 공격력 강화 효과') && /방어력을|치명타 저항을|치명타 피해 저항을|보호 효과/.test(t)) return { dealer: '4티어', support: '1티어' };
   if (/치명타로 적중 시 적에게 주는 피해|대악마|무력화 상태의 적에게 주는 피해/.test(t)) return { dealer: '1티어', support: null };
@@ -208,8 +233,8 @@ function braceletOf(tip: Tip): BraceletLine[] {
 }
 
 // ---------- 어빌리티 스톤 → 각인 슬롯 (img/19, img/20) ----------
-const DEALER_ENGRAVINGS = ['각성', '결투의 대가', '기습의 대가', '달인의 저력', '돌격대장', '마나 효율 증가', '바리케이드', '부러진 뼈', '속전속결', '슈퍼 차지', '시선 집중', '아드레날린', '안정된 상태', '약자 무시', '에테르 포식자', '예리한 둔기', '원한', '저주받은 인형', '정밀 단도', '질량 증가', '추진력', '타격의 대가'];
-const SUPPORT_ENGRAVINGS = ['각성', '구슬동자', '급소 타격', '마나의 흐름', '분쇄의 주먹', '위기 모면', '전문의', '정기 흡수', '중갑 착용', '최대 마나 증가', '폭발물 전문가'];
+export const DEALER_ENGRAVINGS = ['각성', '결투의 대가', '기습의 대가', '달인의 저력', '돌격대장', '마나 효율 증가', '바리케이드', '부러진 뼈', '속전속결', '슈퍼 차지', '시선 집중', '아드레날린', '안정된 상태', '약자 무시', '에테르 포식자', '예리한 둔기', '원한', '저주받은 인형', '정밀 단도', '질량 증가', '추진력', '타격의 대가'];
+export const SUPPORT_ENGRAVINGS = ['각성', '구슬동자', '급소 타격', '마나의 흐름', '분쇄의 주먹', '위기 모면', '전문의', '정기 흡수', '중갑 착용', '최대 마나 증가', '폭발물 전문가'];
 // 딜·폿 전환 가능한 클래스만 서폿 각인 조합을 본다
 const SUPPORT_CLASSES = ['바드', '홀리나이트', '도화가', '발키리'];
 

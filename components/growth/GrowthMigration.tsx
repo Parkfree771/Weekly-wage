@@ -7,40 +7,39 @@
 //   카테고리마다 계단 등급표(Scale, 오른쪽 = 높음)를 위에 깔고, 내 캐릭에 있는 단계에 ▼ 를 단다.
 // 규칙은 migration.ts 참고.
 
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, type ReactNode } from 'react';
 import styles from './GrowthMigration.module.css';
 import { ICON, GRADES, MAX_POLISH, REFINE_MAX } from './growthData';
 import { ENGRAVING_ICONS } from '@/lib/engraving-icons.generated';
-import { migrate, type Migration, type NewGear, type LeftSlot, type RightSlot, type ApiEquip, type ApiProfile } from './migration';
+import {
+  migrate, levelRow, DEALER_TIER_OPTIONS, SUPPORT_TIER_OPTIONS,
+  type Migration, type NewGear, type LeftSlot, type RightSlot, type ApiEquip, type ApiProfile,
+} from './migration';
+import { GRADE_COLORS, ESTHER_COLOR, RANK_COLORS, VALUE_COLORS, tierColor } from './migrationColors';
+import { Info, LevelInfo, RefineInfo, ScrollInfo, TierInfo, ValueInfo, StoneInfo, stoneRowKey } from './MigrationInfo';
 
 const fmt2 = (n: number) => n.toLocaleString('ko-KR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-// ---------- 색 ----------
-// 장비 등급 — 게임 등급색 (고급 · 희귀 · 영웅 · 전설 · 유물 · 고대)
-const GRADE_COLORS = ['#4f9a2c', '#2f6fd6', '#8b3fd1', '#d08a00', '#d4551a', '#a88a4c'];
-const ESTHER_COLOR = '#138f95';
+// ---------- 색 (migrationColors.ts) ----------
 const ITEM_GRADE_COLOR: Record<string, string> = {
   고급: GRADE_COLORS[0], 희귀: GRADE_COLORS[1], 영웅: GRADE_COLORS[2], 전설: GRADE_COLORS[3],
   유물: GRADE_COLORS[4], 고대: GRADE_COLORS[5], 에스더: ESTHER_COLOR,
 };
-// 순위 색 — 1위가 가장 뜨거운 색, 아래로 갈수록 식는다 (주문서 등급 · 팔찌 티어 공통)
-const RANK_COLORS = ['#d4551a', '#d08a00', '#8b3fd1', '#2f6fd6', '#4f9a2c', '#6b7280'];
-// 상 · 중 · 하 — 게임 툴팁 글자색
-const VALUE_COLORS: Record<string, string> = { 상: '#e8722a', 중: '#a046e0', 하: '#2f8fd6' };
-
-// 팔찌 티어 — 같은 숫자 티어는 같은 색, '+' 는 그 티어 안의 윗칸
-const DEALER_TIERS = ['1티어', '2티어+', '2티어', '3티어+', '3티어', '4티어', '5티어'];
-const SUPPORT_TIERS = ['1티어', '2티어', '3티어+', '3티어', '4티어'];
-const tierColor = (t: string) => RANK_COLORS[Number(t[0]) - 1];
+// 팔찌 티어 — 높은 티어부터 (img/15, img/16)
+const DEALER_TIERS = DEALER_TIER_OPTIONS.map(([t]) => t);
+const SUPPORT_TIERS = SUPPORT_TIER_OPTIONS.map(([t]) => t);
 
 // ---------- 등급표 ----------
 interface ScaleItem { key: string; label: string; color: string; }
 // 계단 등급표 — 전 칸 색을 채우고 오른쪽으로 갈수록 높게 쌓는다 (모든 표가 오른쪽 = 높음).
-// 내 캐릭에 있는 칸만 위에 ▼ 를 달고 테두리를 두른다.
-function Scale({ title, items, active }: { title: string; items: ScaleItem[]; active: Set<string> }) {
+// 내 캐릭에 있는 칸만 위에 ▼ 를 달고 테두리를 두른다. info 를 주면 제목 아래 "기준" 버튼으로 기준표를 연다.
+function Scale({ title, items, active, info }: { title: string; items: ScaleItem[]; active: Set<string>; info?: ReactNode }) {
   return (
     <div className={styles.scale}>
-      <span className={styles.scaleTitle}>{title}</span>
+      <span className={styles.scaleTitle}>
+        {title}
+        {info && <Info title={`${title} 기준`}>{info}</Info>}
+      </span>
       <div className={styles.stairs}>
         {items.map((it, i) => {
           const mine = active.has(it.key);
@@ -100,13 +99,12 @@ function Gear({ gear, esther }: { gear: NewGear | null; esther?: boolean }) {
   );
 }
 
-// 오른쪽 칸 — 슬롯 재련과 주문서를 모양 · 아이콘 · 이름으로 갈라 놓는다
-//   슬롯 재련: 네모 · 초록 · 재련석 아이콘 · "슬롯 재련 21단계"
-//   주문서:   알약 · 등급색 · 마력 주입 재료 아이콘 · "주문서 4등급"
+// 오른쪽 칸 — 슬롯 재련과 주문서를 모양과 굵은 이름으로 갈라 놓는다
+//   슬롯 재련: 네모 · 초록 · "슬롯 재련 / 21단계"
+//   주문서:   알약 · 등급색 · "주문서 / 4등급"
 function RefineTag({ value }: { value: number }) {
   return (
     <span className={`${styles.tag} ${styles.refineTag} ${value > 0 ? '' : styles.tagOff}`}>
-      <img src={ICON('stone_red')} alt="" />
       <span className={styles.tagTxt}><small>슬롯 재련</small><b>{value}단계</b></span>
     </span>
   );
@@ -114,7 +112,6 @@ function RefineTag({ value }: { value: number }) {
 function ScrollTag({ label, value, color }: { label: string; value: string; color: string }) {
   return (
     <span className={`${styles.tag} ${styles.scrollTag}`} style={{ background: color }}>
-      <img src={ICON('infuse_mat')} alt="" />
       <span className={styles.tagTxt}><small>{label}</small><b>{value}</b></span>
     </span>
   );
@@ -124,13 +121,16 @@ function Empty({ children }: { children: React.ReactNode }) {
 }
 
 // 열 제목 — 각 칸의 숫자가 무엇인지
-function Head({ now, slot, slotIcon }: { now: string; slot: string; slotIcon: string }) {
+function Head({ now, slot, info }: { now: string; slot: string; info?: ReactNode }) {
   return (
     <div className={`${styles.row} ${styles.head}`}>
       <span className={styles.hPart}>부위</span>
       <span className={styles.hNow}>{now}</span>
       <span className={styles.hAfter}>2부에 받는 장비</span>
-      <span className={styles.hSlot}><img src={ICON(slotIcon)} alt="" />{slot}</span>
+      <span className={styles.hSlot}>
+        {slot}
+        {info && <Info title={`${slot} 기준`} align="right">{info}</Info>}
+      </span>
     </div>
   );
 }
@@ -246,6 +246,19 @@ function Result({ m }: { m: Migration }) {
   const dealerOn = new Set(lines.map(l => l.dealer).filter((t): t is string => !!t));
   const supportOn = new Set(lines.map(l => l.support).filter((t): t is string => !!t));
   const valueOn = new Set(lines.map(l => l.rank));
+  // 기준표에서 짚을 내 줄들 — 방어구는 자기 레벨, 무기 기준 칸은 무기 레벨
+  const weapon = m.left[0];
+  const weaponRow = levelRow(weapon.now?.level ?? null);
+  const armorRows = m.left.filter(s => !['weapon', 'wangap', 'belt'].includes(s.key)).map(s => levelRow(s.now?.level ?? null));
+  const leftRows = new Set([...armorRows, weaponRow].filter(i => i >= 0));
+  const rightRows = leftRows;
+  const estherKey = weapon.esther ? (weapon.esther.evo <= 5 ? 'low' : `${weapon.esther.evo}-${weapon.esther.ella}`) : undefined;
+  const refineSlots = m.left.map(s => ({
+    label: s.label,
+    now: s.esther ? `에스더 ${s.esther.evo}단계 엘라 ${s.esther.ella}` : s.now ? `+${s.now.refine}` : '새 칸',
+    refine: s.refine,
+  }));
+  const stoneKey = m.stone ? stoneRowKey(m.stone.points, Math.max(0, ...m.stone.engravings.map(e => e.level))) : '';
 
   return (
     <>
@@ -271,18 +284,18 @@ function Result({ m }: { m: Migration }) {
         <section className={styles.col}>
           <h3 className={styles.colHead}>장비 <span>8칸</span></h3>
           <div className={styles.scales}>
-            <Scale title="장비 등급" items={GRADE_SCALE} active={leftGrades} />
+            <Scale title="장비 등급" items={GRADE_SCALE} active={leftGrades} info={<LevelInfo rows={leftRows} />} />
           </div>
-          <Head now="지금 강화" slot={`슬롯 재련 (최고 ${REFINE_MAX})`} slotIcon="stone_red" />
+          <Head now="지금 강화" slot={`슬롯 재련 (최고 ${REFINE_MAX})`} info={<RefineInfo slots={refineSlots} esther={estherKey} />} />
           {m.left.map(s => <LeftRow key={s.key} s={s} />)}
         </section>
         <section className={styles.col}>
           <h3 className={styles.colHead}>장신구 <span>8칸</span></h3>
           <div className={styles.scales}>
-            <Scale title="장비 등급" items={GRADE_SCALE} active={rightGrades} />
-            <Scale title="주문서" items={SCROLL_SCALE} active={scrolls} />
+            <Scale title="장비 등급" items={GRADE_SCALE} active={rightGrades} info={<LevelInfo rows={rightRows} pairs />} />
+            <Scale title="주문서" items={SCROLL_SCALE} active={scrolls} info={<ScrollInfo mine={scrolls} />} />
           </div>
-          <Head now="지금 연마 옵션" slot="주문서 (최고 1등급)" slotIcon="infuse_mat" />
+          <Head now="지금 연마 옵션" slot="주문서 (최고 1등급)" />
           {m.right.map(s => <RightRow key={s.key} s={s} />)}
         </section>
       </div>
@@ -300,9 +313,9 @@ function Result({ m }: { m: Migration }) {
                 <b>인장 슬롯</b>
               </div>
               <div className={styles.scales}>
-                <Scale title="딜러 티어" items={DEALER_SCALE} active={dealerOn} />
-                <Scale title="서폿 티어" items={SUPPORT_SCALE} active={supportOn} />
-                <Scale title="수치" items={VALUE_SCALE} active={valueOn} />
+                <Scale title="딜러 티어" items={DEALER_SCALE} active={dealerOn} info={<TierInfo list={DEALER_TIER_OPTIONS} active={dealerOn} />} />
+                <Scale title="서폿 티어" items={SUPPORT_SCALE} active={supportOn} info={<TierInfo list={SUPPORT_TIER_OPTIONS} active={supportOn} />} />
+                <Scale title="수치" items={VALUE_SCALE} active={valueOn} info={<ValueInfo active={valueOn} />} />
               </div>
               <p className={styles.sub2}>최종 1~21등급은 점수표 공개(11/25) 후 계산 가능</p>
               {lines.map((l, i) => (
@@ -321,7 +334,10 @@ function Result({ m }: { m: Migration }) {
         </section>
 
         <section className={styles.col}>
-          <h3 className={styles.colHead}>어빌리티 스톤 → 각인 슬롯 <span>5칸 · 칸마다 최고 7단계</span></h3>
+          <h3 className={styles.colHead}>
+            어빌리티 스톤 → 각인 슬롯 <span>5칸 · 칸마다 최고 7단계</span>
+            <Info title="각인 슬롯 기준"><StoneInfo mine={stoneKey} /></Info>
+          </h3>
           {m.stone && m.stone.engravings.length > 0 ? (
             <>
               <div className={styles.flow}>
