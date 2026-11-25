@@ -12,13 +12,16 @@ import styles from './GrowthMigration.module.css';
 import { ICON, GRADES, MAX_POLISH, REFINE_MAX } from './growthData';
 import { ENGRAVING_ICONS } from '@/lib/engraving-icons.generated';
 import {
-  migrate, levelRow, DEALER_TIER_OPTIONS, SUPPORT_TIER_OPTIONS,
+  migrate, levelRow, lowLevelRow, DEALER_TIER_OPTIONS, SUPPORT_TIER_OPTIONS,
   type Migration, type NewGear, type LeftSlot, type RightSlot, type ApiEquip, type ApiProfile,
 } from './migration';
 import { GRADE_COLORS, ESTHER_COLOR, RANK_COLORS, VALUE_COLORS, tierColor } from './migrationColors';
 import { Info, LevelInfo, RefineInfo, ScrollInfo, TierInfo, ValueInfo, StoneInfo, stoneRowKey } from './MigrationInfo';
 
 const fmt2 = (n: number) => n.toLocaleString('ko-KR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmt = (n: number) => n.toLocaleString('ko-KR');
+// 거래 가능 횟수 — 주문서가 그대로 이어받는다
+const tradeText = (n: number | null) => (n == null ? null : n > 0 ? `거래 ${n}회 가능` : '거래 불가');
 
 // ---------- 색 (migrationColors.ts) ----------
 const ITEM_GRADE_COLOR: Record<string, string> = {
@@ -87,6 +90,14 @@ function Badge({ color, children }: { color: string; children: React.ReactNode }
 
 function Gear({ gear, esther }: { gear: NewGear | null; esther?: boolean }) {
   if (!gear) return <span className={styles.none}>표 범위 밖</span>;
+  if (gear.low) {
+    return (
+      <span className={styles.gear}>
+        <Badge color={RANK_COLORS[5]}>{gear.low}</Badge>
+        <b className={styles.lv}>{gear.level}</b>
+      </span>
+    );
+  }
   return (
     <span className={styles.gear}>
       {esther
@@ -160,6 +171,9 @@ function LeftRow({ s }: { s: LeftSlot }) {
       <div className={styles.after}>
         <Gear gear={s.gear} esther={!!s.esther?.next} />
         {s.esther?.next && <span className={styles.from}>엘라 {s.esther.next.ella}단계</span>}
+        {s.esther?.next && s.esther.next.essence > 0 && (
+          <span className={styles.from}>환급 에스더의 기운 {s.esther.next.essence} · 로맨틱 재료 키트 {fmt(s.esther.next.kit)} (귀속)</span>
+        )}
         {s.gearFrom && <span className={styles.basis}>{s.gearFrom} 기준</span>}
         {s.esther && !s.esther.next && <span className={styles.none}>표에 없는 단계</span>}
       </div>
@@ -191,14 +205,23 @@ function RightRow({ s }: { s: RightSlot }) {
       infuse = <Empty>없음</Empty>;
     } else if (s.acc.scroll == null) {
       now = <><span>{s.acc.grade} · 품질 {s.acc.quality}</span><span>{s.acc.reason}</span></>;
-      infuse = <Empty>이관 X</Empty>;
+      infuse = <Empty>{s.acc.reward ?? '기준 없음'}</Empty>;
     } else {
       now = <><Pattern p={s.acc.pattern} /><span>{s.acc.role === '서폿' ? '서폿 · ' : ''}품질 {s.acc.quality}</span></>;
-      infuse = <ScrollTag label="주문서" value={`${s.acc.scroll}등급`} color={RANK_COLORS[s.acc.scroll - 1]} />;
+      const trade = tradeText(s.acc.trade);
+      infuse = (
+        <>
+          <ScrollTag label="주문서" value={`${s.acc.scroll}등급`} color={RANK_COLORS[s.acc.scroll - 1]} />
+          {trade && <span className={styles.from}>{trade}</span>}
+        </>
+      );
     }
   } else if (s.infuse === 'seal') {
-    now = <span>{s.bracelet ? '지금 팔찌가 여기로' : '새로 생기는 칸'}</span>;
-    infuse = s.bracelet ? <ScrollTag label="인장 주문서" value="아래 참고" color={RANK_COLORS[2]} /> : <Empty>없음</Empty>;
+    const b = s.bracelet;
+    now = <span>{b ? '지금 팔찌가 여기로' : '새로 생기는 칸'}</span>;
+    if (!b) infuse = <Empty>없음</Empty>;
+    else if (b.status === 'seal') infuse = <ScrollTag label="인장 주문서" value="아래 참고" color={RANK_COLORS[2]} />;
+    else infuse = <Empty>{BRACELET_REWARD[b.status]}</Empty>;
   } else {
     now = <span>{s.key === 'bracelet' ? '새 칸 (팔찌는 인장으로)' : '새로 생기는 칸'}</span>;
     infuse = <Empty>처음부터</Empty>;
@@ -208,7 +231,7 @@ function RightRow({ s }: { s: RightSlot }) {
     <div className={styles.row}>
       <Part icon={s.icon} label={s.label} />
       <div className={styles.now}>
-        {src && <ItemIcon src={src.icon} grade={s.acc?.grade ?? '고대'} />}
+        {src && <ItemIcon src={src.icon} grade={s.acc?.grade ?? s.bracelet?.grade ?? '고대'} />}
         <div className={styles.nowTxt}>{now}</div>
       </div>
       <span className={styles.arrow} aria-hidden>→</span>
@@ -221,6 +244,14 @@ function RightRow({ s }: { s: RightSlot }) {
   );
 }
 
+// 팔찌가 인장 주문서로 안 갈 때 받는 것
+const BRACELET_REWARD = { excluded: '이관 제외', decompose: '팔찌 분해 결과물', removed: '제거' } as const;
+const BRACELET_TEXT = {
+  excluded: '딜러 클래스(바드 · 도화가 · 홀리나이트 · 발키리 외)는 서폿 옵션으로만 된 팔찌가 인장 주문서 이관에서 빠져요.',
+  decompose: '효과를 부여하지 않은 팔찌라 팔찌 분해 결과물로 받아요. 분해 결과물은 별도 상점에서 실링으로 바꿀 수 있어요.',
+  removed: '티어 3 팔찌는 교체 없이 사라져요.',
+} as const;
+
 // 각인 슬롯 5칸 — 올라가는 칸만 단계 표시
 function EngravingSlots({ slots, level, bonus }: { slots: number; level: number; bonus: boolean }) {
   return (
@@ -231,7 +262,7 @@ function EngravingSlots({ slots, level, bonus }: { slots: number; level: number;
           <b>{i < slots ? level : 0}단계</b>
         </span>
       ))}
-      {bonus && <span className={styles.engBonus}>+α</span>}
+      {bonus && <span className={styles.engBonus}>+ 추가 아이템</span>}
     </div>
   );
 }
@@ -252,7 +283,9 @@ function Result({ m }: { m: Migration }) {
   const armorRows = m.left.filter(s => !['weapon', 'wangap', 'belt'].includes(s.key)).map(s => levelRow(s.now?.level ?? null));
   const leftRows = new Set([...armorRows, weaponRow].filter(i => i >= 0));
   const rightRows = leftRows;
-  const estherKey = weapon.esther ? (weapon.esther.evo <= 5 ? 'low' : `${weapon.esther.evo}-${weapon.esther.ella}`) : undefined;
+  // 티어 1~3 장비가 걸린 줄 (에스더 무기는 표가 따로)
+  const lowRows = new Set(m.left.filter(s => !s.esther && !['wangap', 'belt'].includes(s.key)).map(s => lowLevelRow(s.now?.level ?? null)).filter(i => i >= 0));
+  const estherKey = weapon.esther?.key;
   const refineSlots = m.left.map(s => ({
     label: s.label,
     now: s.esther ? `에스더 ${s.esther.evo}단계 엘라 ${s.esther.ella}` : s.now ? `+${s.now.refine}` : '새 칸',
@@ -284,7 +317,7 @@ function Result({ m }: { m: Migration }) {
         <section className={styles.col}>
           <h3 className={styles.colHead}>장비 <span>8칸</span></h3>
           <div className={styles.scales}>
-            <Scale title="장비 등급" items={GRADE_SCALE} active={leftGrades} info={<LevelInfo rows={leftRows} />} />
+            <Scale title="장비 등급" items={GRADE_SCALE} active={leftGrades} info={<LevelInfo rows={leftRows} lowRows={lowRows} />} />
           </div>
           <Head now="지금 강화" slot={`슬롯 재련 (최고 ${REFINE_MAX})`} info={<RefineInfo slots={refineSlots} esther={estherKey} />} />
           {m.left.map(s => <LeftRow key={s.key} s={s} />)}
@@ -292,7 +325,7 @@ function Result({ m }: { m: Migration }) {
         <section className={styles.col}>
           <h3 className={styles.colHead}>장신구 <span>8칸</span></h3>
           <div className={styles.scales}>
-            <Scale title="장비 등급" items={GRADE_SCALE} active={rightGrades} info={<LevelInfo rows={rightRows} pairs />} />
+            <Scale title="장비 등급" items={GRADE_SCALE} active={rightGrades} info={<LevelInfo rows={rightRows} lowRows={lowRows} pairs />} />
             <Scale title="주문서" items={SCROLL_SCALE} active={scrolls} info={<ScrollInfo mine={scrolls} />} />
           </div>
           <Head now="지금 연마 옵션" slot="주문서 (최고 1등급)" />
@@ -306,18 +339,26 @@ function Result({ m }: { m: Migration }) {
           {seal ? (
             <>
               <div className={styles.flow}>
-                <ItemIcon src={seal.icon} grade="고대" />
+                <ItemIcon src={seal.icon} grade={seal.grade} />
                 <b>{seal.name}</b>
                 <span className={styles.flowArrow} aria-hidden>→</span>
-                <span className={styles.icon}><img src={ICON('seal')} alt="" /></span>
-                <b>인장 슬롯</b>
+                {seal.status === 'seal' ? (
+                  <>
+                    <span className={styles.icon}><img src={ICON('seal')} alt="" /></span>
+                    <b>인장 마력 주입 주문서</b>
+                  </>
+                ) : <b>{BRACELET_REWARD[seal.status]}</b>}
               </div>
+              {seal.status !== 'seal' && <p className={styles.sub2}>{BRACELET_TEXT[seal.status]}</p>}
               <div className={styles.scales}>
                 <Scale title="딜러 티어" items={DEALER_SCALE} active={dealerOn} info={<TierInfo list={DEALER_TIER_OPTIONS} active={dealerOn} />} />
                 <Scale title="서폿 티어" items={SUPPORT_SCALE} active={supportOn} info={<TierInfo list={SUPPORT_TIER_OPTIONS} active={supportOn} />} />
                 <Scale title="수치" items={VALUE_SCALE} active={valueOn} info={<ValueInfo active={valueOn} />} />
               </div>
-              <p className={styles.sub2}>최종 1~21등급은 점수표 공개(11/25) 후 계산 가능</p>
+              <p className={styles.sub2}>
+                1~21등급 점수표는 공지에도 아직 없어요. 줄마다 딜러 · 서폿 티어만 보여드려요 (둘 중 높은 쪽 기준으로 정해져요).
+                {seal.grade === '유물' && ' 유물 팔찌는 고대 팔찌 기준으로 환산해 계산해요.'}
+              </p>
               {lines.map((l, i) => (
                 <div key={i} className={styles.bLine}>
                   <span className={styles.rank} style={{ background: VALUE_COLORS[l.rank] }}>{l.rank}</span>
@@ -359,17 +400,20 @@ function Result({ m }: { m: Migration }) {
               </div>
               {m.stone.slots > 0
                 ? <EngravingSlots slots={m.stone.slots} level={m.stone.level} bonus={m.stone.bonus} />
-                : <p className={styles.sub2}>{m.stone.valid ? '4포인트 미만이라 올라가는 칸이 없어요.' : '유효 각인 조합이 아니라 이관 대상이 아니에요.'}</p>}
+                : <p className={styles.sub2}>{
+                    !m.stone.valid ? '유효 각인 조합이 아니라 각인 슬롯에 안 들어가고, 초월의 가루로 받아요.'
+                    : m.stone.points < 4 ? '활성화 포인트 합이 4 미만이라 각인 슬롯에 안 들어가요.'
+                    : '공지 표에 없는 포인트 조합이에요.'
+                  }</p>}
             </>
           ) : <p className={styles.sub2}>착용 중인 어빌리티 스톤이 없어요.</p>}
         </section>
       </div>
 
       <ul className={styles.notes}>
-        <li>11월 20일 방송 기준 추정이에요. 11월 25일(수) 이관 공지에서 바뀔 수 있어요.</li>
+        <li>11월 25일 공식 이관 공지 기준이에요.</li>
         <li>완갑 · 허리띠 · 팔찌 · 성물 · 인장 장비는 <b>무기 레벨 기준</b>으로 받아요 (1800 이상 에스더는 25강 무기 기준).</li>
         <li>지금 <b>착용 중인</b> 장비로 계산해요. 가방에 더 높은 무기 · 스톤이 있으면 그쪽 기준으로 받아요.</li>
-        <li>장신구 주문서는 방송 시점 상태 기준이라, 방송 후 바꾼 장신구는 반영되지 않을 수 있어요.</li>
       </ul>
     </>
   );
@@ -406,7 +450,7 @@ export default function GrowthMigration({ onResult }: { onResult?: (m: Migration
   return (
     <section className={styles.wrap}>
       <h2 className={styles.title}>내 장비 이관 미리보기</h2>
-      <p className={styles.desc}>캐릭터명을 검색하면 지금 장비가 2부에서 몇 등급 몇 연마로, 슬롯 재련 몇 단계로 넘어가는지 보여드려요.</p>
+      <p className={styles.desc}>캐릭터명을 검색하면 지금 장비가 2부에서 몇 등급 몇 연마로, 슬롯 재련 몇 단계로 넘어가는지 보여드려요. 11월 25일 공식 이관 공지 기준이에요.</p>
       <form className={styles.search} onSubmit={search}>
         <input
           className={styles.input}

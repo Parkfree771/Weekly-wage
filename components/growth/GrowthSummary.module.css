@@ -44,10 +44,21 @@
 .sideHead b { font-size: 1.45rem; font-weight: 900; }
 .sideHead span { color: var(--text-muted); font-size: 0.95rem; font-weight: 700; }
 
-/* 8칸 아이콘 — 4 × 2 */
+/* 8칸 아이콘 — [무기 2종][방어구 6종] / [보구 2종][장신구 6종], 줄마다 3칸 */
+.slotGroups { display: flex; flex-direction: column; gap: 0.7rem; }
+.slotGroup { display: flex; align-items: flex-start; gap: 0.6rem; }
+.slotGroupName {
+  display: flex;
+  flex: 0 0 3.6rem;
+  flex-direction: column;
+  padding-top: 0.9rem;
+  font-size: 0.95rem;
+  font-weight: 900;
+}
+.slotGroupName small { color: var(--text-muted); font-size: 0.8rem; font-weight: 700; }
 .slots {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, 64px);
   gap: 0.6rem 0.4rem;
 }
 .slot { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; }
@@ -85,7 +96,9 @@
   font-weight: 800;
 }
 .todoIcon { flex: 0 0 auto; width: 36px; height: 36px; border-radius: 8px; }
+.todoText { display: flex; flex-direction: column; min-width: 0; }
 .todoName { font-size: 1.05rem; font-weight: 800; }
+.todoSub { color: var(--text-muted); font-size: 0.82rem; font-weight: 600; }
 .todoUp {
   margin-left: auto;
   color: var(--t);
@@ -163,6 +176,8 @@
 .ilvRule { margin-top: 0.35rem; font-size: 0.95rem; font-weight: 700; }
 .ilvRule b { color: var(--color-primary); }
 .ilvEx { color: var(--text-muted); font-size: 0.85rem; font-weight: 600; }
+.ilvBase { margin-top: 0.5rem; font-size: 0.88rem; font-weight: 600; }
+.ilvBase b { display: block; font-weight: 800; }
 .ilvNo {
   margin-top: 0.35rem;
   padding: 0.2rem 0.65rem;
@@ -224,6 +239,7 @@
   white-space: nowrap;
 }
 .extraItem img { width: 32px; height: 32px; border-radius: 6px; object-fit: cover; }
+.extraItem small { color: var(--text-muted); font-size: 0.82rem; font-weight: 600; }
 .extraItem i {
   padding: 0.05rem 0.4rem;
   background: var(--t);

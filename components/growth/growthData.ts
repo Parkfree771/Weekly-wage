@@ -1,6 +1,7 @@
 // 성장 시뮬 (연마 · 재련 · 마력 주입) — 데이터
 // 출처: 2026-11-20 On-Air 방송 화면(docs/season3-onair-2026-11-20/img/06~08)과 방송 자막(같은 폴더 transcript.txt)
 // [확정] = 방송에서 나온 값 / [예시] = 공식 수치 미공개라 임시로 넣은 값 (공개되면 이 파일만 교체)
+// 11-25 공식 공지(docs/season3-notice-2026-11-25)에도 확률 · 비용 · 옵션 수치는 없다 — 업데이트 노트에서 나올 예정
 
 import { SUCCESSION_BASE_PROBABILITY, JANGIN_ACCUMULATE_DIVIDER } from '@/lib/refiningData';
 
@@ -67,23 +68,20 @@ export const CONVERT_MAT_COUNT = 1;
 export const FLASH_CHANCE = 0.05;
 
 export interface PolishOptionDef { name: string; min: number; max: number; pct?: boolean; }
-// [예시] 옵션 풀 — 화면에 나온 4종 + 전투 특성
+// [예시] 옵션 풀 — 화면에 나온 4종. 치명 · 특화 · 신속은 2부에서 아크 패시브 포인트로 나누므로(11-25 공지) 넣지 않는다
 export const POLISH_OPTION_POOL: PolishOptionDef[] = [
   { name: '힘 / 민첩 / 지능', min: 4000, max: 20000 },
   { name: '최대 생명력', min: 100, max: 800 },
   { name: '극대화', min: 15, max: 120 },
   { name: '무력화 피해', min: 0.05, max: 0.5, pct: true },
-  { name: '치명', min: 15, max: 120 },
-  { name: '특화', min: 15, max: 120 },
-  { name: '신속', min: 15, max: 120 },
 ];
-// 화면 예시 그대로의 첫 옵션 4줄
+// 화면 예시 그대로의 첫 옵션 4줄 + [예시] 5번째 줄
 export const POLISH_DEFAULT_OPTIONS = [
   { name: '힘 / 민첩 / 지능', value: 15600 },
   { name: '최대 생명력', value: 500 },
   { name: '극대화', value: 75 },
   { name: '무력화 피해', value: 0.33 },
-  { name: '치명', value: 60 },
+  { name: '극대화', value: 40 },
 ];
 
 // ---------- 슬롯 재련 ----------

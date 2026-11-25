@@ -9,7 +9,7 @@ import styles from './GrowthMigration.module.css';
 import { GRADES, itemLevelOf } from './growthData';
 import { ENGRAVING_ICONS } from '@/lib/engraving-icons.generated';
 import {
-  LEVEL_TABLE, ESTHER_TABLE, DEALER_RULE, SUPPORT_RULE, DEALER_ENGRAVINGS, SUPPORT_ENGRAVINGS,
+  LEVEL_TABLE, LOW_LEVEL_TABLE, ESTHER_TABLE, DEALER_RULE, SUPPORT_RULE, DEALER_ENGRAVINGS, SUPPORT_ENGRAVINGS,
 } from './migration';
 import { GRADE_COLORS, ESTHER_COLOR, RANK_COLORS, VALUE_COLORS, tierColor } from './migrationColors';
 
@@ -60,8 +60,9 @@ function Badge({ color, children }: { color: string; children: ReactNode }) {
 const mineCls = (on: boolean) => (on ? styles.infoMine : undefined);
 
 // ---------- 장비 레벨 → 등급 · 연마 ----------
-// rows = 내 캐릭 장비가 걸린 줄 번호(LEVEL_TABLE 순서). 높은 구간이 위
-export function LevelInfo({ rows, pairs }: { rows: Set<number>; pairs?: boolean }) {
+// rows = 내 캐릭 장비가 걸린 줄 번호(LEVEL_TABLE 순서), lowRows = 티어 1~3 표 줄 번호. 높은 구간이 위
+export function LevelInfo({ rows, lowRows, pairs }: { rows: Set<number>; lowRows: Set<number>; pairs?: boolean }) {
+  const low = LOW_LEVEL_TABLE.map((r, i) => ({ i, lo: r[0], hi: LOW_LEVEL_TABLE[i + 1]?.[0] ?? 1600, name: r[1], level: r[2] })).reverse();
   const list = LEVEL_TABLE.map((r, i) => ({ i, lo: r[0], hi: LEVEL_TABLE[i + 1]?.[0] ?? 1800, grade: r[1], polish: r[2] })).reverse();
   return (
     <>
@@ -91,15 +92,29 @@ export function LevelInfo({ rows, pairs }: { rows: Set<number>; pairs?: boolean 
           })}
         </tbody>
       </table>
+      <p className={styles.infoSub}>장비마다 자기 아이템 레벨로 정해요. 1770 초과부터는 레벨이 더 올라가요(+표시). 아래는 1600 이하 (연마 0)</p>
+      <table className={styles.infoTable}>
+        <thead><tr><th>지금 레벨</th><th>받는 장비</th><th>2부 레벨</th></tr></thead>
+        <tbody>
+          {low.map(r => (
+            <tr key={r.i} className={mineCls(lowRows.has(r.i))}>
+              <td>{r.lo} 초과 ~ {r.hi} 이하</td>
+              <td>{r.name}</td>
+              <td><b>{r.level}</b></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </>
   );
 }
 
 // ---------- 슬롯 재련 ----------
 // slots = 내 칸들(지금 강화 → 슬롯 재련). 에스더 무기를 낀 캐릭만 에스더 표를 붙인다
-// esther = 내 에스더 무기 키("10-3", 5단계 이하는 "low")
+// esther = 내 에스더 무기 키("10-3" = 진화 10단계 · 엘라 3)
 export function RefineInfo({ slots, esther }: { slots: { label: string; now: string; refine: number }[]; esther?: string }) {
-  const rows = Object.entries(ESTHER_TABLE).sort((a, b) => b[1].refine - a[1].refine || b[1].level - a[1].level);
+  // 공지 표 순서 그대로 아래부터 → 높은 단계가 위
+  const rows = Object.entries(ESTHER_TABLE).reverse();
   return (
     <>
       <table className={styles.infoTable}>
@@ -114,27 +129,26 @@ export function RefineInfo({ slots, esther }: { slots: { label: string; now: str
           ))}
         </tbody>
       </table>
-      <p className={styles.infoSub}>지금 강화 단계가 그 칸 슬롯 재련으로 그대로 넘어간다. 허리띠는 새 칸이라 0단계부터</p>
-      {esther && <table className={styles.infoTable}>
-        <thead><tr><th>에스더 무기</th><th>받는 무기</th><th>슬롯 재련</th></tr></thead>
-        <tbody>
-          {rows.map(([k, v]) => {
-            const [evo, ella] = k.split('-');
-            return (
-              <tr key={k} className={mineCls(esther === k)}>
-                <td>{evo}단계 엘라 {ella}</td>
-                <td><Badge color={ESTHER_COLOR}>엘라 {v.ella}</Badge> {v.polish ? `${v.polish}연마 ` : ''}{v.level}</td>
-                <td><b>{v.refine}단계</b></td>
-              </tr>
-            );
-          })}
-          <tr className={mineCls(esther === 'low')}>
-            <td>0~5단계</td>
-            <td><Badge color={ESTHER_COLOR}>엘라 1</Badge> 1100</td>
-            <td><b>0단계</b></td>
-          </tr>
-        </tbody>
-      </table>}
+      <p className={styles.infoSub}>지금 강화 단계가 같은 부위 슬롯 재련으로 그대로 넘어가요. 완갑도 그대로, 허리띠는 새 칸이라 0단계부터. 장인의 기운도 같은 수치로 남아요</p>
+      {esther && <>
+        <table className={styles.infoTable}>
+          <thead><tr><th>에스더 무기</th><th>받는 무기</th><th>슬롯 재련</th><th>환급 (귀속)</th></tr></thead>
+          <tbody>
+            {rows.map(([k, v]) => {
+              const [evo, ella] = k.split('-');
+              return (
+                <tr key={k} className={mineCls(esther === k)}>
+                  <td>{evo}단계{ella !== '0' && ` 엘라 ${ella}`} · {v.from}</td>
+                  <td><Badge color={ESTHER_COLOR}>엘라 {v.ella}</Badge> {v.polish ? `${v.polish}연마 ` : ''}{v.level}</td>
+                  <td><b>{v.refine}단계</b></td>
+                  <td>{v.essence ? `기운 ${v.essence} · 키트 ${v.kit.toLocaleString('ko-KR')}` : '-'}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        <p className={styles.infoSub}>환급 = 에스더의 기운 · 로맨틱 재료 키트. 쓴 재료와 바뀐 뒤 그 단계까지 필요한 재료의 차이만큼. 2부 에스더 무기는 연마로 성장하고, 연마하면 아이템 레벨과 무기 슬롯 재련 단계가 같이 올라요</p>
+      </>}
     </>
   );
 }
@@ -157,7 +171,8 @@ export function ScrollInfo({ mine }: { mine: Set<string> }) {
           ))}
         </tbody>
       </table>
-      <p className={styles.infoSub}>4티어 고대 · 품질 67 이상. 서폿 귀걸이는 한 칸씩 낮음(상상상 최대 생명력 2등급 · 보호막/회복 3등급 · 상상중 4 · 상상 5) · 4티어 유물은 서폿 목걸이 · 반지 상상만 5등급</p>
+      <p className={styles.infoSub}>4티어 고대 · 품질 67 이상. 3옵션은 상상상 · 상상중일 때만 본다. 서폿 귀걸이는 한 칸씩 낮음(상상상 최대 생명력 2등급 · 보호막/회복 3등급 · 상상중 4 · 상상 5 · 상중 이하 6) · 4티어 유물은 서폿 목걸이 · 반지 상상만 5등급</p>
+      <p className={styles.infoSub}>유효 옵션이 없거나 품질 67 미만 → 연마 단계에 따라 영롱한 보석 파편(실링으로 교환). 티어 3 이하 → 제거. 주문서 거래 횟수는 지금 장신구 그대로</p>
       <table className={styles.infoTable}>
         <thead><tr><th>부위</th><th>앞 두 자리 (1 · 2옵션)</th><th>끝자리 (3옵션)</th></tr></thead>
         <tbody>
@@ -214,14 +229,14 @@ export function ValueInfo({ active }: { active: Set<string> }) {
           ))}
         </tbody>
       </table>
-      <p className={styles.infoSub}>같은 티어라도 상이 하보다 점수가 높다. 줄마다 점수를 더해 1~21등급 (점수표는 11/25 공지 예정)</p>
+      <p className={styles.infoSub}>같은 티어라도 상이 하보다 성능이 높다. 줄마다 점수를 더해 1~21등급 (점수표는 아직 미공개)</p>
     </>
   );
 }
 
 // ---------- 스톤 → 각인 슬롯 ----------
 const STONE_ROWS: { key: string; label: string; result: string }[] = [
-  { key: '8', label: '8 (4+4)', result: '5칸 7단계 +α' },
+  { key: '8', label: '8 (4+4)', result: '5칸 7단계 + 추가 아이템' },
   { key: '7', label: '7 (4+3)', result: '5칸 7단계' },
   { key: '6-3', label: '6 (3+3)', result: '4칸 7단계' },
   { key: '6-4', label: '6 (4+2)', result: '3칸 7단계' },
@@ -256,7 +271,8 @@ export function StoneInfo({ mine }: { mine: string }) {
           ))}
         </tbody>
       </table>
-      <p className={styles.infoSub}>증가 각인 두 개가 아래 유효 각인일 때만 이관. 서폿 각인은 바드 · 홀리나이트 · 도화가 · 발키리만</p>
+      <p className={styles.infoSub}>세공 완료 · 증가 각인 두 개가 유효 각인일 때만. 딜러는 딜러 각인 2개, 서포터(바드 · 홀리나이트 · 도화가 · 발키리)는 서폿 각인 2개 또는 딜러 각인 2개. 각성은 양쪽 다 유효. 감소 효과는 상관없음. 여러 개면 합이 가장 높은 스톤 하나</p>
+      <p className={styles.infoSub}>각인 슬롯에 안 들어간 세공 완료 스톤: 유효 조합 5포인트 이상 → 장신구 슬롯 성장 재료, 유효 조합 4포인트 → 초월의 가루. 미세공 · 유효하지 않은 조합 → 초월의 가루</p>
       <b className={styles.infoLabel}>딜러 유효 각인</b>
       <EngList names={DEALER_ENGRAVINGS} />
       <b className={styles.infoLabel}>서폿 유효 각인</b>

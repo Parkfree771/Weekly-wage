@@ -231,7 +231,7 @@ function Panel({ tone, wide, children }: { tone: string; wide?: boolean; childre
           </svg>
         )}
       </div>
-      <p className={styles.source}>설명은 2026년 11월 20일 방송 내용 기준</p>
+      <p className={styles.source}>설명은 11월 20일 방송 · 11월 25일 공지 기준. 확률 · 비용 · 옵션 수치는 아직 공개되지 않아 예시 값이에요</p>
     </div>
   );
 }
@@ -288,7 +288,9 @@ function PolishTab({ start }: { start?: SimStart }) {
   const setSel = sub === 'equip' ? setSelEquip : setSelAcc;
   const slot = slots.find(s => s.key === sel)!;
   const st = data[sel];
-  const isAncient = st.grade === GRADES.length - 1;
+  // 검색한 캐릭이 에스더 무기면 무기 칸은 이관 상태만 보여준다 (에스더 연마 비용 · 구간 미공개)
+  const esther = sub === 'equip' && sel === 'weapon' ? start?.esther : undefined;
+  const isAncient = !esther && st.grade === GRADES.length - 1;
   const atMax = st.polish >= MAX_POLISH;
 
   const update = (patch: Partial<PolishState>) => setData(prev => ({ ...prev, [sel]: { ...prev[sel], ...patch } }));
@@ -313,6 +315,8 @@ function PolishTab({ start }: { start?: SimStart }) {
   };
 
   const curLv = itemLevelOf(st.grade, st.polish);
+  // 에스더 무기도 연마 1번에 +5 (공지 표: 엘라 4단계 1840 → 연마 5단계 1865)
+  const estherBase = esther ? esther.level - esther.polish * 5 : 0;
 
   return (
     <div className={styles.body}>
@@ -320,9 +324,40 @@ function PolishTab({ start }: { start?: SimStart }) {
         slots={slots}
         selected={sel}
         onSelect={k => { setSel(k); setFlashMsg(null); }}
-        sub={s => `${data[s.key].polish}단계`}
+        sub={s => (sub === 'equip' && s.key === 'weapon' && start?.esther ? `에스더 ${start.esther.polish}단계` : `${data[s.key].polish}단계`)}
       />
       <Panel tone={styles.tonePolish} wide={sub === 'equip'}>
+        {esther ? (
+          <Sec note={NOTES.polish.esther}>
+            <div className={styles.subTabs}>
+              <button type="button" className={`${styles.subTab} ${styles.subTabActive}`} onClick={() => setSub('equip')}>장비 연마</button>
+              <button type="button" className={styles.subTab} onClick={() => setSub('acc')}>장신구 연마</button>
+            </div>
+            <div className={styles.head}>
+              <div className={styles.headIcon}><img src={ICON(slot.icon)} alt="" /></div>
+              <div className={styles.headName}>에스더 무기 · 엘라 {esther.ella}단계</div>
+              <div className={styles.ilvNow}>
+                <span className={styles.ilvNowLabel}>아이템 레벨</span>
+                <span className={styles.ilvNowVal}>{fmt2(esther.level)}</span>
+              </div>
+            </div>
+            {esther.ella === 4 && (
+              <div className={styles.pTrack}>
+                <div className={styles.pBase}>
+                  <span className={styles.pStep}>엘라 4</span>
+                  <span className={styles.pLv}>{estherBase}</span>
+                </div>
+                {Array.from({ length: MAX_POLISH }).map((_, i) => (
+                  <div key={i} className={`${styles.pSeg} ${i < esther.polish ? styles.pSegDone : ''} ${i === esther.polish ? styles.pSegNext : ''}`}>
+                    <span className={styles.pStep}>{i + 1}단계</span>
+                    <span className={styles.pLv}>{estherBase + (i + 1) * 5}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className={styles.result}>에스더 무기 연마 비용 · 재료는 아직 공개되지 않아 이관 상태만 보여드려요</div>
+          </Sec>
+        ) : (<>
         <Sec note={sub === 'equip' ? NOTES.polish.head : NOTES.polish.headAcc}>
           <div className={styles.subTabs}>
             <button type="button" className={`${styles.subTab} ${sub === 'equip' ? styles.subTabActive : ''}`} onClick={() => setSub('equip')}>장비 연마</button>
@@ -418,6 +453,7 @@ function PolishTab({ start }: { start?: SimStart }) {
             <button type="button" className={styles.btn} disabled={atMax} onClick={doPolish}>{atMax ? '최대 단계' : '연마'}</button>
           </div>
         </Sec>
+        </>)}
       </Panel>
     </div>
   );
@@ -429,9 +465,9 @@ function PolishTab({ start }: { start?: SimStart }) {
 interface RefineState { stage: number; jangin: number; }
 // 전 칸 같은 단계에서 시작. 성공률을 아는 가장 낮은 단계가 11이라 11부터 (growthData REFINE_MIN)
 const REFINE_START: Record<string, number> = Object.fromEntries(EQUIP_SLOTS.map(s => [s.key, REFINE_MIN]));
-// 검색한 캐릭은 칸마다 이관 단계로. 11 아래(허리띠 0 등)는 성공률을 몰라 11로 올린다
+// 검색한 캐릭은 칸마다 이관 단계 그대로. 11 아래(허리띠 0 등)는 성공률을 몰라 재련 버튼을 막는다
 const initRefine = (start?: SimStart) => Object.fromEntries(EQUIP_SLOTS.map(s => [s.key, {
-  stage: start ? Math.max(REFINE_MIN, start.refine[s.key] ?? REFINE_MIN) : REFINE_START[s.key],
+  stage: start ? start.refine[s.key] ?? REFINE_MIN : REFINE_START[s.key],
   jangin: 0,
 }])) as Record<string, RefineState>;
 const REFINE_SLOTS: SlotDef[] = EQUIP_SLOTS.map(s => ({ ...s, itemName: `${s.label} 슬롯` }));
@@ -446,12 +482,14 @@ function RefineTab({ start }: { start?: SimStart }) {
   const slot = REFINE_SLOTS.find(s => s.key === sel)!;
   const st = data[sel];
   const atMax = st.stage >= REFINE_MAX;
+  const unknown = st.stage < REFINE_MIN;
   const base = refineBaseProb(st.stage);
   const prob = st.jangin >= 1 ? 1 : Math.min(1, base + (needle ? base * NEEDLE_BONUS_RATE : 0));
   // 방송 예시는 투구라 파란 재료. 무기 쪽(무기·완갑)은 빨간 재료
   const isWeaponSide = slot.group === '무기';
 
   const attempt = (times: number) => {
+    if (unknown) return;
     let s = { ...st };
     let tries = 0, okAt = -1;
     for (let i = 0; i < times && s.stage < REFINE_MAX; i++) {
@@ -509,14 +547,16 @@ function RefineTab({ start }: { start?: SimStart }) {
         <Sec note={NOTES.refine.rate}>
           <div className={styles.rateFrame}>
             <div className={styles.rateLabel}>재련 성공률</div>
-            <div className={styles.rateValue}>{atMax ? '최대' : `${(prob * 100).toFixed(2)}%`}</div>
+            <div className={styles.rateValue}>{atMax ? '최대' : unknown ? '미공개' : `${(prob * 100).toFixed(2)}%`}</div>
             <div className={styles.janginRow}>
               <span>장인의 기운</span>
               <span className={styles.janginBar}><i style={{ width: `${Math.min(100, st.jangin * 100)}%` }} /></span>
               <span className={styles.janginVal}>{pct2(st.jangin)}</span>
             </div>
           </div>
-          <div className={`${styles.result} ${result && !result.ok ? styles.resultBad : ''}`}>{result?.text}</div>
+          <div className={`${styles.result} ${result && !result.ok ? styles.resultBad : ''}`}>
+            {unknown ? `${REFINE_MIN}단계 아래 성공률은 아직 공개되지 않아 재련할 수 없어요` : result?.text}
+          </div>
         </Sec>
 
         <Sec>
@@ -553,8 +593,8 @@ function RefineTab({ start }: { start?: SimStart }) {
             </div>
           </div>
           <div className={styles.btnRow}>
-            <button type="button" className={styles.btn} disabled={atMax} onClick={() => attempt(1)}>슬롯 재련</button>
-            <button type="button" className={`${styles.btn} ${styles.btnSub}`} disabled={atMax} onClick={() => attempt(3)}>슬롯 재련 3회</button>
+            <button type="button" className={styles.btn} disabled={atMax || unknown} onClick={() => attempt(1)}>슬롯 재련</button>
+            <button type="button" className={`${styles.btn} ${styles.btnSub}`} disabled={atMax || unknown} onClick={() => attempt(3)}>슬롯 재련 3회</button>
           </div>
         </Sec>
       </Panel>

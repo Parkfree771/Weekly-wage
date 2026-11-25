@@ -1,6 +1,6 @@
 // 내 캐릭 이관 미리보기 — 지금 착용 장비(로아 API)를 2부 규칙으로 옮긴다.
-// 출처: 2026-11-20 On-Air (docs/season3-onair-2026-11-20/README.md 9장, img/10~20, transcript.txt 1:13~1:41)
-// 11-25 이관 공지에서 수치가 바뀌면 이 파일의 표만 고친다.
+// 출처: 2026-11-25 공식 공지 "로스트아크 2부 업데이트에 따른 주요 개편 사항 사전 안내"
+//       (docs/season3-notice-2026-11-25/README.md 에 표 전부 옮겨 둠. 11-20 방송 정리는 임시였다)
 
 import { itemLevelOf } from './growthData';
 
@@ -21,6 +21,11 @@ function itemLevel(tip: Tip): number | null {
   const m = titleOf(tip).leftStr2?.match(/아이템 레벨 (\d+)/);
   return m ? Number(m[1]) : null;
 }
+// "아이템 티어 4" → 4
+function tierOfItem(tip: Tip): number | null {
+  const m = stripHtml(titleOf(tip).leftStr2 ?? '').match(/티어 (\d)/);
+  return m ? Number(m[1]) : null;
+}
 // ItemPartBox 중 제목(Element_000)이 title 을 포함하는 칸의 본문(HTML)
 function partBox(tip: Tip, title: string): string | null {
   for (const el of Object.values(tip)) {
@@ -28,6 +33,16 @@ function partBox(tip: Tip, title: string): string | null {
     if (el?.type === 'ItemPartBox' && v && String(v.Element_000).includes(title)) return String(v.Element_001 ?? '');
   }
   return null;
+}
+// 거래 가능 횟수 — "거래 2회 가능" → 2, "거래 불가" → 0
+function tradeOf(tip: Tip): number | null {
+  const text = Object.values(tip)
+    .filter(el => el?.type === 'SingleTextBox' || el?.type === 'MultiTextBox')
+    .map(el => stripHtml(String(el?.value ?? '')))
+    .join(' ');
+  const m = text.match(/거래 (\d+)회 가능/);
+  if (m) return Number(m[1]);
+  return text.includes('거래 불가') ? 0 : null;
 }
 const plusN = (name: string) => Number(name.match(/^\+(\d+)/)?.[1] ?? 0);
 
@@ -38,59 +53,88 @@ function rankOfColor(html: string): Rank {
   return c === 'FE9600' ? '상' : c === 'CE43FC' ? '중' : '하';
 }
 
-// ---------- 장비 레벨 → 등급 · 연마 (img/10) ----------
-// 기존 레벨 "초과" 경계 → 이관 등급(GRADES 인덱스) · 연마. 장비 각각의 레벨 기준 (방송 1:14)
+// ---------- 장비 레벨 → 등급 · 연마 (공지 표 1) ----------
+// 티어 4: 기존 레벨 "초과" 경계 → 이관 등급(GRADES 인덱스) · 연마. 장비 각각의 레벨 기준
 export const LEVEL_TABLE: [number, number, number][] = [
   [1600, 0, 0], [1675, 0, 1], [1680, 0, 2], [1685, 0, 3], [1690, 0, 4],
   [1695, 1, 0], [1700, 1, 1], [1705, 1, 2], [1710, 1, 3], [1715, 1, 4],
   [1720, 2, 0], [1725, 2, 1], [1730, 2, 2], [1735, 2, 3], [1740, 2, 4],
   [1745, 3, 0], [1750, 3, 1], [1755, 3, 2], [1760, 3, 3], [1765, 3, 4],
-  // 1770 초과부터 +15 보정 (보라색 구간)
+  // 1770 초과부터 +15 보정
   [1770, 4, 2], [1775, 4, 3], [1780, 4, 4],
   [1785, 5, 0], [1790, 5, 2], [1795, 5, 3],
 ];
-export interface NewGear { grade: number; polish: number; level: number; }
-// 레벨이 걸리는 표의 줄 번호 (1600 이하는 -1). 1800 넘는 레벨(에스더)은 맨 끝 줄 = 25강 무기 기준
+// 티어 1~3: 기존 레벨 "초과" 경계 → 이관 장비 이름 · 레벨 (연마는 전부 0)
+export const LOW_LEVEL_TABLE: [number, string, number][] = [
+  [50, '티어 1 고급', 100], [100, '티어 1 희귀', 150], [150, '티어 1 영웅', 200], [200, '티어 1 전설', 250],
+  [250, '티어 2 일반', 600], [600, '티어 2 고급', 700], [700, '티어 2 희귀', 800], [800, '티어 2 영웅', 900], [900, '티어 2 전설', 1000],
+  [1000, '티어 3 일반', 1200], [1200, '티어 3 고급', 1300], [1300, '티어 3 희귀', 1400], [1400, '티어 3 영웅', 1500], [1500, '티어 3 전설', 1600],
+];
+// low 가 있으면 티어 1~3 장비 (grade -2). 에스더 무기는 grade -1
+export interface NewGear { grade: number; polish: number; level: number; low?: string; }
+// 레벨이 걸리는 티어 4 표의 줄 번호 (1600 이하는 -1). 1800 넘는 레벨(에스더)은 맨 끝 줄 = 25강 무기 기준
 export function levelRow(level: number | null): number {
   if (level == null || level <= 1600) return -1;
   let row = 0;
   LEVEL_TABLE.forEach((r, i) => { if (level > r[0]) row = i; });
   return row;
 }
+// 티어 1~3 표의 줄 번호 (해당 없으면 -1)
+export function lowLevelRow(level: number | null): number {
+  if (level == null || level <= LOW_LEVEL_TABLE[0][0] || level > 1600) return -1;
+  let row = 0;
+  LOW_LEVEL_TABLE.forEach((r, i) => { if (level > r[0]) row = i; });
+  return row;
+}
 function gearOf(level: number | null): NewGear | null {
   const i = levelRow(level);
-  if (i < 0) return null;
-  const [, grade, polish] = LEVEL_TABLE[i];
-  return { grade, polish, level: itemLevelOf(grade, polish) };
+  if (i >= 0) {
+    const [, grade, polish] = LEVEL_TABLE[i];
+    return { grade, polish, level: itemLevelOf(grade, polish) };
+  }
+  const j = lowLevelRow(level);
+  if (j < 0) return null;
+  const [, low, lv] = LOW_LEVEL_TABLE[j];
+  return { grade: -2, polish: 0, level: lv, low };
 }
 
-// ---------- 에스더 무기 (img/13, img/14) ----------
-// [진화, 엘라] → 엘라 단계 · 연마 · 레벨 · 무기 슬롯 재련
-export const ESTHER_TABLE: Record<string, { ella: number; polish: number; level: number; refine: number }> = {
-  '6-0': { ella: 2, polish: 0, level: 1625, refine: 0 },
-  '7-0': { ella: 2, polish: 0, level: 1625, refine: 0 },
-  '6-1': { ella: 2, polish: 0, level: 1625, refine: 9 },
-  '7-1': { ella: 2, polish: 0, level: 1625, refine: 9 },
-  '6-2': { ella: 2, polish: 0, level: 1625, refine: 9 },
-  '8-0': { ella: 2, polish: 0, level: 1625, refine: 11 },
-  '7-2': { ella: 3, polish: 0, level: 1735, refine: 12 },
-  '7-3': { ella: 3, polish: 0, level: 1735, refine: 14 },
-  '8-1': { ella: 3, polish: 0, level: 1735, refine: 14 },
-  '8-2': { ella: 3, polish: 0, level: 1735, refine: 18 },
-  '8-3': { ella: 3, polish: 0, level: 1735, refine: 20 },
-  '9-2': { ella: 3, polish: 0, level: 1735, refine: 22 },
-  '9-3': { ella: 4, polish: 0, level: 1840, refine: 25 },
-  '10-3': { ella: 4, polish: 5, level: 1865, refine: 25 },
+// ---------- 에스더 무기 (공지 표 2 · 3 · 4) ----------
+// [진화, 엘라] → 기존 레벨 · 받는 엘라 단계 · 연마 · 레벨 · 무기 슬롯 재련 · 환급(에스더의 기운 · 로맨틱 재료 키트)
+export interface EstherRow { from: number; ella: number; polish: number; level: number; refine: number; essence: number; kit: number; }
+const er = (from: number, ella: number, polish: number, level: number, refine: number, essence: number, kit: number): EstherRow =>
+  ({ from, ella, polish, level, refine, essence, kit });
+// 줄 순서는 공지 표 그대로
+export const ESTHER_TABLE: Record<string, EstherRow> = {
+  '0-0': er(1100, 1, 0, 1100, 0, 0, 0),
+  '1-0': er(1200, 1, 0, 1100, 0, 1, 10),
+  '2-0': er(1300, 1, 0, 1100, 0, 3, 310),
+  '3-0': er(1400, 1, 0, 1100, 0, 8, 810),
+  '4-0': er(1500, 1, 0, 1100, 0, 18, 1810),
+  '5-0': er(1600, 1, 0, 1100, 0, 28, 3310),
+  '6-0': er(1625, 2, 0, 1625, 0, 20, 3000),
+  '7-0': er(1635, 2, 0, 1625, 0, 40, 7000),
+  '6-1': er(1650, 2, 0, 1625, 9, 40, 11500),
+  '7-1': er(1665, 2, 0, 1625, 9, 60, 15500),
+  '6-2': er(1675, 2, 0, 1625, 9, 60, 20000),
+  '8-0': er(1645, 2, 0, 1625, 11, 70, 12000),
+  '7-2': er(1695, 3, 0, 1735, 12, 20, 12000),
+  '7-3': er(1785, 3, 0, 1735, 14, 20, 14500),
+  '8-1': er(1680, 3, 0, 1735, 14, 30, 8500),
+  '8-2': er(1715, 3, 0, 1735, 18, 50, 17000),
+  '8-3': er(1775, 3, 0, 1735, 20, 50, 19500),
+  '9-2': er(1745, 3, 0, 1735, 22, 80, 24000),
+  '9-3': er(1800, 4, 0, 1840, 25, 20, 10500),
+  '10-3': er(1830, 4, 5, 1865, 25, 0, 0),
 };
-export interface EstherResult { evo: number; ella: number; next: { ella: number; polish: number; level: number; refine: number } | null; }
+export interface EstherResult { evo: number; ella: number; key: string; next: EstherRow | null; }
 function estherOf(e: ApiEquip, tip: Tip): EstherResult {
   const evo = plusN(e.Name);
   const ella = Number(stripHtml(JSON.stringify(tip)).match(/엘라 부여 (\d) 단계/)?.[1] ?? 0);
-  const next = evo <= 5 ? { ella: 1, polish: 0, level: 1100, refine: 0 } : ESTHER_TABLE[`${evo}-${ella}`] ?? null;
-  return { evo, ella, next };
+  const key = `${evo}-${ella}`;
+  return { evo, ella, key, next: ESTHER_TABLE[key] ?? null };
 }
 
-// ---------- 장신구 → 마력 주입 주문서 (img/17, img/18) ----------
+// ---------- 장신구 → 마력 주입 주문서 (공지 표 5 · 6) ----------
 export interface AccRule { main: string[]; third: string[]; }
 // 1,2옵션 / 3옵션 유효 옵션. '%' 가 붙은 이름은 퍼센트 옵션, 없으면 고정 수치 옵션
 export const DEALER_RULE: Record<string, AccRule> = {
@@ -108,10 +152,12 @@ export interface AccResult {
   quality: number | null;
   grade: string;
   lines: PolishLine[];
+  trade: number | null;       // 거래 가능 횟수 (0 = 거래 불가). 주문서가 그대로 이어받는다
   scroll: number | null;      // 주문서 등급 (1이 최고)
   pattern: string;            // 상상중 같은 판정
   role: '딜러' | '서폿' | null;
-  reason?: string;            // 이관 대상이 아닌 이유
+  reason?: string;            // 주문서가 아닌 이유
+  reward?: string;            // 주문서 대신 받는 것
 }
 const RANK_ORDER: Rank[] = ['상', '중', '하'];
 const rankIdx = (r?: Rank) => (r ? RANK_ORDER.indexOf(r) : 3);
@@ -137,8 +183,13 @@ function judge(lines: PolishLine[], rule: AccRule) {
   const third = lines.filter(l => hits(l, rule.third)).map(l => l.rank).sort((a, b) => rankIdx(a) - rankIdx(b))[0];
   return { a: main[0], b: main[1], third };
 }
-function dealerScroll(lines: PolishLine[], rule: AccRule) {
+interface Pick { scroll: number; pattern: string; }
+// 6등급은 실제 1,2옵션 상중하를 그대로 보여준다 (상 하나뿐이면 '상'). 3옵션만 있으면 '3옵션만'
+const lowPattern = (a?: Rank, b?: Rank) => `${a ?? ''}${b ?? ''}` || '3옵션만';
+// 유효 옵션이 하나도 없으면 null (= 주문서 대신 영롱한 보석 파편)
+function dealerScroll(lines: PolishLine[], rule: AccRule): Pick | null {
   const { a, b, third } = judge(lines, rule);
+  if (!a && !third) return null;
   if (a === '상' && b === '상') {
     if (third === '상') return { scroll: 1, pattern: '상상상' };
     if (third === '중') return { scroll: 2, pattern: '상상중' };
@@ -146,12 +197,12 @@ function dealerScroll(lines: PolishLine[], rule: AccRule) {
   }
   if (a === '상' && b === '중') return { scroll: 4, pattern: '상중' };
   if (a === '상' && b === '하') return { scroll: 5, pattern: '상하' };
-  // 6등급은 실제 유효 옵션 상중하를 그대로 보여준다 (상 하나뿐이면 '상')
-  return { scroll: 6, pattern: `${a ?? ''}${b ?? ''}` || '유효 옵션 없음' };
+  return { scroll: 6, pattern: lowPattern(a, b) };
 }
-// 서폿 귀걸이는 따로 (img/17 아래 칸)
-function supportEarringScroll(lines: PolishLine[], rule: AccRule) {
+// 서폿 귀걸이는 따로
+function supportEarringScroll(lines: PolishLine[], rule: AccRule): Pick | null {
   const { a, b, third } = judge(lines, rule);
+  if (!a && !third) return null;
   if (a === '상' && b === '상') {
     if (third === '상') {
       const hp = lines.some(l => keyOf(l) === '최대 생명력' && l.rank === '상');
@@ -160,34 +211,39 @@ function supportEarringScroll(lines: PolishLine[], rule: AccRule) {
     if (third === '중') return { scroll: 4, pattern: '상상중' };
     return { scroll: 5, pattern: '상상' };
   }
-  return { scroll: 6, pattern: `${a ?? ''}${b ?? ''}` || '유효 옵션 없음' };
+  return { scroll: 6, pattern: lowPattern(a, b) };
 }
 
+export const SHARD = '영롱한 보석 파편';
 function accOf(e: ApiEquip, tip: Tip): AccResult {
   const lines = polishLines(tip);
   const quality = titleOf(tip).qualityValue ?? null;
-  const base = { quality, grade: e.Grade, lines, scroll: null, pattern: '', role: null } as AccResult;
-  if (!/티어 4/.test(titleOf(tip).leftStr2 ?? '')) return { ...base, reason: '4티어만 이관' };
-  if (quality == null || quality < 67) return { ...base, reason: '품질 67 미만' };
+  const base: AccResult = { quality, grade: e.Grade, lines, trade: tradeOf(tip), scroll: null, pattern: '', role: null };
+  if ((tierOfItem(tip) ?? 0) < 4) return { ...base, reason: '티어 3 이하', reward: '제거 (교체 없음)' };
+  if (e.Grade !== '고대' && e.Grade !== '유물') return { ...base, reason: '고대 · 유물만 기준 있음' };
+  if (quality == null || quality < 67) return { ...base, reason: '품질 67 미만', reward: SHARD };
 
   const part = e.Type;
   if (e.Grade === '고대') {
     const d = dealerScroll(lines, DEALER_RULE[part]);
     const s = part === '귀걸이' ? supportEarringScroll(lines, SUPPORT_RULE[part]) : dealerScroll(lines, SUPPORT_RULE[part]);
     // 딜러·서폿 둘 다 따져서 더 좋은 쪽
-    return s.scroll < d.scroll ? { ...base, ...s, role: '서폿' } : { ...base, ...d, role: '딜러' };
+    if (s && (!d || s.scroll < d.scroll)) return { ...base, ...s, role: '서폿' };
+    if (d) return { ...base, ...d, role: '딜러' };
+    return { ...base, reason: '유효 옵션 없음', reward: SHARD };
   }
-  if (e.Grade === '유물' && part !== '귀걸이') {
+  // 유물은 서폿 목걸이 · 반지 상상만 5등급
+  if (part !== '귀걸이') {
     const { a, b } = judge(lines, SUPPORT_RULE[part]);
     if (a === '상' && b === '상') return { ...base, scroll: 5, pattern: '상상', role: '서폿' };
   }
-  return { ...base, reason: e.Grade === '유물' ? '유물은 서폿 목걸이·반지 상상만 이관' : '고대·유물만 이관' };
+  return { ...base, reason: '유물은 서폿 목걸이 · 반지 상상만', reward: SHARD };
 }
 
-// ---------- 팔찌 → 인장 주문서 (img/15, img/16) ----------
+// ---------- 팔찌 → 인장 주문서 (공지 표 7 · 8) ----------
 // 줄마다 티어만 매긴다. 1~21등급 점수표는 미공개.
 export interface BraceletLine { text: string; rank: Rank; dealer: string | null; support: string | null; }
-// 기준 말풍선에 보여줄 티어별 옵션 (img/15, img/16 그대로)
+// 기준 말풍선에 보여줄 티어별 옵션 (공지 표 그대로, 문구만 짧게)
 export const DEALER_TIER_OPTIONS: [string, string[]][] = [
   ['1티어', ['치명타 적중률 & 치명타 시 피해량', '치명타 피해 & 치명타 시 피해량', '추가 피해 & 악마 및 대악마 피해', '재사용 대기 시간 증가 & 적에게 주는 피해', '적에게 주는 피해 & 무력화 대상 피해']],
   ['2티어+', ['치명 / 특화 / 신속']],
@@ -221,7 +277,7 @@ function tierOf(t: string): { dealer: string | null; support: string | null } {
   if (stat === '힘' || stat === '민첩' || stat === '지능') return { dealer: '5티어', support: '4티어' };
   return { dealer: null, support: null };
 }
-function braceletOf(tip: Tip): BraceletLine[] {
+function braceletLines(tip: Tip): BraceletLine[] {
   const html = partBox(tip, '팔찌 효과');
   if (!html) return [];
   // 줄마다 앞에 잠금/변경 아이콘이 붙는다. 이중 옵션은 아이콘 없이 <BR> 로 이어진다.
@@ -231,15 +287,29 @@ function braceletOf(tip: Tip): BraceletLine[] {
     return { text, rank: rankOfColor(seg), ...tierOf(text) };
   }).filter((l): l is BraceletLine => l !== null);
 }
+// seal = 인장 주문서 / excluded = 딜러 클래스의 서폿 옵션 팔찌 / decompose = 효과 미부여 / removed = 티어 3
+export type BraceletStatus = 'seal' | 'excluded' | 'decompose' | 'removed';
+export interface BraceletResult { name: string; icon: string; grade: string; lines: BraceletLine[]; status: BraceletStatus; }
+function braceletOf(e: ApiEquip, tip: Tip, className: string): BraceletResult {
+  const lines = braceletLines(tip);
+  const base = { name: e.Name, icon: e.Icon, grade: e.Grade, lines };
+  if ((tierOfItem(tip) ?? 0) < 4) return { ...base, status: 'removed' };
+  if (lines.length === 0) return { ...base, status: 'decompose' };
+  // 딜러(서폿 가능 4클래스 외)는 서폿 쪽 점수만 있는 팔찌가 이관 대상에서 빠진다
+  const supportOnly = lines.some(l => l.support) && !lines.some(l => l.dealer);
+  if (!SUPPORT_CLASSES.includes(className) && supportOnly) return { ...base, status: 'excluded' };
+  return { ...base, status: 'seal' };
+}
 
-// ---------- 어빌리티 스톤 → 각인 슬롯 (img/19, img/20) ----------
+// ---------- 어빌리티 스톤 → 각인 슬롯 (공지 표 9) ----------
 export const DEALER_ENGRAVINGS = ['각성', '결투의 대가', '기습의 대가', '달인의 저력', '돌격대장', '마나 효율 증가', '바리케이드', '부러진 뼈', '속전속결', '슈퍼 차지', '시선 집중', '아드레날린', '안정된 상태', '약자 무시', '에테르 포식자', '예리한 둔기', '원한', '저주받은 인형', '정밀 단도', '질량 증가', '추진력', '타격의 대가'];
 export const SUPPORT_ENGRAVINGS = ['각성', '구슬동자', '급소 타격', '마나의 흐름', '분쇄의 주먹', '위기 모면', '전문의', '정기 흡수', '중갑 착용', '최대 마나 증가', '폭발물 전문가'];
-// 딜·폿 전환 가능한 클래스만 서폿 각인 조합을 본다
-const SUPPORT_CLASSES = ['바드', '홀리나이트', '도화가', '발키리'];
+// 서포터가 될 수 있는 클래스 — 서폿 각인 조합 · 서폿 옵션 팔찌가 인정된다
+export const SUPPORT_CLASSES = ['바드', '홀리나이트', '도화가', '발키리'];
 
-// slots 개 칸이 level 단계, bonus = 8포인트의 +α
-export interface StoneResult { engravings: { name: string; level: number }[]; points: number; valid: boolean; slots: number; level: number; bonus: boolean; }
+// slots 개 칸이 level 단계, bonus = 8포인트의 추가 아이템
+// reward = 각인 슬롯에 안 들어갈 때 받는 것 (유효하지 않은 조합 → 초월의 가루)
+export interface StoneResult { engravings: { name: string; level: number }[]; points: number; valid: boolean; slots: number; level: number; bonus: boolean; reward?: string; }
 function stoneOf(tip: Tip, className: string): StoneResult {
   const found: { name: string; level: number }[] = [];
   const group = Object.values(tip).find(el => el?.type === 'IndentStringGroup');
@@ -264,14 +334,15 @@ function stoneOf(tip: Tip, className: string): StoneResult {
     else if (points === 4 && hi === 3) [slots, level] = [1, 5];
     else if (points === 4 && hi === 2) [slots, level] = [1, 3];
   }
-  return { engravings, points, valid, slots, level, bonus: valid && points >= 8 };
+  return { engravings, points, valid, slots, level, bonus: valid && points >= 8, reward: valid ? undefined : '초월의 가루' };
 }
 
 // ---------- 아래 시뮬 시작값 ----------
-// 연마 탭: 칸마다 받는 장비 등급 · 연마 / 재련 탭: 칸마다 슬롯 재련 단계
+// 연마 탭: 칸마다 받는 장비 등급 · 연마 (에스더 무기는 따로) / 재련 탭: 칸마다 슬롯 재련 단계
 export interface SimStart {
   name: string;
   polish: Record<string, { grade: number; polish: number }>;
+  esther?: { ella: number; polish: number; level: number };
   refine: Record<string, number>;
 }
 
@@ -296,7 +367,7 @@ export interface RightSlot {
   gear: NewGear | null;
   gearFrom: string;              // 어느 부위 레벨 기준으로 받는지 (투구 +22 · 1785)
   acc?: AccResult & { name: string; icon: string };
-  bracelet?: { name: string; icon: string; lines: BraceletLine[] };
+  bracelet?: BraceletResult;
   infuse: 'scroll' | 'seal' | 'fresh';
 }
 export interface Migration {
@@ -316,7 +387,7 @@ const ARMOR: { key: LeftKey; type: string; label: string; icon: string }[] = [
   { key: 'pants', type: '하의', label: '하의', icon: 'pants' },
   { key: 'gloves', type: '장갑', label: '장갑', icon: 'gloves' },
 ];
-// 방어구 5부위와 짝이 되는 장신구 (img/11)
+// 방어구 5부위와 짝이 되는 장신구
 const PAIR: Record<string, { key: RightKey; label: string; icon: string; nth: number; type: string }> = {
   helmet: { key: 'necklace', label: '목걸이', icon: 'necklace', nth: 0, type: '목걸이' },
   shoulder: { key: 'earring1', label: '귀걸이', icon: 'earring', nth: 0, type: '귀걸이' },
@@ -325,17 +396,24 @@ const PAIR: Record<string, { key: RightKey; label: string; icon: string; nth: nu
   gloves: { key: 'ring2', label: '반지', icon: 'ring', nth: 1, type: '반지' },
 };
 
-// 에스더 무기는 시뮬 등급표(고급~고대)에 없어서 연마 시작값에서 뺀다
+// 에스더 무기와 티어 1~3 장비는 시뮬 등급표(고급~고대)에 없어서 연마 시작값에서 뺀다. 에스더는 esther 로 따로 넘긴다
 export function toSimStart(m: Migration): SimStart {
   const polish: SimStart['polish'] = {};
   for (const s of [...m.left, ...m.right]) {
     if (s.gear && s.gear.grade >= 0) polish[s.key] = { grade: s.gear.grade, polish: s.gear.polish };
   }
-  return { name: m.name, polish, refine: Object.fromEntries(m.left.map(s => [s.key, s.refine])) };
+  const e = m.left[0].esther?.next;
+  return {
+    name: m.name,
+    polish,
+    esther: e ? { ella: e.ella, polish: e.polish, level: e.level } : undefined,
+    refine: Object.fromEntries(m.left.map(s => [s.key, s.refine])),
+  };
 }
 
 export function migrate(profile: ApiProfile, equipment: ApiEquip[]): Migration {
   const byType = (t: string) => equipment.filter(e => e.Type === t);
+  const className = profile.CharacterClassName;
 
   // 무기
   const w = byType('무기')[0];
@@ -349,8 +427,8 @@ export function migrate(profile: ApiProfile, equipment: ApiEquip[]): Migration {
   const weaponBasis = !w ? '무기 없음'
     : isEsther ? `에스더 ${wLevel}${(wLevel ?? 0) >= 1800 ? ' (25강 무기로 계산)' : ''}`
     : `무기 +${plusN(w.Name)} · ${wLevel}`;
-  const weaponGear: NewGear | null = esther?.next
-    ? { grade: -1, polish: esther.next.polish, level: esther.next.level }
+  const weaponGear: NewGear | null = esther
+    ? (esther.next ? { grade: -1, polish: esther.next.polish, level: esther.next.level } : null)
     : byWeapon;
 
   const left: LeftSlot[] = [];
@@ -372,7 +450,8 @@ export function migrate(profile: ApiProfile, equipment: ApiEquip[]): Migration {
   const right: RightSlot[] = [];
   for (const a of ARMOR) {
     const e = byType(a.type)[0];
-    const lv = e ? itemLevel(parseTip(e.Tooltip)) : null;
+    const tip = e ? parseTip(e.Tooltip) : {};
+    const lv = e ? itemLevel(tip) : null;
     const gear = gearOf(lv);
     left.push({ key: a.key, label: a.label, icon: a.icon, now: e ? { name: e.Name, icon: e.Icon, grade: e.Grade, level: lv, refine: plusN(e.Name) } : null, gear, refine: e ? plusN(e.Name) : 0 });
 
@@ -390,7 +469,7 @@ export function migrate(profile: ApiProfile, equipment: ApiEquip[]): Migration {
   right.push({ key: 'relic', label: '성물', icon: 'relic', gear: byWeapon, gearFrom: weaponBasis, infuse: 'fresh' });
   right.push({
     key: 'seal', label: '인장', icon: 'seal', gear: byWeapon, gearFrom: weaponBasis, infuse: 'seal',
-    bracelet: br ? { name: br.Name, icon: br.Icon, lines: braceletOf(parseTip(br.Tooltip)) } : undefined,
+    bracelet: br ? braceletOf(br, parseTip(br.Tooltip), className) : undefined,
   });
 
   // 16칸 평균 (한 칸이라도 표 범위 밖이면 계산 안 함)
@@ -400,11 +479,11 @@ export function migrate(profile: ApiProfile, equipment: ApiEquip[]): Migration {
   const st = byType('어빌리티 스톤')[0];
   return {
     name: profile.CharacterName,
-    className: profile.CharacterClassName,
+    className,
     nowLevel: Number(String(profile.ItemAvgLevel).replace(/,/g, '')),
     newLevel,
     left,
     right,
-    stone: st ? { ...stoneOf(parseTip(st.Tooltip), profile.CharacterClassName), name: st.Name, icon: st.Icon } : null,
+    stone: st ? { ...stoneOf(parseTip(st.Tooltip), className), name: st.Name, icon: st.Icon } : null,
   };
 }
